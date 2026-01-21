@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: "24.x"
           cache: "npm"
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run format
       - run: npm run typecheck
@@ -50,7 +50,7 @@ jobs:
         with:
           node-version: "24.x"
           cache: "npm"
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run format
       - run: npm run typecheck

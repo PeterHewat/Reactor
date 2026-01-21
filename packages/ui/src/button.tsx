@@ -2,12 +2,21 @@ import { cn } from "@repo/utils";
 import type { ButtonHTMLAttributes } from "react";
 import { forwardRef } from "react";
 
+/** Available button style variants */
 export type ButtonVariant = "primary" | "secondary" | "ghost";
+
+/** Available button sizes */
 export type ButtonSize = "sm" | "md" | "lg";
 
+/**
+ * Props for the Button component.
+ */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Visual style variant */
   variant?: ButtonVariant;
+  /** Button size */
   size?: ButtonSize;
+  /** Shows loading state and disables the button */
   isLoading?: boolean;
 }
 
@@ -26,6 +35,13 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: "h-12 px-6 text-base",
 };
 
+/**
+ * A flexible button component with variants and sizes.
+ *
+ * @example
+ * <Button variant="primary" size="md">Click me</Button>
+ * <Button variant="secondary" isLoading>Loading...</Button>
+ */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { className, variant = "primary", size = "md", isLoading = false, disabled, children, ...props },
   ref,

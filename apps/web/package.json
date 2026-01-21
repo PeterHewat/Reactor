@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Web app (React 19) - scaffold with Vite",
+  "description": "Web app (React 19)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,10 +13,20 @@
     "e2e": "playwright test",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@repo/ui": "file:../../packages/ui",
+    "@repo/utils": "file:../../packages/utils",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "jsdom": "^27.4.0"
+    "@vitejs/plugin-react": "^5.1.2",
+    "autoprefixer": "^10.4.23",
+    "jsdom": "^27.4.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18"
   }
 }

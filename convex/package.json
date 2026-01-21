@@ -7,9 +7,10 @@
   "scripts": {
     "dev": "convex dev",
     "deploy": "convex deploy",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests configured for convex yet\" && exit 0"
   },
   "dependencies": {
-    "convex": "^1.21.0"
+    "convex": "^1.31.5"
   }
 }

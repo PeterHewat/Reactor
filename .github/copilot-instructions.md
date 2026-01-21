@@ -41,6 +41,7 @@
 
 - **Strictness**: NO `any`. Use `unknown` or strictly defined interfaces.
 - **Legacy**: NO `@ts-ignore`. Use `@ts-expect-error` with a description.
+- **Documentation**: Add JSDoc comments to all exported functions, types, and components. Include `@param`, `@returns`, and `@example` where appropriate.
 
 ## Documentation Maintenance
 

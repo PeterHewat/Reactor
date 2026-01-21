@@ -1,0 +1,87 @@
+// Place your settings in this file to overwrite the default settings
+{
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.rulers": [100],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.suggestSelection": "first",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[react]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.associations": {
+    "*.mdc": "markdown"
+    // "*.tsx": "typescript",
+  },
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/.astro": true,
+    "**/.DS_Store": true,
+    "**/build": true,
+    "**/bun.lock": true,
+    "**/dist": true,
+    "**/node_modules": true
+  },
+  "search.exclude": {
+    "**/.astro": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/node_modules": true
+  },
+  "html.format.wrapAttributes": "force-expand-multiline",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "i18n-ally.localesPaths": ["locales"],
+  "i18n-ally.sourceLanguage": "en",
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.sortKeys": true,
+  "npm.packageManager": "bun",
+  "npm.scriptRunner": "bun",
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Use conventional commit format: type: description"
+    },
+    {
+      "text": "Types must be one of: feat, fix, docs, style, refactor, perf, test, chore, ci"
+    },
+    {
+      "text": "Keep the subject line under 72 characters"
+    },
+    {
+      "text": "Use imperative mood"
+    },
+    {
+      "text": "If you can accurately express the change in just the subject line, don't include anything in the message body. Only use the body when it is providing *useful* information that cannot be conveyed in the subject line."
+    }
+  ]
+}

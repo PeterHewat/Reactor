@@ -1,0 +1,46 @@
+{
+  "name": "reactor-monorepo",
+  "version": "0.1.0",
+  "description": "Starter monorepo for React 19 + Convex + Clerk + Tailwind CSS + Vitest + Playwright",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web",
+    "convex",
+    "packages/ui",
+    "packages/utils"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "typecheck": "tsc -p tsconfig.base.json --noEmit",
+    "typecheck:refs": "tsc -b",
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "npm run test --workspaces --if-present",
+    "e2e:install": "npx -w apps/web playwright install"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.7.4",
+    "typescript": "~5.9.3",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.17",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "@types/node": "^25.0.9",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/jest-dom": "^6.4.2"
+  }
+}

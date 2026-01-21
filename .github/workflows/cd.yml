@@ -1,0 +1,57 @@
+name: Continuous Delivery
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  parse-release:
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.parse.outputs.target }}
+      version: ${{ steps.parse.outputs.version }}
+    steps:
+      - name: Parse release tag
+        id: parse
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "Parsing tag: $TAG"
+          if [[ "$TAG" =~ ^(frontend|backend)-v(.+)$ ]]; then
+            echo "target=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "version=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+          else
+            echo "Invalid tag format. Expected: {frontend|backend}-v{version}"
+            exit 1
+          fi
+
+  release-frontend:
+    needs: parse-release
+    if: needs.parse-release.outputs.target == 'frontend'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format
+      - run: npm run typecheck
+      - run: npm test
+
+  release-backend:
+    needs: parse-release
+    if: needs.parse-release.outputs.target == 'backend'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format
+      - run: npm run typecheck
+      - run: npm test

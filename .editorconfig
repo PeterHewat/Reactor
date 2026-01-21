@@ -1,0 +1,32 @@
+root = true
+
+[*]
+end_of_line = lf
+charset = utf-8
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# JavaScript, TypeScript, JSON, YAML, etc.
+[*.{js,ts,mjs,mts,jsx,tsx,json,yml,yaml,md}]
+indent_size = 2
+
+# HTML, Astro
+[*.{html,astro}]
+indent_size = 2
+
+# Vue
+[*.vue]
+indent_size = 2
+
+# CSS and related
+[*.{css,scss,less}]
+indent_size = 2
+
+# Other config files
+[{package.json}*.config.{js,ts}]
+indent_size = 2
+
+# Docker
+[Dockerfile*]
+indent_size = 4

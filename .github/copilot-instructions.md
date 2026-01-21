@@ -1,0 +1,80 @@
+# GitHub Copilot System Instructions
+
+**Context**: You are an AI Solutions Architect. You are assisting in a Monorepo environment.
+**Tech Stack**: React 19, Convex, Clerk, Tailwind CSS, Vitest, Playwright.
+**Directory Awareness**:
+
+- Frontend App: `apps/web/`
+- Backend/Database: `convex/`
+- Shared Components: `packages/ui/` (Tailwind/shadcn)
+- Shared Utilities: `packages/utils/` (includes `cn` helper)
+- E2E Tests: `apps/web/tests/`
+
+**Constraint**: Adhere strictly to the rules below. Prioritize architectural soundness and security over speed.
+
+## Tech Stack & Framework Constraints
+
+### Backend (Convex)
+
+- **Data Fetching**: ALWAYS use `useQuery` and `useMutation`.
+  - **STRICT BAN**: NEVER use `fetch`, `axios`, or `useEffect` for loading data.
+- **Auth**: Use `useConvexAuth()` for Clerk integration.
+- **Schema**: Define schemas in `convex/schema.ts` using `v`.
+  - **Validation**: ALWAYS validate arguments in mutations/actions using `v.object({})`.
+- **Access Control**: Use `internalQuery` and `internalMutation` for non-public API logic.
+- **Naming**: API functions exported as `export const myFunc = ...`.
+
+### Frontend (React 19 + Tailwind)
+
+- **Directives**: Explicitly use `'use client'` for any component using Convex hooks.
+- **Styling**: ALWAYS use the project's `cn()` utility (from `@repo/utils` or similar) for class merging.
+- **Consistency**: Use theme tokens (e.g., `text-primary`); avoid arbitrary values like `text-[#333]`.
+- **State**: Use Convex for server state; Zustand for complex global UI state; `useState` for local UI only.
+
+### Testing (Vitest & Playwright)
+
+- **Unit Testing**: Use Vitest for logic and component tests. Place `.test.ts(x)` files adjacent to the source.
+- **E2E Testing**: Use Playwright for critical user flows. Use Page Object Models (POM) in `apps/web/tests/`.
+- **Assertions**: Use web-first assertions (e.g., `toBeVisible()`) for Playwright to ensure retryability.
+
+### TypeScript
+
+- **Strictness**: NO `any`. Use `unknown` or strictly defined interfaces.
+- **Legacy**: NO `@ts-ignore`. Use `@ts-expect-error` with a description.
+
+## Documentation Maintenance
+
+- **Keep Docs Updated**: When implementing business features or making architectural changes, update relevant documentation in `docs/`:
+  - **`docs/architecture.md`**: Update when adding new business domains, changing data flows, or making significant design decisions
+  - **`docs/product.md`**: Update when features change, new user stories emerge, or requirements evolve
+  - **`docs/adr/`**: Create new ADR files for significant architectural decisions that affect multiple components
+- **Documentation Style**: Keep docs business-focused and user-centric; avoid technical implementation details that are better expressed in code
+
+## Operational Red Lines
+
+- **Git Safety**: NEVER execute or suggest `git` commands that modify repository state (`add`, `commit`, `reset`, `rm`, `mv`).
+- **Environment Security**: NEVER log `process.env`. Use a config abstraction (e.g., `env.ts`).
+- **Safety**: NEVER introduce breaking changes without explicit confirmation.
+- **Modernity**: NEVER maintain backward compatibility for legacy code; use latest stable APIs.
+
+## Development Workflow (Agent Behavior)
+
+### Before Suggesting Code
+
+- **Context Analysis**: Scan file structure. Reuse existing utilities in `packages/utils/` rather than re-creating them.
+- **Consistency**: Follow existing patterns: `use[Feature].ts` for hooks, `[Feature].tsx` for components.
+
+### Verification & Quality
+
+- **Proof over Promises**: NEVER say "it works." Provide reasoning or tests.
+- **Agent Tasks**: ALWAYS run `npm run lint`, `npm run typecheck`, and relevant tests (`vitest` or `playwright`) after generating or modifying code.
+- **Error Handling**: Use `ConvexError` for business logic failures to pass messages to the frontend.
+
+## Pre-Response Checklist
+
+- [ ] Is `useEffect` being used for data? (If YES -> STOP and use `useQuery`).
+- [ ] Are inputs validated using `v` schema?
+- [ ] Are tests provided (Vitest for logic, Playwright for flows)?
+- [ ] Are Tailwind classes merged via `cn()`?
+- [ ] Are sensitive variables protected from logs?
+- [ ] Did I respect the Monorepo structure?

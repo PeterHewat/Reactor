@@ -1,0 +1,490 @@
+# Release Workflow
+#
+# SETUP REQUIRED:
+# 1. Create a 'production' environment in GitHub repo settings for manual approval
+# 2. Go to: Settings > Environments > New environment > Name: "production"
+# 3. Enable "Required reviewers" and add yourself/team members
+# 4. Uncomment the "environment: production" line in the job below
+#
+# USAGE:
+# - Manual trigger only via GitHub Actions tab
+# - Select component scope and version increment type
+# - Review release plan before approval step
+# - Automatic changelog generation via GitHub CLI
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_scope:
+        description: "Release scope"
+        required: true
+        type: choice
+        options:
+          - "all"
+          - "frontend"
+          - "backend"
+        default: "all"
+      version_type:
+        description: "Version increment type"
+        required: true
+        type: choice
+        options:
+          - "patch"
+          - "minor"
+          - "major"
+        default: "minor"
+      skip_unchanged:
+        description: "Skip components with no changes since last release"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  create-releases:
+    runs-on: ubuntu-latest
+    environment: production # Requires manual approval for production releases
+    outputs:
+      released_components: ${{ steps.create.outputs.released_components }}
+      failed_components: ${{ steps.create.outputs.failed_components }}
+      summary_url: ${{ steps.create.outputs.summary_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate repository state
+        run: |
+          set -euo pipefail
+
+          echo "🔍 Validating repository state..."
+
+          # Check if we're on main branch
+          CURRENT_BRANCH=$(git branch --show-current)
+          if [ "$CURRENT_BRANCH" != "main" ]; then
+            echo "❌ Releases must be created from main branch (currently on: $CURRENT_BRANCH)"
+            exit 1
+          fi
+
+          # Check for uncommitted changes
+          if ! git diff --quiet HEAD; then
+            echo "❌ Working directory has uncommitted changes:"
+            git status --porcelain
+            exit 1
+          fi
+
+          # Check if main is up to date with origin
+          git fetch origin main --quiet
+          LOCAL_SHA=$(git rev-parse HEAD)
+          REMOTE_SHA=$(git rev-parse origin/main)
+
+          if [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
+            echo "❌ Local main branch is not up to date with origin/main"
+            echo "   Local:  $LOCAL_SHA"
+            echo "   Remote: $REMOTE_SHA"
+            echo "   Please pull latest changes first"
+            exit 1
+          fi
+
+          echo "✅ Repository state is valid"
+
+      - name: Setup bash utilities
+        run: |
+          echo "Setting up release utilities..."
+          # Verify git and gh are available
+          git --version || { echo "❌ Git not found"; exit 1; }
+          gh --version || { echo "❌ GitHub CLI not found"; exit 1; }
+
+      - name: Analyze releases
+        id: analyze
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          RELEASE_SCOPE="${{ github.event.inputs.release_scope }}"
+          VERSION_TYPE="${{ github.event.inputs.version_type }}"
+          SKIP_UNCHANGED="${{ github.event.inputs.skip_unchanged }}"
+
+          echo "🚀 Release Configuration:"
+          echo "  Scope: $RELEASE_SCOPE"
+          echo "  Version: $VERSION_TYPE"
+          echo "  Skip unchanged: $SKIP_UNCHANGED"
+          echo ""
+
+          # Validate inputs
+          case "$VERSION_TYPE" in
+            patch|minor|major) ;;
+            *) echo "❌ Invalid version type: $VERSION_TYPE"; exit 1 ;;
+          esac
+
+          # Native semver increment function
+          increment_version() {
+            local version=$1
+            local type=$2
+            if [[ ! $version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              echo "❌ Invalid version format: $version" >&2
+              exit 1
+            fi
+            local major=${BASH_REMATCH[1]}
+            local minor=${BASH_REMATCH[2]}
+            local patch=${BASH_REMATCH[3]}
+            case $type in
+              major) echo "$((major + 1)).0.0" ;;
+              minor) echo "$major.$((minor + 1)).0" ;;
+              patch) echo "$major.$minor.$((patch + 1))" ;;
+            esac
+          }
+
+          # Get component paths for change detection
+          get_component_paths() {
+            local component=$1
+            case $component in
+              "frontend") echo "apps/web/ packages/ui/ packages/utils/" ;;
+              "backend") echo "convex/ packages/ui/ packages/utils/" ;;
+              *) echo "❌ Unknown component: $component" >&2; exit 1 ;;
+            esac
+          }
+
+          # Check if component has changes since last tag
+          has_component_changes() {
+            local component=$1
+            local latest_tag=$2
+            if [ -z "$latest_tag" ]; then
+              echo "true"
+              return
+            fi
+            local component_paths=($(get_component_paths "$component"))
+            for path in "${component_paths[@]}"; do
+              if [ -d "$path" ]; then
+                local changes=$(git diff --name-only "$latest_tag"..HEAD -- "$path" 2>/dev/null || true)
+                if [ -n "$changes" ]; then
+                  echo "true"
+                  return
+                fi
+              fi
+            done
+            echo "false"
+          }
+
+          # Get changed files for component
+          get_changed_files() {
+            local component=$1
+            local latest_tag=$2
+            local component_paths=($(get_component_paths "$component"))
+            local changed_files=()
+
+            if [ -z "$latest_tag" ]; then
+              # First release - get all files
+              for path in "${component_paths[@]}"; do
+                if [ -d "$path" ]; then
+                  while IFS= read -r -d '' file; do
+                    changed_files+=("$file")
+                  done < <(find "$path" -type f -print0 2>/dev/null || true)
+                fi
+              done
+            else
+              # Get changed files since last tag
+              for path in "${component_paths[@]}"; do
+                if [ -d "$path" ]; then
+                  while IFS= read -r file; do
+                    if [ -n "$file" ]; then
+                      changed_files+=("$file")
+                    fi
+                  done < <(git diff --name-only "$latest_tag"..HEAD -- "$path" 2>/dev/null || true)
+                fi
+              done
+            fi
+
+            printf '%s\n' "${changed_files[@]}"
+          }
+
+          # Determine which components to process
+          if [ "$RELEASE_SCOPE" = "all" ]; then
+            COMPONENTS=("frontend" "backend")
+            echo "📋 Analyzing all components: ${COMPONENTS[*]}"
+          else
+            COMPONENTS=("$RELEASE_SCOPE")
+            echo "📋 Analyzing single component: $RELEASE_SCOPE"
+          fi
+          echo ""
+
+          # Create state files for data persistence
+          mkdir -p /tmp/release_state
+          > /tmp/release_state/release_plan.txt
+          > /tmp/release_state/skip_plan.txt
+          > /tmp/release_state/component_details.txt
+
+          for COMPONENT in "${COMPONENTS[@]}"; do
+            echo "┌─────────────────────────────────────────┐"
+            echo "│ 🔍 Analyzing: $COMPONENT" | awk '{printf "%-40s│\n", $0}'
+            echo "└─────────────────────────────────────────┘"
+
+            # Get latest tag for this component
+            LATEST_TAG=$(git tag -l "${COMPONENT}-v*" --sort=-version:refname | head -n1 || true)
+
+            # Check for changes using functions
+            HAS_CHANGES=$(has_component_changes "$COMPONENT" "$LATEST_TAG")
+
+            # Get changed files
+            readarray -t CHANGED_FILES < <(get_changed_files "$COMPONENT" "$LATEST_TAG")
+
+            # Display status
+            if [ -z "$LATEST_TAG" ]; then
+              echo "  📅 Status: First release (no previous tags)"
+            else
+              echo "  📅 Previous: $LATEST_TAG"
+            fi
+
+            # Display changed files
+            if [ ${#CHANGED_FILES[@]} -gt 0 ]; then
+              echo "  📝 Changed files (${#CHANGED_FILES[@]}):"
+              for file in "${CHANGED_FILES[@]:0:5}"; do
+                echo "     - $file"
+              done
+              if [ ${#CHANGED_FILES[@]} -gt 5 ]; then
+                echo "     ... and $((${#CHANGED_FILES[@]} - 5)) more"
+              fi
+            else
+              echo "  📝 No file changes detected"
+            fi
+
+            # Skip if no changes and skip_unchanged is true
+            if [ "$HAS_CHANGES" = "false" ] && [ "$SKIP_UNCHANGED" = "true" ]; then
+              echo "  ⏭️  Action: SKIP (no changes)"
+              echo "$COMPONENT" >> /tmp/release_state/skip_plan.txt
+              echo ""
+              continue
+            fi
+
+            # Determine new version
+            if [ -z "$LATEST_TAG" ]; then
+              CURRENT_VERSION="0.0.0"
+              NEW_VERSION="1.0.0"
+            else
+              CURRENT_VERSION=$(echo "$LATEST_TAG" | sed "s/${COMPONENT}-v//")
+              if [ -z "$CURRENT_VERSION" ]; then
+                echo "❌ Failed to parse version from tag: $LATEST_TAG"
+                exit 1
+              fi
+              NEW_VERSION=$(increment_version "$CURRENT_VERSION" "$VERSION_TYPE")
+              if [ -z "$NEW_VERSION" ]; then
+                echo "❌ Failed to increment version: $CURRENT_VERSION"
+                exit 1
+              fi
+            fi
+
+            NEW_TAG="${COMPONENT}-v${NEW_VERSION}"
+            echo "  📦 Version: $CURRENT_VERSION → $NEW_VERSION ($VERSION_TYPE)"
+            echo "  🏷️  Tag: $NEW_TAG"
+            echo "  ✅ Action: RELEASE"
+
+            # Save release plan to state file
+            echo "$COMPONENT:$CURRENT_VERSION:$NEW_VERSION:$NEW_TAG:${#CHANGED_FILES[@]}" >> /tmp/release_state/release_plan.txt
+
+            # Save detailed component info
+            echo "[Component: $COMPONENT]" >> /tmp/release_state/component_details.txt
+            echo "LatestTag=$LATEST_TAG" >> /tmp/release_state/component_details.txt
+            echo "CurrentVersion=$CURRENT_VERSION" >> /tmp/release_state/component_details.txt
+            echo "NewVersion=$NEW_VERSION" >> /tmp/release_state/component_details.txt
+            echo "NewTag=$NEW_TAG" >> /tmp/release_state/component_details.txt
+            echo "FileCount=${#CHANGED_FILES[@]}" >> /tmp/release_state/component_details.txt
+            echo "" >> /tmp/release_state/component_details.txt
+            echo ""
+          done
+
+          # Display release plan summary
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "📋 RELEASE PLAN SUMMARY"
+          echo "═══════════════════════════════════════════════════════════════"
+
+          RELEASE_COUNT=$(wc -l < /tmp/release_state/release_plan.txt 2>/dev/null || echo "0")
+          SKIP_COUNT=$(wc -l < /tmp/release_state/skip_plan.txt 2>/dev/null || echo "0")
+
+          if [ "$RELEASE_COUNT" -gt 0 ]; then
+            echo "🚀 Components to release ($RELEASE_COUNT):"
+            while IFS=':' read -r comp curr_ver new_ver tag file_count; do
+              echo "  ├─ $comp: v$curr_ver → v$new_ver ($file_count files changed)"
+            done < /tmp/release_state/release_plan.txt
+          else
+            echo "📭 No components will be released"
+          fi
+
+          if [ "$SKIP_COUNT" -gt 0 ]; then
+            echo ""
+            SKIP_LIST=$(tr '\n' ' ' < /tmp/release_state/skip_plan.txt)
+            echo "⏭️  Components skipped ($SKIP_COUNT): $SKIP_LIST"
+          fi
+
+          # Set step outputs
+          echo "release_count=$RELEASE_COUNT" >> $GITHUB_OUTPUT
+          echo "skip_count=$SKIP_COUNT" >> $GITHUB_OUTPUT
+
+          if [ "$RELEASE_COUNT" -eq 0 ]; then
+            echo ""
+            echo "✨ All components are up to date. No releases needed."
+            exit 0
+          fi
+
+          echo ""
+          echo "⚠️  Review the release plan above. Manual approval is required to proceed."
+
+      - name: Create releases
+        id: create
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |-
+          set -euo pipefail
+
+          VERSION_TYPE="${{ github.event.inputs.version_type }}"
+
+          # Recreate functions (simplified for release step)
+          increment_version() {
+            local version=$1
+            local type=$2
+            if [[ ! $version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              echo "❌ Invalid version format: $version" >&2
+              exit 1
+            fi
+            local major=${BASH_REMATCH[1]}
+            local minor=${BASH_REMATCH[2]}
+            local patch=${BASH_REMATCH[3]}
+            case $type in
+              major) echo "$((major + 1)).0.0" ;;
+              minor) echo "$major.$((minor + 1)).0" ;;
+              patch) echo "$major.$minor.$((patch + 1))" ;;
+            esac
+          }
+
+          # Create results tracking
+          > /tmp/release_state/created_releases.txt
+          > /tmp/release_state/failed_releases.txt
+
+          echo "🚀 Creating releases..."
+          echo ""
+
+          # Process each component from the release plan
+          while IFS=':' read -r COMPONENT CURRENT_VERSION NEW_VERSION NEW_TAG FILE_COUNT; do
+            echo "📦 Creating $NEW_TAG..."
+
+            # Get previous tag for changelog
+            if [ "$CURRENT_VERSION" = "0.0.0" ]; then
+              LATEST_TAG=""
+            else
+              LATEST_TAG="${COMPONENT}-v${CURRENT_VERSION}"
+            fi
+
+            # Create release with error handling and retry logic
+            # Retry logic for network issues
+            SUCCESS=false
+            for attempt in {1..3}; do
+              if [ -n "$LATEST_TAG" ]; then
+                # Generate notes from previous tag to current HEAD
+                if timeout 60 gh release create "$NEW_TAG" \
+                  --title "$COMPONENT v$NEW_VERSION" \
+                  --generate-notes \
+                  --notes-start-tag "$LATEST_TAG" \
+                  2>/tmp/gh_error_${COMPONENT}.log; then
+                  SUCCESS=true
+                  break
+                fi
+              else
+                # First release - generate notes from beginning
+                if timeout 60 gh release create "$NEW_TAG" \
+                  --title "$COMPONENT v$NEW_VERSION" \
+                  --generate-notes \
+                  2>/tmp/gh_error_${COMPONENT}.log; then
+                  SUCCESS=true
+                  break
+                fi
+              fi
+
+              if [ $attempt -lt 3 ]; then
+                echo "   ⚠️  Attempt $attempt failed, retrying in 5 seconds..."
+                sleep 5
+              fi
+            done
+
+            if [ "$SUCCESS" = "true" ]; then
+              echo "   ✅ Success: $NEW_TAG"
+              echo "$NEW_TAG" >> /tmp/release_state/created_releases.txt
+            else
+              echo "   ❌ Failed: $NEW_TAG (after 3 attempts)"
+              if [ -f "/tmp/gh_error_${COMPONENT}.log" ]; then
+                echo "   Error details: $(cat /tmp/gh_error_${COMPONENT}.log)"
+              fi
+              echo "$NEW_TAG" >> /tmp/release_state/failed_releases.txt
+            fi
+
+          done < /tmp/release_state/release_plan.txt
+
+          # Generate final results
+          CREATED_COUNT=$(wc -l < /tmp/release_state/created_releases.txt 2>/dev/null || echo "0")
+          FAILED_COUNT=$(wc -l < /tmp/release_state/failed_releases.txt 2>/dev/null || echo "0")
+
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "🎉 RELEASE RESULTS"
+          echo "═══════════════════════════════════════════════════════════════"
+
+          if [ "$CREATED_COUNT" -gt 0 ]; then
+            echo "✅ Successfully created ($CREATED_COUNT):"
+            while read -r release; do
+              echo "   🏷️  $release"
+            done < /tmp/release_state/created_releases.txt
+          fi
+
+          if [ "$FAILED_COUNT" -gt 0 ]; then
+            echo ""
+            echo "❌ Failed to create ($FAILED_COUNT):"
+            while read -r release; do
+              echo "   💥 $release"
+            done < /tmp/release_state/failed_releases.txt
+          fi
+
+          # Set step outputs for external consumption
+          CREATED_LIST=$(tr '\n' ',' < /tmp/release_state/created_releases.txt | sed 's/,$//')
+          FAILED_LIST=$(tr '\n' ',' < /tmp/release_state/failed_releases.txt | sed 's/,$//')
+
+          echo "released_components=$CREATED_LIST" >> $GITHUB_OUTPUT
+          echo "failed_components=$FAILED_LIST" >> $GITHUB_OUTPUT
+          echo "summary_url=https://github.com/${{ github.repository }}/releases" >> $GITHUB_OUTPUT
+
+          # Handle partial failures
+          if [ "$FAILED_COUNT" -gt 0 ]; then
+            echo ""
+            echo "⚠️  Some releases failed. You may need to:"
+            echo "   1. Check error logs above"
+            echo "   2. Verify GitHub permissions"
+            echo "   3. Re-run this workflow for failed components only"
+
+            if [ "$CREATED_COUNT" -gt 0 ]; then
+              echo ""
+              echo "🔄 Partial success: $CREATED_COUNT succeeded, $FAILED_COUNT failed"
+              exit 2  # Partial failure exit code
+            else
+              echo ""
+              echo "💥 Complete failure: No releases were created"
+              exit 1
+            fi
+          fi
+
+          echo ""
+          echo "🚀 All releases created successfully!"
+          echo "🔗 View releases: https://github.com/${{ github.repository }}/releases"
+          echo "📊 Deployment progress will be visible in the CD workflow"
+
+      - name: Cleanup state files
+        if: always()
+        run: |
+          echo "🧹 Cleaning up temporary files..."
+          rm -rf /tmp/release_state /tmp/gh_error_*.log 2>/dev/null || true
+          echo "✅ Cleanup completed"

@@ -1,0 +1,141 @@
+version: 2
+updates:
+  # Enable version updates for monorepo root (manages all Bun workspaces)
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    versioning-strategy: "lockfile-only"
+    labels:
+      - "dependencies"
+      - "monorepo"
+      - "typescript"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Group minor and major updates (will update package.json)
+    groups:
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+        update-types:
+          - "major"
+          - "minor"
+      eslint:
+        patterns:
+          - "eslint*"
+          - "eslint-config-prettier"
+          - "eslint-plugin-*"
+        update-types:
+          - "major"
+          - "minor"
+      google-cloud:
+        patterns:
+          - "@google-cloud/*"
+        update-types:
+          - "major"
+          - "minor"
+      firebase:
+        patterns:
+          - "firebase*"
+        update-types:
+          - "major"
+          - "minor"
+      vite:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+        update-types:
+          - "major"
+          - "minor"
+      vue:
+        patterns:
+          - "vue*"
+          - "@vue/*"
+        update-types:
+          - "major"
+          - "minor"
+      astro:
+        patterns:
+          - "astro*"
+          - "@astrojs/*"
+        update-types:
+          - "major"
+          - "minor"
+      node-types:
+        patterns:
+          - "@types/*"
+        update-types:
+          - "major"
+          - "minor"
+      testing:
+        patterns:
+          - "vitest*"
+          - "@vitest/*"
+          - "@playwright/*"
+        update-types:
+          - "major"
+          - "minor"
+      misc-deps:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+          - "minor"
+      # Bundle all patch updates together (lockfile-only)
+      patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+
+  # Enable version updates for Rust dependencies (worker)
+  - package-ecosystem: "cargo"
+    directory: "backend/runner/worker"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    versioning-strategy: "lockfile-only"
+    labels:
+      - "dependencies"
+      - "backend"
+      - "worker"
+      - "rust"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    groups:
+      rust-deps:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+          - "minor"
+      # Bundle all patch updates together (lockfile-only)
+      rust-patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+          - "minor"
+    # Patch updates for GitHub Actions will be individual

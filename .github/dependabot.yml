@@ -1,7 +1,7 @@
 version: 2
 updates:
-  # Enable version updates for monorepo root (manages all Bun workspaces)
-  - package-ecosystem: "bun"
+  # Enable version updates for monorepo root (manages all npm workspaces)
+  - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -30,15 +30,29 @@ updates:
         update-types:
           - "major"
           - "minor"
-      google-cloud:
+      react:
         patterns:
-          - "@google-cloud/*"
+          - "react*"
+          - "@types/react*"
         update-types:
           - "major"
           - "minor"
-      firebase:
+      convex:
         patterns:
-          - "firebase*"
+          - "convex*"
+        update-types:
+          - "major"
+          - "minor"
+      clerk:
+        patterns:
+          - "@clerk/*"
+        update-types:
+          - "major"
+          - "minor"
+      tailwind:
+        patterns:
+          - "tailwindcss*"
+          - "@tailwindcss/*"
         update-types:
           - "major"
           - "minor"
@@ -46,20 +60,6 @@ updates:
         patterns:
           - "vite*"
           - "@vitejs/*"
-        update-types:
-          - "major"
-          - "minor"
-      vue:
-        patterns:
-          - "vue*"
-          - "@vue/*"
-        update-types:
-          - "major"
-          - "minor"
-      astro:
-        patterns:
-          - "astro*"
-          - "@astrojs/*"
         update-types:
           - "major"
           - "minor"
@@ -74,6 +74,7 @@ updates:
           - "vitest*"
           - "@vitest/*"
           - "@playwright/*"
+          - "playwright*"
         update-types:
           - "major"
           - "minor"
@@ -85,35 +86,6 @@ updates:
           - "minor"
       # Bundle all patch updates together (lockfile-only)
       patch-updates:
-        patterns:
-          - "*"
-        update-types:
-          - "patch"
-
-  # Enable version updates for Rust dependencies (worker)
-  - package-ecosystem: "cargo"
-    directory: "backend/runner/worker"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    versioning-strategy: "lockfile-only"
-    labels:
-      - "dependencies"
-      - "backend"
-      - "worker"
-      - "rust"
-    commit-message:
-      prefix: "deps"
-      include: "scope"
-    groups:
-      rust-deps:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-          - "minor"
-      # Bundle all patch updates together (lockfile-only)
-      rust-patch-updates:
         patterns:
           - "*"
         update-types:

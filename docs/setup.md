@@ -241,6 +241,61 @@ test("shows data when API returns results", async ({ page }) => {
 
 For most E2E tests, prefer running against a real Convex dev deployment rather than mocking.
 
+## GitHub Actions Secrets
+
+Configure these secrets in your repository for CI/CD deployments:
+
+**Repository Settings > Secrets and variables > Actions > New repository secret**
+
+### Required Secrets
+
+| Secret | Description | Where to find it |
+|--------|-------------|------------------|
+| `CONVEX_DEPLOY_KEY` | Convex deployment key for CI/CD | Convex Dashboard > Settings > Deploy Key |
+| `VITE_CONVEX_URL` | Your Convex deployment URL | Convex Dashboard > Settings > URL (e.g., `https://your-project.convex.cloud`) |
+
+### Optional Secrets (if using Clerk)
+
+| Secret | Description | Where to find it |
+|--------|-------------|------------------|
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | Clerk Dashboard > API Keys |
+
+### Deployment Provider Secrets
+
+Choose your deployment platform and add the required secrets:
+
+#### Vercel
+
+| Secret | Description |
+|--------|-------------|
+| `VERCEL_TOKEN` | Vercel API token (Account Settings > Tokens) |
+| `VERCEL_ORG_ID` | Your Vercel organization ID |
+| `VERCEL_PROJECT_ID` | Your Vercel project ID |
+
+#### Netlify
+
+| Secret | Description |
+|--------|-------------|
+| `NETLIFY_AUTH_TOKEN` | Netlify personal access token |
+| `NETLIFY_SITE_ID` | Your Netlify site ID |
+
+#### Cloudflare Pages
+
+| Secret | Description |
+|--------|-------------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Pages permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
+
+### Getting the Convex Deploy Key
+
+1. Go to your [Convex Dashboard](https://dashboard.convex.dev)
+2. Select your project
+3. Go to **Settings** > **Deploy Key**
+4. Click **Generate Deploy Key**
+5. Copy the key and add it as `CONVEX_DEPLOY_KEY` in GitHub Secrets
+
+> **Security Note**: Never commit secrets to your repository. Always use GitHub Secrets or environment variables for sensitive values.
+
 ## Next Steps
 
 - Follow [.github/copilot-instructions.md](../.github/copilot-instructions.md) for coding standards and patterns

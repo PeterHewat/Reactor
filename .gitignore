@@ -45,9 +45,10 @@ pkg/
 .DS_Store
 Thumbs.db
 
-# Environment variables
+# Environment variables (keep .env.example for documentation)
 .env
 .env.local
+!.env.example
 
 # Docker
 docker-compose.override.yml

@@ -2,6 +2,7 @@
   "name": "reactor-monorepo",
   "version": "0.1.0",
   "description": "Starter monorepo for React 19 + Convex + Clerk + Tailwind CSS + Vitest + Playwright",
+  "author": "Peter Hewat <peter.hewat@gmail.com>",
   "private": true,
   "type": "module",
   "engines": {

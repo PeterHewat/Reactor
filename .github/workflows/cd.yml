@@ -1,5 +1,17 @@
 name: Continuous Delivery
 
+# ============================================================================
+# REQUIRED GITHUB SECRETS
+# ============================================================================
+# Configure these in: Repository Settings > Secrets and variables > Actions
+#
+# CONVEX_DEPLOY_KEY    - Convex deployment key (from Convex dashboard)
+# VITE_CONVEX_URL      - Convex deployment URL (e.g., https://your-project.convex.cloud)
+# VITE_CLERK_PUBLISHABLE_KEY - Clerk publishable key (optional, if using Clerk)
+#
+# See docs/setup.md for detailed instructions on obtaining these values.
+# ============================================================================
+
 on:
   release:
     types: [published]
@@ -24,22 +36,9 @@ jobs:
             exit 1
           fi
 
-  release-frontend:
-    needs: parse-release
-    if: needs.parse-release.outputs.target == 'frontend'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24.x"
-          cache: "npm"
-      - run: npm ci --ignore-scripts
-      - run: npm run lint
-      - run: npm run format
-      - run: npm run typecheck
-      - run: npm test
-
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Backend Deployment (Convex)
+  # ─────────────────────────────────────────────────────────────────────────────
   release-backend:
     needs: parse-release
     if: needs.parse-release.outputs.target == 'backend'
@@ -51,7 +50,85 @@ jobs:
           node-version: "24.x"
           cache: "npm"
       - run: npm ci --ignore-scripts
-      - run: npm run lint
-      - run: npm run format
-      - run: npm run typecheck
-      - run: npm test
+
+      - name: Run checks
+        run: |
+          npm run lint
+          npm run format
+          npm run typecheck
+
+      - name: Deploy to Convex
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: npx convex deploy --cmd 'npm run build'
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Frontend Deployment
+  # ─────────────────────────────────────────────────────────────────────────────
+  # NOTE: Add your deployment provider here (Vercel, Netlify, Cloudflare, etc.)
+  # Most providers have GitHub integrations that deploy automatically on push.
+  # This job runs checks and can trigger deployments via webhooks or CLI.
+  # ─────────────────────────────────────────────────────────────────────────────
+  release-frontend:
+    needs: parse-release
+    if: needs.parse-release.outputs.target == 'frontend'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci --ignore-scripts
+
+      - name: Run checks
+        run: |
+          npm run lint
+          npm run format
+          npm run typecheck
+          npm test
+
+      - name: Build frontend
+        env:
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+        run: npm run build -w apps/web
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # DEPLOYMENT OPTIONS (uncomment one)
+      # ─────────────────────────────────────────────────────────────────────────
+
+      # Option 1: Vercel (recommended)
+      # - name: Deploy to Vercel
+      #   uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+      #     working-directory: apps/web
+
+      # Option 2: Netlify
+      # - name: Deploy to Netlify
+      #   uses: nwtgck/actions-netlify@v3
+      #   with:
+      #     publish-dir: apps/web/dist
+      #     production-deploy: true
+      #   env:
+      #     NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      #     NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      # Option 3: Cloudflare Pages
+      # - name: Deploy to Cloudflare Pages
+      #   uses: cloudflare/pages-action@v1
+      #   with:
+      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      #     projectName: your-project-name
+      #     directory: apps/web/dist
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: frontend-build-${{ needs.parse-release.outputs.version }}
+          path: apps/web/dist/
+          retention-days: 30

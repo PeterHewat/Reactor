@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite --open",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --open",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",

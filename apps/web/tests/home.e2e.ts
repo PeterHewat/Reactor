@@ -47,18 +47,29 @@ test.describe("Home Page", () => {
     });
 
     test("toggles between light and dark mode", async () => {
-      // Initial state depends on system preference, so we just verify toggling works
-      const initialDarkMode = await homePage.isDarkMode();
+      // Theme cycles: light -> dark -> system -> light
+      // First, ensure we're in a known state by toggling until we reach light mode
+      // (identified by aria-label containing "Light")
+      let attempts = 0;
+      while (attempts < 3) {
+        const label = await homePage.themeToggle.getAttribute("aria-label");
+        if (label?.includes("Light")) break;
+        await homePage.toggleTheme();
+        attempts++;
+      }
 
-      await homePage.toggleTheme();
-      const afterFirstToggle = await homePage.isDarkMode();
-      expect(afterFirstToggle).not.toBe(initialDarkMode);
+      // Now we should be in light mode
+      expect(await homePage.isDarkMode()).toBe(false);
 
+      // Toggle to dark mode
       await homePage.toggleTheme();
-      const afterSecondToggle = await homePage.isDarkMode();
-      // After two toggles, we might be in system mode which could match initial
-      // Just verify the toggle is interactive
-      expect(typeof afterSecondToggle).toBe("boolean");
+      expect(await homePage.isDarkMode()).toBe(true);
+
+      // Toggle to system mode (which follows OS preference)
+      await homePage.toggleTheme();
+      // System mode result depends on OS preference, just verify toggle works
+      const label = await homePage.themeToggle.getAttribute("aria-label");
+      expect(label).toContain("System");
     });
 
     test("persists theme preference across page reload", async ({ page }) => {

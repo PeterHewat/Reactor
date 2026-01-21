@@ -46,14 +46,14 @@ test.describe("Visual Regression", () => {
 
   test.describe("Dark Mode", () => {
     test.beforeEach(async () => {
-      // Ensure we're in dark mode
-      const isDark = await homePage.isDarkMode();
-      if (!isDark) {
+      // Theme cycles: light -> dark -> system -> light
+      // Toggle until we reach dark mode (aria-label contains "Dark")
+      let attempts = 0;
+      while (attempts < 3) {
+        const label = await homePage.themeToggle.getAttribute("aria-label");
+        if (label?.includes("Dark")) break;
         await homePage.toggleTheme();
-        // If still not dark (might be in system mode), toggle again
-        if (!(await homePage.isDarkMode())) {
-          await homePage.toggleTheme();
-        }
+        attempts++;
       }
     });
 

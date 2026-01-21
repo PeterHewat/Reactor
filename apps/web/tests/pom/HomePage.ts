@@ -25,7 +25,7 @@ export class HomePage {
 
     // Header elements
     this.languageSwitcher = page.getByRole("combobox", { name: /select language/i });
-    this.themeToggle = page.getByRole("button", { name: /toggle theme/i });
+    this.themeToggle = page.getByRole("button", { name: /current theme/i });
 
     // Main content
     this.title = page.getByRole("heading", { level: 1 });

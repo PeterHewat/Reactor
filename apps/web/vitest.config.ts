@@ -5,6 +5,13 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./setupTests.ts"],
-    include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}"],
+    exclude: ["**/dist/**", "**/node_modules/**"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov", "html"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.d.ts", "src/main.tsx", "src/vite-env.d.ts"],
+    },
   },
 });

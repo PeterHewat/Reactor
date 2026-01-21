@@ -1,6 +1,5 @@
 import { cn } from "@repo/utils";
-import type { ButtonHTMLAttributes } from "react";
-import { forwardRef } from "react";
+import type { ButtonHTMLAttributes, Ref } from "react";
 
 /**
  * Available button style variants.
@@ -44,6 +43,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   /** Shows loading state and disables the button */
   isLoading?: boolean;
+  /** Ref to the button element (React 19 ref-as-prop pattern) */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 const baseClasses =
@@ -64,14 +65,23 @@ const sizeClasses: Record<ButtonSize, string> = {
 /**
  * A flexible button component with variants and sizes.
  *
+ * Uses React 19's ref-as-prop pattern instead of forwardRef.
+ *
  * @example
  * <Button variant="primary" size="md">Click me</Button>
  * <Button variant="secondary" isLoading>Loading...</Button>
+ * <Button ref={myRef}>With ref</Button>
  */
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className, variant = "primary", size = "md", isLoading = false, disabled, children, ...props },
+export function Button({
+  className,
+  variant = "primary",
+  size = "md",
+  isLoading = false,
+  disabled,
+  children,
   ref,
-) {
+  ...props
+}: ButtonProps) {
   const classes = cn(
     baseClasses,
     variantClasses[variant],
@@ -85,4 +95,4 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {children}
     </button>
   );
-});
+}

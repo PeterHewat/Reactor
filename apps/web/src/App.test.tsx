@@ -1,15 +1,38 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import App from "./App";
+import { initializeTranslations } from "./locales";
 
 describe("App", () => {
+  beforeEach(() => {
+    // Initialize translations before each test
+    initializeTranslations();
+  });
+
   it("renders the heading", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: /reactor/i })).toBeInTheDocument();
   });
 
-  it("renders the get started button", () => {
+  it("renders the GitHub link", () => {
     render(<App />);
-    expect(screen.getByRole("button", { name: /get started/i })).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: /github/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "https://github.com/PeterHewat/Reactor");
+  });
+
+  it("renders the theme toggle", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: /theme/i })).toBeInTheDocument();
+  });
+
+  it("renders the language switcher", () => {
+    render(<App />);
+    expect(screen.getByRole("combobox", { name: /language/i })).toBeInTheDocument();
+  });
+
+  it("renders the features section", () => {
+    render(<App />);
+    expect(screen.getByRole("heading", { name: /features/i })).toBeInTheDocument();
   });
 });

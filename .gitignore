@@ -65,6 +65,7 @@ public/themes/
 # Test results
 test-results/
 coverage/
+playwright-report/
 
 # SSL certificates
 cert.pem

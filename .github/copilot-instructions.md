@@ -27,12 +27,54 @@
 - **Access Control**: Use `internalQuery` and `internalMutation` for non-public API logic.
 - **Naming**: API functions exported as `export const myFunc = ...`.
 
-### Frontend (React 19 + Tailwind)
+### Frontend (React 19 + Tailwind CSS v4)
 
-- **Directives**: Explicitly use `'use client'` for any component using Convex hooks.
+- **Directives**: Explicitly use `'use client'` for any component using Convex hooks or Zustand stores.
 - **Styling**: ALWAYS use the project's `cn()` utility (from `@repo/utils` or similar) for class merging.
-- **Consistency**: Use theme tokens (e.g., `text-primary`); avoid arbitrary values like `text-[#333]`.
+- **Consistency**: Use theme tokens (e.g., `text-primary`, `bg-background`); avoid arbitrary values like `text-[#333]`.
 - **State**: Use Convex for server state; Zustand for complex global UI state; `useState` for local UI only.
+
+### Tailwind CSS v4 Configuration
+
+- **CSS-First**: Tailwind v4 uses CSS-first configuration. NO `tailwind.config.js` file.
+- **Import**: Use `@import "tailwindcss"` instead of `@tailwind base/components/utilities`.
+- **Theme**: Define custom colors and tokens in `@theme { }` block in `index.css`.
+- **PostCSS**: Use `@tailwindcss/postcss` package (not `tailwindcss` directly) in `postcss.config.js`.
+- **Colors**: Define colors as `--color-*` in `@theme` (e.g., `--color-primary: hsl(var(--primary))`).
+- **CSS Variables**: Define HSL values without wrapper in `:root` and `.dark` selectors.
+
+### Theming (Light/Dark Mode)
+
+- **Store**: Use `useThemeStore` from `@repo/utils` for theme state management (Zustand with localStorage persistence).
+- **Modes**: Support three modes: `light`, `dark`, `system` (follows OS preference via `prefers-color-scheme`).
+- **CSS Variables**: Define theme colors in `index.css` with `:root` (light) and `.dark` (dark) selectors.
+- **Dark Mode**: Theme is applied via `.dark` class on `<html>` element (Tailwind v4 detects this automatically).
+- **Initialization**: Call `initializeTheme()` once at app startup (in `main.tsx`) to apply saved preference and listen for system changes.
+- **Components**: Use `<ThemeToggle>` from `@repo/ui` for user-facing theme switching.
+- **Persistence**: User preference is saved to localStorage (key: `theme-storage`) and restored on page load.
+
+### Internationalization (i18n)
+
+- **Store**: Use `useI18nStore` from `@repo/utils` for locale state management.
+- **Hook**: Use `useTranslation()` hook from `@repo/utils` for translations in components.
+- **Translation Files**: Place locale files in `apps/web/src/locales/` as TypeScript modules (e.g., `en.ts`, `es.ts`).
+- **Keys**: Use dot-notation keys (e.g., `common.hello`, `home.title`) organized by feature/namespace.
+- **Interpolation**: Use `{{variable}}` syntax for dynamic values: `t("greeting", { name: "World" })`.
+- **Fallback**: Missing translations fall back to English, then to the key itself.
+- **Initialization**: Call `initializeTranslations()` and `initializeI18n()` at app startup.
+- **Components**: Use `<LanguageSwitcher>` from `@repo/ui` for user-facing locale switching.
+- **Adding Locales**: Add new locale to `Locale` type in `@repo/utils/i18n.ts` and create corresponding translation file.
+
+### React 19 Features
+
+Leverage React 19's new hooks and patterns where appropriate:
+
+- **`use()` hook**: Use for reading context and promises directly in render. Prefer over `useContext()` for cleaner code.
+- **`useOptimistic`**: Use for optimistic UI updates during Convex mutations. Shows immediate feedback while mutation is in flight.
+- **`useFormStatus`**: Use in submit button components to access parent form's pending state. Must be called from a child component of `<form>`.
+- **`useActionState`**: Use for form actions that need state management. Replaces manual `useState` + `useTransition` patterns.
+- **Form Actions**: Use `action` prop on `<form>` elements with async functions for server mutations. React handles transitions automatically.
+- **`ref` as prop**: Pass refs directly as props instead of using `forwardRef` (still supported but no longer required).
 
 ### Testing (Vitest & Playwright)
 
@@ -73,6 +115,16 @@
 - **Proof over Promises**: NEVER say "it works." Provide reasoning or tests.
 - **Agent Tasks**: ALWAYS run `npm run lint`, `npm run typecheck`, and relevant tests (`vitest` or `playwright`) after generating or modifying code.
 - **Error Handling**: Use `ConvexError` for business logic failures to pass messages to the frontend.
+
+## Chrome DevTools MCP
+
+Use Chrome DevTools MCP to inspect and debug the web app at `http://localhost:5173`:
+
+- `new_page` / `list_pages`: Open/list browser pages
+- `take_snapshot`: Get accessibility tree (preferred over screenshots)
+- `evaluate_script`: Run JS to check computed styles, dimensions, etc.
+
+**Troubleshooting**: If "Not connected", restart IDE. If "Browser already running", run `pkill -f "chrome-devtools-mcp"`.
 
 ## Pre-Response Checklist
 

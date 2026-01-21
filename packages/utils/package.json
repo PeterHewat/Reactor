@@ -16,13 +16,19 @@
       "default": "./src/index.ts"
     }
   },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.17",
+    "jsdom": "^27.4.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zustand": "^5.0.10"
   }
 }

@@ -49,3 +49,32 @@ export function cn(...classes: ClassValue[]): string {
 }
 
 export { asBoolean, asInt, asString, loadEnv } from "./env";
+
+// Theme utilities
+export {
+  applyThemeToDOM,
+  getSystemTheme,
+  initializeTheme,
+  resolveTheme,
+  useThemeStore,
+} from "./theme";
+export type { ResolvedTheme, ThemeMode } from "./theme";
+
+// i18n utilities
+export {
+  clearTranslations,
+  DEFAULT_LOCALE,
+  flattenTranslations,
+  getBrowserLocale,
+  getTranslations,
+  initializeI18n,
+  interpolate,
+  registerTranslations,
+  SUPPORTED_LOCALES,
+  t,
+  useI18nStore,
+} from "./i18n";
+export type { FlatTranslations, Locale, TranslationDictionary } from "./i18n";
+
+// i18n React hook
+export { useTranslation } from "./use-translation";

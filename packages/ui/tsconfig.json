@@ -5,9 +5,10 @@
     "outDir": "dist",
     "declaration": true,
     "composite": true,
-    "rootDir": "src"
+    "rootDir": ".",
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.spec.ts", "src/**/*.spec.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "setupTests.ts"],
+  "exclude": ["dist"],
   "references": [{ "path": "../utils" }]
 }

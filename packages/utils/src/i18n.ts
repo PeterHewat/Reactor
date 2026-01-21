@@ -5,7 +5,7 @@ import { persist } from "zustand/middleware";
  * Supported locales.
  * Add new locales here as they are supported.
  */
-export type Locale = "en" | "es";
+export type Locale = "en" | "es" | "fr" | "de";
 
 /**
  * Default locale used when no preference is set.
@@ -18,6 +18,8 @@ export const DEFAULT_LOCALE: Locale = "en";
 export const SUPPORTED_LOCALES: Record<Locale, string> = {
   en: "English",
   es: "Español",
+  fr: "Français",
+  de: "Deutsch",
 };
 
 /**
@@ -42,6 +44,8 @@ type TranslationsRegistry = Record<Locale, FlatTranslations>;
 let translationsRegistry: TranslationsRegistry = {
   en: {},
   es: {},
+  fr: {},
+  de: {},
 };
 
 /**
@@ -112,6 +116,8 @@ export function clearTranslations(): void {
   translationsRegistry = {
     en: {},
     es: {},
+    fr: {},
+    de: {},
   };
 }
 
@@ -158,7 +164,7 @@ export const useI18nStore = create<I18nState>()(
       setLocale: (locale: Locale) => set({ locale }),
     }),
     {
-      name: "i18n-storage",
+      name: "i18n",
     },
   ),
 );
@@ -221,7 +227,7 @@ export function getBrowserLocale(): Locale {
  * Only sets locale if user hasn't already set a preference.
  */
 export function initializeI18n(): void {
-  const stored = localStorage.getItem("i18n-storage");
+  const stored = localStorage.getItem("i18n");
   if (!stored) {
     const browserLocale = getBrowserLocale();
     useI18nStore.getState().setLocale(browserLocale);

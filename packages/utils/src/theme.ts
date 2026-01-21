@@ -100,7 +100,7 @@ export const useThemeStore = create<ThemeState>()(
       },
     }),
     {
-      name: "theme-storage",
+      name: "theme",
       partialize: (state) => ({ mode: state.mode }),
       onRehydrateStorage: () => (state) => {
         // Apply theme after rehydration from localStorage

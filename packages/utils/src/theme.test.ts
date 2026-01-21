@@ -127,7 +127,7 @@ describe("theme utilities", () => {
       useThemeStore.getState().setMode("dark");
 
       // Check localStorage
-      const stored = localStorage.getItem("theme-storage");
+      const stored = localStorage.getItem("theme");
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored ?? "{}");
       expect(parsed.state.mode).toBe("dark");
@@ -136,7 +136,7 @@ describe("theme utilities", () => {
     it("does not persist resolvedTheme to localStorage", () => {
       useThemeStore.getState().setMode("dark");
 
-      const stored = localStorage.getItem("theme-storage");
+      const stored = localStorage.getItem("theme");
       const parsed = JSON.parse(stored ?? "{}");
       // resolvedTheme should not be in storage (partialize excludes it)
       expect(parsed.state.resolvedTheme).toBeUndefined();

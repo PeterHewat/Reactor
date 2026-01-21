@@ -228,7 +228,7 @@ describe("Theme Integration", () => {
     it("persists mode to localStorage", () => {
       useThemeStore.getState().setMode("dark");
 
-      const stored = localStorage.getItem("theme-storage");
+      const stored = localStorage.getItem("theme");
       expect(stored).toBeTruthy();
 
       const parsed = JSON.parse(stored!);
@@ -238,7 +238,7 @@ describe("Theme Integration", () => {
     it("does not persist resolvedTheme to localStorage", () => {
       useThemeStore.getState().setMode("dark");
 
-      const stored = localStorage.getItem("theme-storage");
+      const stored = localStorage.getItem("theme");
       const parsed = JSON.parse(stored!);
 
       // resolvedTheme should not be in persisted state (partialize excludes it)

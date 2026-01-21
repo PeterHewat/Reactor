@@ -57,7 +57,7 @@ alwaysApply: true
 - **Dark Mode**: Theme is applied via `.dark` class on `<html>` element (Tailwind v4 detects this automatically).
 - **Initialization**: Call `initializeTheme()` once at app startup (in `main.tsx`) to apply saved preference and listen for system changes.
 - **Components**: Use `<ThemeToggle>` from `@repo/ui` for user-facing theme switching.
-- **Persistence**: User preference is saved to localStorage (key: `theme-storage`) and restored on page load.
+- **Persistence**: User preference is saved to localStorage (key: `theme`) and restored on page load.
 
 ### Internationalization (i18n)
 

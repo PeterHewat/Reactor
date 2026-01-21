@@ -165,7 +165,7 @@ describe("i18n utilities", () => {
     });
 
     it("returns default locale if browser language not supported", () => {
-      vi.stubGlobal("navigator", { language: "fr-FR" });
+      vi.stubGlobal("navigator", { language: "ja-JP" });
       expect(getBrowserLocale()).toBe("en");
     });
 
@@ -179,7 +179,7 @@ describe("i18n utilities", () => {
     it("persists locale to localStorage", () => {
       useI18nStore.getState().setLocale("es");
 
-      const stored = localStorage.getItem("i18n-storage");
+      const stored = localStorage.getItem("i18n");
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored ?? "{}");
       expect(parsed.state.locale).toBe("es");

@@ -6,6 +6,8 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:5173";
 export default defineConfig({
   testDir: "tests",
   testMatch: "**/*.e2e.ts",
+  /* Auto-create missing snapshots without failing */
+  updateSnapshots: "missing",
   /* Fail fast in CI to save resources */
   maxFailures: isCI ? 5 : undefined,
   /* Run tests in parallel - use fewer workers in CI to reduce resource usage */

@@ -24,7 +24,7 @@
     "build": "tsc -b",
     "clean": "tsc -b --clean",
     "test": "npm run test --workspaces --if-present",
-    "e2e:install": "npx -w apps/web playwright install",
+    "e2e:install": "npx -w apps/web playwright install chromium",
     "install": "npm i --ignore-scripts",
     "clean-install": "npm ci --ignore-scripts",
     "outdated": "npm outdated",

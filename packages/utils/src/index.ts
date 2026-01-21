@@ -1,3 +1,5 @@
+import { twMerge } from "tailwind-merge";
+
 /**
  * Represents a value that can be used as a CSS class.
  * Supports strings, numbers, booleans, arrays, and objects with boolean values.
@@ -12,16 +14,22 @@ export type ClassValue =
   | { [key: string]: boolean };
 
 /**
- * Merges CSS class names, filtering out falsy values and deduplicating.
+ * Merges CSS class names, filtering out falsy values and intelligently
+ * resolving Tailwind CSS class conflicts.
+ *
+ * Uses tailwind-merge under the hood to handle conflicting utility classes
+ * (e.g., `cn("p-2", "p-4")` returns `"p-4"`, not `"p-2 p-4"`).
  *
  * @param classes - Class values to merge (strings, arrays, or objects)
- * @returns A single space-separated string of unique class names
+ * @returns A single space-separated string of merged class names
  *
  * @example
  * cn("foo", "bar") // "foo bar"
  * cn("base", isActive && "active") // "base active" or "base"
  * cn("base", { active: true, disabled: false }) // "base active"
  * cn(["foo", "bar"], "baz") // "foo bar baz"
+ * cn("p-2", "p-4") // "p-4" (tailwind-merge resolves conflicts)
+ * cn("text-red-500", "text-blue-500") // "text-blue-500"
  */
 export function cn(...classes: ClassValue[]): string {
   const toArray = (v: ClassValue): string[] => {
@@ -37,7 +45,7 @@ export function cn(...classes: ClassValue[]): string {
   };
 
   const parts = classes.flatMap(toArray).filter(Boolean);
-  return Array.from(new Set(parts)).join(" ");
+  return twMerge(parts.join(" "));
 }
 
 export { asBoolean, asInt, asString, loadEnv } from "./env";

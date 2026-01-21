@@ -4,18 +4,96 @@ This folder contains the Convex backend for the application.
 
 ## Initial Setup
 
-Run the Convex CLI from the repository root to scaffold and connect to your Convex project:
+### Prerequisites
+
+- A [Convex account](https://dashboard.convex.dev) (free tier available)
+- Node.js 24+ installed
+
+### Step 1: Initialize Convex
+
+Run the Convex CLI from the **repository root** (not this folder):
 
 ```bash
 npx convex dev
 ```
 
-This will:
+This interactive command will:
 
-1. Prompt you to log in to Convex
-2. Create a new project (or connect to an existing one)
-3. Generate `_generated/` files
-4. Create `.env.local` with your deployment URL
+1. Open a browser to log in to Convex (or create an account)
+2. Prompt you to create a new project or connect to an existing one
+3. Generate the `convex/_generated/` directory with TypeScript types
+4. Create `.env.local` in the repository root with your deployment URL
+
+### Step 2: Create Your Schema
+
+After initialization, create `convex/schema.ts` to define your database tables:
+
+```ts
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  // Example: users table
+  users: defineTable({
+    name: v.string(),
+    email: v.string(),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
+
+  // Add more tables as needed
+});
+```
+
+### Step 3: Create Your First Function
+
+Create a query or mutation in `convex/` (e.g., `convex/users.ts`):
+
+```ts
+import { query, mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});
+
+export const create = mutation({
+  args: { name: v.string(), email: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("users", {
+      name: args.name,
+      email: args.email,
+      createdAt: Date.now(),
+    });
+  },
+});
+```
+
+### Step 4: Connect the Frontend
+
+In `apps/web/src/main.tsx`, add the Convex provider:
+
+```tsx
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <ConvexProvider client={convex}>
+    <App />
+  </ConvexProvider>,
+);
+```
+
+Add the Convex URL to `apps/web/.env.local`:
+
+```text
+VITE_CONVEX_URL=https://your-project.convex.cloud
+```
+
+You can find this URL in the Convex dashboard or in the root `.env.local` file.
 
 ## Clerk Authentication
 

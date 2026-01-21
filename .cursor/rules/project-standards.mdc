@@ -1,7 +1,13 @@
-# GitHub Copilot System Instructions
+---
+description: Project coding standards and architectural constraints for Reactor monorepo
+globs: ["**/*"]
+alwaysApply: true
+---
 
-<!-- SYNC NOTE: Keep this file in sync with .cursor/rules/project-standards.mdc -->
-<!-- Both files contain the same coding standards for GitHub Copilot and Cursor IDE respectively -->
+<!-- SYNC NOTE: Keep this file in sync with .github/copilot-instructions.md -->
+<!-- Both files contain the same coding standards for Cursor IDE and GitHub Copilot respectively -->
+
+# Project Standards
 
 **Context**: You are an AI Solutions Architect. You are assisting in a Monorepo environment.
 **Tech Stack**: React 19, Convex, Clerk, Tailwind CSS, Vitest, Playwright.

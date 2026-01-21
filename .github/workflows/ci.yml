@@ -15,6 +15,8 @@ jobs:
     outputs:
       frontend: ${{ steps.detect.outputs.frontend }}
       backend: ${{ steps.detect.outputs.backend }}
+      shared: ${{ steps.detect.outputs.shared }}
+      any: ${{ steps.detect.outputs.any }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -34,15 +36,31 @@ jobs:
 
           frontend=false
           backend=false
+          shared=false
 
           for file in $CHANGED_FILES; do
-            if [[ $file == apps/web/* ]] || [[ $file == packages/ui/* ]] || [[ $file == packages/utils/* ]]; then frontend=true; fi
-            if [[ $file == convex/* ]] || [[ $file == packages/ui/* ]] || [[ $file == packages/utils/* ]]; then backend=true; fi
+            if [[ $file == apps/web/* ]]; then frontend=true; fi
+            if [[ $file == convex/* ]]; then backend=true; fi
+            if [[ $file == packages/ui/* ]] || [[ $file == packages/utils/* ]]; then shared=true; fi
           done
 
-          echo "Detected changes: frontend=$frontend, backend=$backend"
+          # If shared packages changed, both frontend and backend need checking
+          if [ "$shared" = "true" ]; then
+            frontend=true
+            backend=true
+          fi
+
+          # Determine if any changes require checks
+          any=false
+          if [ "$frontend" = "true" ] || [ "$backend" = "true" ]; then
+            any=true
+          fi
+
+          echo "Detected changes: frontend=$frontend, backend=$backend, shared=$shared, any=$any"
           echo "frontend=$frontend" >> $GITHUB_OUTPUT
           echo "backend=$backend" >> $GITHUB_OUTPUT
+          echo "shared=$shared" >> $GITHUB_OUTPUT
+          echo "any=$any" >> $GITHUB_OUTPUT
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Security Audit (runs on all changes)
@@ -60,11 +78,34 @@ jobs:
         run: npm audit --audit-level=high
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Frontend Checks
+  # Shared Checks (lint, format, typecheck - run once for entire monorepo)
   # ─────────────────────────────────────────────────────────────────────────────
-  checks-frontend:
+  checks-shared:
+    name: Lint, Format & Typecheck
     runs-on: ubuntu-latest
     needs: detect-changes
+    if: needs.detect-changes.outputs.any == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci --ignore-scripts
+      - name: Lint
+        run: npm run lint
+      - name: Format check
+        run: npm run format
+      - name: Typecheck
+        run: npm run typecheck
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Frontend Tests
+  # ─────────────────────────────────────────────────────────────────────────────
+  tests-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, checks-shared]
     if: needs.detect-changes.outputs.frontend == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -73,17 +114,19 @@ jobs:
           node-version: "24.x"
           cache: "npm"
       - run: npm ci --ignore-scripts
-      - run: npm run lint
-      - run: npm run format
-      - run: npm run typecheck
-      - run: npm test
+      - name: Run frontend tests
+        run: |
+          npm run test -w apps/web
+          npm run test -w packages/ui
+          npm run test -w packages/utils
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Backend Checks
+  # Backend Tests
   # ─────────────────────────────────────────────────────────────────────────────
-  checks-backend:
+  tests-backend:
+    name: Backend Tests
     runs-on: ubuntu-latest
-    needs: detect-changes
+    needs: [detect-changes, checks-shared]
     if: needs.detect-changes.outputs.backend == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -92,10 +135,8 @@ jobs:
           node-version: "24.x"
           cache: "npm"
       - run: npm ci --ignore-scripts
-      - run: npm run lint
-      - run: npm run format
-      - run: npm run typecheck
-      - run: npm test
+      - name: Run backend tests
+        run: npm run test -w convex
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Frontend E2E (Playwright)
@@ -103,7 +144,7 @@ jobs:
   frontend-e2e:
     name: Frontend E2E
     runs-on: ubuntu-latest
-    needs: detect-changes
+    needs: [detect-changes, tests-frontend]
     # Opt-in via PR label 'e2e'
     if: needs.detect-changes.outputs.frontend == 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e')
     steps:

@@ -17,7 +17,7 @@ Starter monorepo for React 19, Convex, Clerk, Tailwind CSS, Vitest, and Playwrig
 Install the following software:
 
 - [git-scm](https://git-scm.com/download/)
-- [Node.js](https://nodejs.org/en/) (v24.13.0 or higher)
+- [Node.js](https://nodejs.org/en/) (v24.0.0 or higher)
 
 Check that tools are available on PATH:
 

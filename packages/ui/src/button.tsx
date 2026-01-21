@@ -2,14 +2,40 @@ import { cn } from "@repo/utils";
 import type { ButtonHTMLAttributes } from "react";
 import { forwardRef } from "react";
 
-/** Available button style variants */
+/**
+ * Available button style variants.
+ *
+ * Exported for consumers who need to type props or create wrapper components.
+ *
+ * @example
+ * // Typing a wrapper component
+ * import type { ButtonVariant } from "@repo/ui";
+ * const MyButton = ({ variant }: { variant: ButtonVariant }) => { ... }
+ */
 export type ButtonVariant = "primary" | "secondary" | "ghost";
 
-/** Available button sizes */
+/**
+ * Available button sizes.
+ *
+ * Exported for consumers who need to type props or create wrapper components.
+ *
+ * @example
+ * // Typing a size prop
+ * import type { ButtonSize } from "@repo/ui";
+ * const sizes: ButtonSize[] = ["sm", "md", "lg"];
+ */
 export type ButtonSize = "sm" | "md" | "lg";
 
 /**
  * Props for the Button component.
+ *
+ * Extends native button attributes with additional styling and state props.
+ * Exported for consumers who need to type props or create wrapper components.
+ *
+ * @example
+ * // Typing a wrapper component
+ * import type { ButtonProps } from "@repo/ui";
+ * const MyButton = (props: ButtonProps) => <Button {...props} />;
  */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Visual style variant */

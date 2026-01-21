@@ -19,7 +19,8 @@
     "baseUrl": ".",
     "paths": {
       "@repo/utils": ["packages/utils/src/index.ts"],
-      "@repo/ui": ["packages/ui/src/index.ts"]
+      "@repo/ui": ["packages/ui/src/index.ts"],
+      "@repo/test-utils": ["packages/test-utils/src/index.ts"]
     }
   }
 }

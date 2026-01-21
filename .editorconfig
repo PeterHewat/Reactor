@@ -23,8 +23,8 @@ indent_size = 2
 [*.{css,scss,less}]
 indent_size = 2
 
-# Other config files
-[{package.json}*.config.{js,ts}]
+# Config files
+[*.config.{js,ts,mjs,mts}]
 indent_size = 2
 
 # Docker

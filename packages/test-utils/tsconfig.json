@@ -5,6 +5,6 @@
     "types": ["node", "vitest/globals"],
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "setupTests.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["dist"]
 }

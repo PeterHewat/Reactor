@@ -18,6 +18,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@repo/utils": path.resolve(__dirname, "../utils/src/index.ts"),
+      "@repo/test-utils": path.resolve(__dirname, "../test-utils/src/index.ts"),
     },
   },
 });

@@ -10,6 +10,7 @@
   "workspaces": [
     "apps/web",
     "convex",
+    "packages/test-utils",
     "packages/ui",
     "packages/utils"
   ],

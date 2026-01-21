@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -13,6 +14,11 @@ export default defineConfig({
       reporter: ["text", "lcov", "html"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.d.ts", "src/index.ts"],
+    },
+  },
+  resolve: {
+    alias: {
+      "@repo/test-utils": path.resolve(__dirname, "../test-utils/src/index.ts"),
     },
   },
 });

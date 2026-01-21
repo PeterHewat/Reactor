@@ -5,6 +5,7 @@
   "references": [
     { "path": "packages/utils" },
     { "path": "packages/ui" },
+    { "path": "packages/test-utils" },
     { "path": "apps/web" },
     { "path": "convex" }
   ]

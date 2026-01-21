@@ -16,8 +16,5 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run"
-  },
-  "devDependencies": {
-    "typescript": "~5.9.3"
   }
 }

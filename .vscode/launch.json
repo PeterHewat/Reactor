@@ -8,14 +8,19 @@
       "type": "chrome",
       "request": "launch",
       "skipFiles": ["${workspaceFolder}/node_modules/**/*.js"],
-      "name": "Debug app",
-      // "preLaunchTask": "bun: dev",
-      "url": "http://localhost:3000/",
-      "webRoot": "${workspaceFolder}/src"
+      "name": "Debug Web App",
+      "url": "http://localhost:5173/",
+      "webRoot": "${workspaceFolder}/apps/web/src"
     },
     {
-      "command": "./marketing/node_modules/.bin/astro dev",
-      "name": "Marketing Astro Server",
+      "command": "npm run -w apps/web dev",
+      "name": "Web Dev Server",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "command": "npx convex dev",
+      "name": "Convex Dev Server",
       "request": "launch",
       "type": "node-terminal"
     }

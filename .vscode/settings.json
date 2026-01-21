@@ -31,6 +31,9 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -48,7 +51,7 @@
     "**/.astro": true,
     "**/.DS_Store": true,
     "**/build": true,
-    "**/bun.lock": true,
+    "**/package-lock.json": true,
     "**/dist": true,
     "**/node_modules": true
   },
@@ -65,8 +68,6 @@
   "i18n-ally.sourceLanguage": "en",
   "i18n-ally.keystyle": "nested",
   "i18n-ally.sortKeys": true,
-  "npm.packageManager": "bun",
-  "npm.scriptRunner": "bun",
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "text": "Use conventional commit format: type: description"

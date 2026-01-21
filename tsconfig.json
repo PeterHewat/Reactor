@@ -2,5 +2,10 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.base.json",
   "files": [],
-  "references": [{ "path": "packages/utils" }, { "path": "packages/ui" }, { "path": "apps/web" }]
+  "references": [
+    { "path": "packages/utils" },
+    { "path": "packages/ui" },
+    { "path": "apps/web" },
+    { "path": "convex" }
+  ]
 }

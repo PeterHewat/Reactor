@@ -25,22 +25,30 @@ Add Tailwind directives in `apps/web/src/index.css`:
 
 ## Scaffold Backend (Convex CLI)
 
-Use the Convex CLI from the repository root. The first run will create `convex/` and `.env.local`.
+The `convex/` folder contains a minimal placeholder. Run the Convex CLI from the repository root to initialize your project:
 
 ```bash
 npx convex dev
 ```
 
-You'll be prompted to log in; a `convex/` folder is created at the repo root.
+This will:
+
+1. Prompt you to log in to Convex
+2. Create a new project (or connect to an existing one)
+3. Generate `convex/_generated/` files
+4. Created at the repo root.
 
 ### Auth Integration (Clerk + Convex)
 
-This starter intentionally defers backend scaffolding to you. After initializing Convex, integrate Clerk for auth:
+After initializing Convex, integrate Clerk for authentication:
 
-1. Install Clerk in the web app and configure the provider
-2. Use `useConvexAuth()` on the client to read auth state
-3. Gate Convex functions with `internalQuery`/`internalMutation` for non-public logic
-4. Validate every action/mutation input with `v.object({ ... })` and surface business errors via `ConvexError`
+1. Install Clerk: `npm install -w apps/web @clerk/clerk-react`
+2. Configure `ClerkProvider` and `ConvexProviderWithClerk` in your app entry
+3. Create `convex/auth.config.ts` with your Clerk domain
+4. Use `ctx.auth.getUserIdentity()` in Convex functions to verify users
+5. Validate every mutation input with `v.object({ ... })` and surface errors via `ConvexError`
+
+Full setup instructions are in [convex/README.md](../convex/README.md).
 
 ## Configuration Examples
 
@@ -187,11 +195,51 @@ export const addTodo = mutation({
 
 On the client, use `useQuery`/`useMutation` for data and `useConvexAuth()` for auth state. Avoid `fetch`/`axios`/`useEffect` for loading data.
 
-### API Mocks (Optional)
+### Testing Convex Functions
 
-- For local development without a backend, consider using MSW (Mock Service Worker): https://mswjs.io/
-- Place mock handlers alongside frontend code (e.g., under `apps/web/src/mock`) and wire them conditionally for dev
-- Keep mocks in sync with actual API types to avoid drift; update mocks when backend schema changes
+Unit test Convex functions with `convex-test`:
+
+```bash
+npm install -D convex-test
+```
+
+```ts
+// convex/mutations/addTodo.test.ts
+import { convexTest } from "convex-test";
+import { expect, test } from "vitest";
+import { api } from "./_generated/api";
+import schema from "./schema";
+
+test("addTodo creates a todo", async () => {
+  const t = convexTest(schema);
+  const id = await t.mutation(api.mutations.addTodo, {
+    title: "Test todo",
+    userId: "user123",
+  });
+  expect(id).toBeDefined();
+});
+```
+
+### Mocking in E2E Tests (Playwright)
+
+For E2E tests that need to mock Convex responses, use Playwright's route interception:
+
+```ts
+// apps/web/tests/example.e2e.ts
+test("shows data when API returns results", async ({ page }) => {
+  await page.route("**/api/**", (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: "mocked" }),
+    });
+  });
+  await page.goto("/");
+  // Assert mocked data appears
+});
+```
+
+For most E2E tests, prefer running against a real Convex dev deployment rather than mocking.
 
 ## Next Steps
 

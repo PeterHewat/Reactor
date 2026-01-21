@@ -14,27 +14,41 @@ Starter monorepo for React 19, Convex, Clerk, Tailwind CSS, Vitest, and Playwrig
 
 ### Prerequisites
 
-- Install Git and Node.js
-  - Git: https://git-scm.com/download/
-  - Node.js: https://nodejs.org/en/
-- Verify tools on PATH:
+Install the following software:
+
+- [git-scm](https://git-scm.com/download/)
+- [Node.js](https://nodejs.org/en/) (v20.20.0 or higher)
+
+Check that tools are available on PATH:
 
 ```bash
 node -v
 npm -v
 ```
 
-- Recommended IDE: VS Code https://code.visualstudio.com/
+Recommended IDEs:
+
+- [VS Code](https://code.visualstudio.com/) with [Copilot](https://github.com/features/copilot)
+- [Cursor](https://cursor.com/)
+- [Claude Code](https://claude.com/product/claude-code)
 
 ### Setup Steps
 
 This is a **minimal scaffold** - you run the scaffolding commands yourself to maintain ownership of configuration and credentials. The repo provides structure, tooling, and guidance while keeping you in control.
 
-**Initial Setup**: Follow [docs/setup.md](docs/setup.md) to scaffold your frontend and backend. Once done, you can safely delete this file.
+Clone the repository and install dependencies
+
+```bash
+git clone git@github.com:PeterHewat/Reactor.git
+cd reactor
+npm run clean-install
+```
+
+Then follow [docs/setup.md](docs/setup.md) to scaffold your frontend and backend
 
 ## Project Structure
 
-```
+```text
 apps/
   web/                  # React frontend
 packages/
@@ -57,9 +71,18 @@ prompts/                # AI prompt templates
 
 ```bash
 npm run lint           # Lint all packages
+npm run format         # Check formatting (Prettier)
+npm run format:fix     # Fix formatting
 npm run typecheck      # Type check all packages
-npm test               # Run all tests
+npm run typecheck:refs # Type check with project references
+npm run build          # Build all TypeScript projects
+npm run clean          # Clean TypeScript build artifacts
+npm test               # Run all unit tests
 npm run e2e:install    # Install Playwright browsers (one-time)
+npm run install        # Install dependencies (ignore scripts)
+npm run clean-install  # Clean install (npm ci, ignore scripts)
+npm run outdated       # Check for outdated dependencies
+npm run update         # Update dependencies within semver ranges
 ```
 
 ## Development Workflow
@@ -81,12 +104,12 @@ npm run e2e:install    # Install Playwright browsers (one-time)
 - Wrap the body at 72 characters
 - Use the body to explain what and why vs. how
 
-Reference: https://chris.beams.io/posts/git-commit/
+Reference: [How to Write a Git Commit Message](https://chris.beams.io/posts/git-commit/)
 
 ### Dependencies & Semver
 
-- Check updates: `npm outdated`
-- Update within declared semver ranges: `npm update`
+- Check updates: `npm run outdated`
+- Update within declared semver ranges: `npm run update`
 - Semver reminder:
   - `*` latest stable
   - `^` update minor

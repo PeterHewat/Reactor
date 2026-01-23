@@ -1,7 +1,7 @@
 {
   "name": "reactor-monorepo",
   "version": "0.1.0",
-  "description": "Starter monorepo for React 19 + Convex + Clerk + Tailwind CSS + Vitest + Playwright",
+  "description": "Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and Marketing (Astro) with Convex + Clerk + Tailwind CSS",
   "author": "Peter Hewat <peter.hewat@gmail.com>",
   "private": true,
   "type": "module",
@@ -10,9 +10,14 @@
   },
   "workspaces": [
     "apps/web",
+    "apps/mobile",
+    "apps/marketing",
     "convex",
     "packages/test-utils",
-    "packages/ui",
+    "packages/ui-web",
+    "packages/ui-mobile",
+    "packages/ui-astro",
+    "packages/ui-shared",
     "packages/utils"
   ],
   "scripts": {
@@ -32,7 +37,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@types/node": "^25.0.9",
+    "@types/node": "^25.0.10",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.53.1",
@@ -42,12 +47,12 @@
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "prettier": "^3.8.0",
+    "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "typescript": "~5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.18"
   }
 }

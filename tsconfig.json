@@ -4,7 +4,10 @@
   "files": [],
   "references": [
     { "path": "packages/utils" },
-    { "path": "packages/ui" },
+    { "path": "packages/ui-shared" },
+    { "path": "packages/ui-web" },
+    { "path": "packages/ui-mobile" },
+    { "path": "packages/ui-astro" },
     { "path": "packages/test-utils" },
     { "path": "apps/web" },
     { "path": "convex" }

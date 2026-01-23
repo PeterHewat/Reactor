@@ -1,0 +1,52 @@
+---
+description: Mobile platform standards (React Native CLI + NativeWind)
+globs: ["apps/mobile/**/*", "packages/ui-mobile/**/*"]
+alwaysApply: false
+---
+
+# Mobile Platform (React Native CLI + NativeWind)
+
+## Framework
+
+- **CLI**: React Native CLI (not Expo)
+- **Styling**: NativeWind for Tailwind-like styling
+- **Navigation**: React Navigation
+- **Auth**: Clerk React Native SDK (`@clerk/clerk-expo`)
+- **Components**: Import from `@repo/ui-mobile`
+
+## Platform-Specific Code
+
+- Use `.ios.tsx` / `.android.tsx` suffixes for platform-specific files
+- Use `Platform.OS` for conditional logic
+- Use `Platform.select()` for platform-specific values
+
+## NativeWind
+
+- Configure in `tailwind.config.js` with `nativewind/preset`
+- Add `nativewind/babel` to babel config
+- Use className prop on React Native components
+
+## Theming
+
+- Use React Native `Appearance` API for system theme
+- `Appearance.getColorScheme()` returns `'light'` | `'dark'`
+- `Appearance.addChangeListener()` for theme changes
+
+## Metro Configuration
+
+Configure for monorepo in `metro.config.js`:
+
+- Add `watchFolders` for monorepo root
+- Configure `nodeModulesPaths` for workspace resolution
+- Add `extraNodeModules` for `@repo/*` packages
+
+## Testing
+
+- **Unit**: React Native Testing Library
+- **E2E**: Detox for iOS/Android E2E tests
+
+## Common Issues
+
+- **Metro cache**: `npm start -- --reset-cache`
+- **iOS pods**: `cd ios && pod deintegrate && pod install`
+- **Android build**: `cd android && ./gradlew clean`

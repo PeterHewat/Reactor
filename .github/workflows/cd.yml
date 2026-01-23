@@ -28,20 +28,20 @@ jobs:
         run: |
           TAG="${{ github.ref_name }}"
           echo "Parsing tag: $TAG"
-          if [[ "$TAG" =~ ^(frontend|backend)-v(.+)$ ]]; then
+          if [[ "$TAG" =~ ^(web|mobile|marketing|convex)-v(.+)$ ]]; then
             echo "target=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
             echo "version=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
           else
-            echo "Invalid tag format. Expected: {frontend|backend}-v{version}"
+            echo "Invalid tag format. Expected: {web|mobile|marketing|convex}-v{version}"
             exit 1
           fi
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Backend Deployment (Convex)
+  # Convex Deployment
   # ─────────────────────────────────────────────────────────────────────────────
-  release-backend:
+  release-convex:
     needs: parse-release
-    if: needs.parse-release.outputs.target == 'backend'
+    if: needs.parse-release.outputs.target == 'convex'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -63,15 +63,15 @@ jobs:
         run: npx convex deploy --cmd 'npm run build'
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Frontend Deployment
+  # Web Deployment
   # ─────────────────────────────────────────────────────────────────────────────
   # NOTE: Add your deployment provider here (Vercel, Netlify, Cloudflare, etc.)
   # Most providers have GitHub integrations that deploy automatically on push.
   # This job runs checks and can trigger deployments via webhooks or CLI.
   # ─────────────────────────────────────────────────────────────────────────────
-  release-frontend:
+  release-web:
     needs: parse-release
-    if: needs.parse-release.outputs.target == 'frontend'
+    if: needs.parse-release.outputs.target == 'web'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -88,7 +88,7 @@ jobs:
           npm run typecheck
           npm test
 
-      - name: Build frontend
+      - name: Build web app
         env:
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
@@ -129,6 +129,102 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: frontend-build-${{ needs.parse-release.outputs.version }}
+          name: web-build-${{ needs.parse-release.outputs.version }}
           path: apps/web/dist/
           retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Mobile Deployment (React Native)
+  # ─────────────────────────────────────────────────────────────────────────────
+  # NOTE: Mobile deployment requires additional setup:
+  # - iOS: Apple Developer account, certificates, provisioning profiles
+  # - Android: Google Play Console, signing keys
+  # This job is a placeholder - implement after React Native setup.
+  # ─────────────────────────────────────────────────────────────────────────────
+  release-mobile:
+    needs: parse-release
+    if: needs.parse-release.outputs.target == 'mobile'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci --ignore-scripts
+
+      - name: Run checks
+        run: |
+          npm run lint
+          npm run format
+          npm run typecheck
+
+      - name: Mobile deployment placeholder
+        run: |
+          echo "Mobile deployment for version ${{ needs.parse-release.outputs.version }}"
+          echo ""
+          echo "To implement mobile deployment:"
+          echo "1. Set up React Native project in apps/mobile/"
+          echo "2. Configure iOS signing (Fastlane recommended)"
+          echo "3. Configure Android signing"
+          echo "4. Add deployment steps for App Store / Play Store"
+          echo ""
+          echo "See apps/mobile/README.md for setup instructions"
+
+      # Uncomment after setting up React Native and Fastlane:
+      # - name: Build iOS
+      #   run: |
+      #     cd apps/mobile/ios
+      #     fastlane build
+
+      # - name: Build Android
+      #   run: |
+      #     cd apps/mobile/android
+      #     ./gradlew assembleRelease
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Marketing Site Deployment (Astro)
+  # ─────────────────────────────────────────────────────────────────────────────
+  # NOTE: Astro builds to static HTML - deploy to any static host.
+  # This job is a placeholder - implement after Astro setup.
+  # ─────────────────────────────────────────────────────────────────────────────
+  release-marketing:
+    needs: parse-release
+    if: needs.parse-release.outputs.target == 'marketing'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci --ignore-scripts
+
+      - name: Run checks
+        run: |
+          npm run lint
+          npm run format
+          npm run typecheck
+
+      - name: Marketing deployment placeholder
+        run: |
+          echo "Marketing site deployment for version ${{ needs.parse-release.outputs.version }}"
+          echo ""
+          echo "To implement marketing deployment:"
+          echo "1. Set up Astro project in apps/marketing/"
+          echo "2. Configure deployment provider (Vercel, Netlify, Cloudflare)"
+          echo "3. Add build and deploy steps"
+          echo ""
+          echo "See apps/marketing/README.md for setup instructions"
+
+      # Uncomment after setting up Astro:
+      # - name: Build marketing site
+      #   run: npm run build -w apps/marketing
+
+      # - name: Deploy to Cloudflare Pages
+      #   uses: cloudflare/pages-action@v1
+      #   with:
+      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      #     projectName: your-marketing-site
+      #     directory: apps/marketing/dist

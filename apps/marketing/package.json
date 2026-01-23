@@ -1,0 +1,16 @@
+{
+  "name": "@repo/marketing",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Astro marketing site - scaffold only, see README.md",
+  "scripts": {
+    "setup": "echo 'See README.md for setup instructions'",
+    "typecheck": "echo 'Run after Astro setup'",
+    "lint": "echo 'Run after Astro setup'",
+    "test": "echo 'Run after Astro setup'"
+  },
+  "dependencies": {
+    "@repo/ui-astro": "file:../../packages/ui-astro",
+    "@repo/ui-shared": "file:../../packages/ui-shared"
+  }
+}

@@ -8,7 +8,7 @@ import type { ButtonHTMLAttributes, Ref } from "react";
  *
  * @example
  * // Typing a wrapper component
- * import type { ButtonVariant } from "@repo/ui";
+ * import type { ButtonVariant } from "@repo/ui-web";
  * const MyButton = ({ variant }: { variant: ButtonVariant }) => { ... }
  */
 export type ButtonVariant = "primary" | "secondary" | "ghost";
@@ -20,7 +20,7 @@ export type ButtonVariant = "primary" | "secondary" | "ghost";
  *
  * @example
  * // Typing a size prop
- * import type { ButtonSize } from "@repo/ui";
+ * import type { ButtonSize } from "@repo/ui-web";
  * const sizes: ButtonSize[] = ["sm", "md", "lg"];
  */
 export type ButtonSize = "sm" | "md" | "lg";
@@ -33,7 +33,7 @@ export type ButtonSize = "sm" | "md" | "lg";
  *
  * @example
  * // Typing a wrapper component
- * import type { ButtonProps } from "@repo/ui";
+ * import type { ButtonProps } from "@repo/ui-web";
  * const MyButton = (props: ButtonProps) => <Button {...props} />;
  */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

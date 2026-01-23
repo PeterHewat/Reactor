@@ -1,4 +1,4 @@
-import { LanguageSwitcher, ThemeToggle } from "@repo/ui";
+import { LanguageSwitcher, ThemeToggle } from "@repo/ui-web";
 import { useTranslation } from "@repo/utils";
 
 function App() {

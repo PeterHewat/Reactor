@@ -1,0 +1,62 @@
+---
+description: Marketing platform standards (Astro)
+globs: ["apps/marketing/**/*", "packages/ui-astro/**/*"]
+alwaysApply: false
+---
+
+# Marketing Platform (Astro)
+
+## Framework
+
+- **Astro**: Static site generation
+- **Styling**: Tailwind CSS v4 with shared design tokens
+- **Components**: `.astro` files in `apps/marketing/src/components/`
+- **Utilities**: Import from `@repo/ui-astro`
+
+## Astro Components
+
+```astro
+---
+// Frontmatter (runs at build time)
+import { colors } from "@repo/ui-astro";
+const { title } = Astro.props;
+---
+
+<h1 class="text-primary">{title}</h1>
+```
+
+## Content Collections
+
+- Define schemas in `src/content/config.ts`
+- Use `getCollection()` to query content
+- Markdown/MDX files in `src/content/`
+
+## SEO
+
+- Use `<head>` for meta tags
+- Add sitemap: `npx astro add sitemap`
+- Add RSS: `npx astro add rss`
+- Use canonical URLs
+
+## Static Generation
+
+- Pages in `src/pages/` use file-based routing
+- Dynamic routes with `[param].astro`
+- `getStaticPaths()` for dynamic route generation
+
+## Styling
+
+- Same Tailwind CSS v4 configuration as web
+- CSS variables in global stylesheet
+- Use design tokens from `@repo/ui-shared`
+
+## Testing
+
+- **Unit**: Vitest for utilities
+- **E2E**: Playwright for critical paths
+
+## Deployment
+
+- Builds to `dist/` folder
+- Deploy to any static host
+- Use `npx astro add vercel/netlify/cloudflare` for adapters

@@ -1,13 +1,13 @@
-# @repo/ui
+# @repo/ui-web
 
-Shared UI components for the Reactor monorepo. Built with React 19 and Tailwind CSS.
+Web-specific UI components for the Reactor monorepo. Built with React 19, Tailwind CSS, and shadcn/ui patterns.
 
 ## Installation
 
 This package is internal to the monorepo. Import via the path alias:
 
 ```tsx
-import { Button } from "@repo/ui";
+import { Button } from "@repo/ui-web";
 ```
 
 ## Components
@@ -17,7 +17,7 @@ import { Button } from "@repo/ui";
 A flexible button component with variants and sizes.
 
 ```tsx
-import { Button } from "@repo/ui";
+import { Button } from "@repo/ui-web";
 
 // Variants: primary (default), secondary, ghost
 <Button variant="primary">Primary</Button>
@@ -52,13 +52,13 @@ Plus all standard `<button>` HTML attributes.
 
 ```bash
 # Run tests
-npm test -w packages/ui
+npm test -w packages/ui-web
 
 # Type check
-npm run typecheck -w packages/ui
+npm run typecheck -w packages/ui-web
 
 # Build
-npm run build -w packages/ui
+npm run build -w packages/ui-web
 ```
 
 ## Dependencies

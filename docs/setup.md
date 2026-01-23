@@ -2,26 +2,88 @@
 
 > **Note**: This document contains everything needed for initial project setup, including scaffolding steps and configuration examples. Once your project is scaffolded and running, this file can be safely deleted.
 
-## Scaffold Frontend (React + Vite + Tailwind)
+## Platform Overview
 
-Create a React app in `apps/web`.
+This monorepo supports three platforms:
+
+| Platform  | Directory         | Status   | Description                    |
+| --------- | ----------------- | -------- | ------------------------------ |
+| Web       | `apps/web/`       | Ready    | React 19 + Vite + Tailwind CSS |
+| Mobile    | `apps/mobile/`    | Scaffold | React Native CLI + NativeWind  |
+| Marketing | `apps/marketing/` | Scaffold | Astro + Tailwind CSS           |
+
+**Scaffold** means the directory contains setup instructions - you run the CLI commands yourself.
+
+## Web Frontend (React + Vite + Tailwind)
+
+The web app is already scaffolded and ready to use. Dependencies are managed at the monorepo root.
+
+To start development:
 
 ```bash
-npm create vite@latest apps/web -- --template react-ts
-cd apps/web
-npm install
-npm install react@^19 react-dom@^19
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
+npm run -w apps/web dev
 ```
 
-Configure Tailwind in `apps/web/tailwind.config.js`:
+> **Note**: If creating a new web app from scratch, use `npm create vite@latest` with the `react-ts` template, then configure Tailwind CSS v4 with `@tailwindcss/postcss`.
 
-- `content: ["./index.html", "./src/**/*.{ts,tsx}"]`
+## Scaffold Mobile App (React Native CLI)
 
-Add Tailwind directives in `apps/web/src/index.css`:
+The mobile app requires React Native CLI setup. See `apps/mobile/README.md` for detailed instructions.
 
-- `@tailwind base; @tailwind components; @tailwind utilities;`
+### Quick Start
+
+```bash
+cd apps/mobile
+
+# Initialize React Native in a temp directory, then move files
+npx @react-native-community/cli init ReactorMobile --template react-native-template-typescript
+mv ReactorMobile/* . 2>/dev/null || true
+mv ReactorMobile/.* . 2>/dev/null || true
+rm -rf ReactorMobile
+
+# Install React Native (merges with existing package.json)
+npm install react-native
+```
+
+### Key Configuration Steps
+
+1. **Configure Metro for monorepo** - Update `metro.config.js` to resolve workspace packages
+2. **Install NativeWind** - For Tailwind-like styling
+3. **Install Clerk** - For authentication (`@clerk/clerk-expo`)
+4. **Install Convex** - For backend (`convex`)
+5. **Install React Navigation** - For navigation
+
+See `apps/mobile/README.md` for complete setup instructions.
+
+## Scaffold Marketing Site (Astro)
+
+The marketing site uses Astro for static site generation. See `apps/marketing/README.md` for detailed instructions.
+
+### Quick Start
+
+```bash
+cd apps/marketing
+
+# Initialize Astro in a temp directory, then move files
+npm create astro@latest temp-astro -- --template minimal --typescript strict
+mv temp-astro/* . 2>/dev/null || true
+mv temp-astro/.* . 2>/dev/null || true
+rm -rf temp-astro
+
+# Install Astro (merges with existing package.json)
+npm install astro
+
+# Add Tailwind CSS
+npx astro add tailwind
+```
+
+### Key Configuration Steps
+
+1. **Configure Tailwind** - Update `tailwind.config.mjs` with design tokens
+2. **Add global styles** - Create CSS with theme variables
+3. **Configure TypeScript paths** - For workspace package imports
+
+See `apps/marketing/README.md` for complete setup instructions.
 
 ## Scaffold Backend (Convex CLI)
 
@@ -72,7 +134,7 @@ export default {
     "./index.html",
     "./src/**/*.{ts,tsx}",
     // include shared packages
-    "../../packages/ui/src/**/*.{ts,tsx}",
+    "../../packages/ui-web/src/**/*.{ts,tsx}",
     "../../packages/utils/src/**/*.{ts,tsx}",
   ],
   theme: {
@@ -98,14 +160,14 @@ export default {
 
 Use `cn()` from `@repo/utils` to merge classes and apply variants.
 
-### UI Components (packages/ui)
+### UI Components (packages/ui-web)
 
 Minimal UI components consume Tailwind tokens and `cn()` for variants. Import via the path alias and use in client components:
 
 ```tsx
 // apps/web/src/App.tsx
 "use client";
-import { Button } from "@repo/ui";
+import { Button } from "@repo/ui-web";
 
 export function App() {
   return (
@@ -119,6 +181,19 @@ export function App() {
     </div>
   );
 }
+```
+
+### Design Tokens (packages/ui-shared)
+
+Shared design tokens are available for all platforms:
+
+```ts
+import { colors, spacing, fontSize } from "@repo/ui-shared";
+
+// Use in platform-specific implementations
+const primaryLight = colors.primary.light; // HSL value
+const padding = spacing[4]; // 16px
+const heading = fontSize["2xl"]; // { size: 24, lineHeight: 32 }
 ```
 
 ### Environment Config (packages/utils)
@@ -145,13 +220,17 @@ const env = loadEnv({
 
 Imports are simplified via TypeScript `paths`:
 
-- `@repo/ui` → UI components
+- `@repo/ui-web` → Web UI components
+- `@repo/ui-mobile` → Mobile UI components
+- `@repo/ui-astro` → Astro utilities
+- `@repo/ui-shared` → Design tokens and types
 - `@repo/utils` → Utilities like `cn()` and env helpers
 
 Example:
 
 ```ts
-import { Button } from "@repo/ui";
+import { Button } from "@repo/ui-web";
+import { colors } from "@repo/ui-shared";
 import { cn, loadEnv } from "@repo/utils";
 ```
 

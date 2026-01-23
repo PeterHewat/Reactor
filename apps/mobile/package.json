@@ -1,0 +1,17 @@
+{
+  "name": "@repo/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "description": "React Native mobile app (iOS + Android) - scaffold only, see README.md",
+  "scripts": {
+    "setup": "echo 'See README.md for setup instructions'",
+    "typecheck": "echo 'Run after React Native setup'",
+    "lint": "echo 'Run after React Native setup'",
+    "test": "echo 'Run after React Native setup'"
+  },
+  "dependencies": {
+    "@repo/ui-mobile": "file:../../packages/ui-mobile",
+    "@repo/ui-shared": "file:../../packages/ui-shared",
+    "@repo/utils": "file:../../packages/utils"
+  }
+}

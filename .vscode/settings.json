@@ -59,7 +59,8 @@
     "**/.astro": true,
     "**/build": true,
     "**/dist": true,
-    "**/node_modules": true
+    "**/node_modules": true,
+    "**/convex/_generated": true
   },
   "html.format.wrapAttributes": "force-expand-multiline",
   "javascript.updateImportsOnFileMove.enabled": "always",

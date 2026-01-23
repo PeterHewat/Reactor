@@ -1,5 +1,5 @@
 {
-  "name": "@repo/utils",
+  "name": "@repo/ui-mobile",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -16,20 +16,18 @@
       "default": "./src/index.ts"
     }
   },
-  "devDependencies": {
-    "@testing-library/react": "^16.3.2",
-    "@vitest/coverage-v8": "^4.0.18",
-    "jsdom": "^27.4.0"
+  "dependencies": {
+    "@repo/ui-shared": "file:../ui-shared",
+    "@repo/utils": "file:../utils"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test": "echo \"See apps/mobile for tests\" && exit 0"
   },
-  "dependencies": {
-    "tailwind-merge": "^3.4.0",
-    "zustand": "^5.0.10"
+  "peerDependencies": {
+    "react": "^19.2.3",
+    "react-native": "^0.83.1"
   }
 }

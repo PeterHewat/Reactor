@@ -1,0 +1,60 @@
+---
+description: Web platform standards (React 19 + Tailwind CSS v4)
+globs: ["apps/web/**/*", "packages/ui-web/**/*"]
+alwaysApply: false
+---
+
+# Web Platform (React 19 + Tailwind CSS v4)
+
+## React 19
+
+- **Directives**: Use `'use client'` for components with Convex hooks or Zustand stores.
+- **`use()` hook**: Prefer over `useContext()` for reading context.
+- **`useOptimistic`**: For optimistic UI during mutations.
+- **`useFormStatus`**: In submit buttons to access form pending state.
+- **`useActionState`**: For form actions with state management.
+- **Form Actions**: Use `action` prop on `<form>` with async functions.
+- **`ref` as prop**: Pass refs directly instead of `forwardRef`.
+
+## Tailwind CSS v4
+
+- **CSS-First**: NO `tailwind.config.js`. Use CSS configuration.
+- **Import**: Use `@import "tailwindcss"` not `@tailwind` directives.
+- **Theme**: Define tokens in `@theme { }` block in `index.css`.
+- **PostCSS**: Use `@tailwindcss/postcss` package.
+- **Colors**: Define as `--color-*` in `@theme`.
+- **CSS Variables**: HSL values in `:root` and `.dark` selectors.
+
+## Styling
+
+- **Class Merging**: ALWAYS use `cn()` from `@repo/utils`.
+- **Theme Tokens**: Use `text-primary`, `bg-background`, etc. Avoid arbitrary values.
+- **Components**: Import from `@repo/ui-web`.
+
+## Theming
+
+- **Store**: `useThemeStore` from `@repo/utils` (Zustand + localStorage).
+- **Modes**: `light`, `dark`, `system`.
+- **Application**: `.dark` class on `<html>` element.
+- **Init**: Call `initializeTheme()` in `main.tsx`.
+
+## i18n
+
+- **Store**: `useI18nStore` from `@repo/utils`.
+- **Hook**: `useTranslation()` for translations.
+- **Files**: TypeScript modules in `apps/web/src/locales/`.
+- **Keys**: Dot-notation (e.g., `home.title`).
+- **Interpolation**: `{{variable}}` syntax.
+
+## Testing
+
+- **Unit**: Vitest with `.test.ts(x)` files adjacent to source.
+- **E2E**: Playwright with Page Object Models in `apps/web/tests/`.
+- **Assertions**: Web-first assertions (e.g., `toBeVisible()`).
+
+## Chrome DevTools MCP
+
+Debug at `http://localhost:5173`:
+
+- `take_snapshot`: Get accessibility tree
+- `evaluate_script`: Check styles, dimensions

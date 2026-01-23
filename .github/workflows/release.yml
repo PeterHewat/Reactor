@@ -23,8 +23,10 @@ on:
         type: choice
         options:
           - "all"
-          - "frontend"
-          - "backend"
+          - "web"
+          - "mobile"
+          - "marketing"
+          - "convex"
         default: "all"
       version_type:
         description: "Version increment type"
@@ -147,8 +149,10 @@ jobs:
           get_component_paths() {
             local component=$1
             case $component in
-              "frontend") echo "apps/web/ packages/ui/ packages/utils/" ;;
-              "backend") echo "convex/ packages/ui/ packages/utils/" ;;
+              "web") echo "apps/web/ packages/ui-web/ packages/ui-shared/ packages/utils/" ;;
+              "mobile") echo "apps/mobile/ packages/ui-mobile/ packages/ui-shared/ packages/utils/" ;;
+              "marketing") echo "apps/marketing/ packages/ui-astro/ packages/ui-shared/ packages/utils/" ;;
+              "convex") echo "convex/ packages/ui-shared/ packages/utils/" ;;
               *) echo "❌ Unknown component: $component" >&2; exit 1 ;;
             esac
           }
@@ -208,7 +212,7 @@ jobs:
 
           # Determine which components to process
           if [ "$RELEASE_SCOPE" = "all" ]; then
-            COMPONENTS=("frontend" "backend")
+            COMPONENTS=("web" "mobile" "marketing" "convex")
             echo "📋 Analyzing all components: ${COMPONENTS[*]}"
           else
             COMPONENTS=("$RELEASE_SCOPE")

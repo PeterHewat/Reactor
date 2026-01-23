@@ -19,7 +19,10 @@
     "baseUrl": ".",
     "paths": {
       "@repo/utils": ["packages/utils/src/index.ts"],
-      "@repo/ui": ["packages/ui/src/index.ts"],
+      "@repo/ui-shared": ["packages/ui-shared/src/index.ts"],
+      "@repo/ui-web": ["packages/ui-web/src/index.ts"],
+      "@repo/ui-mobile": ["packages/ui-mobile/src/index.ts"],
+      "@repo/ui-astro": ["packages/ui-astro/src/index.ts"],
       "@repo/test-utils": ["packages/test-utils/src/index.ts"]
     }
   }

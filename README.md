@@ -1,14 +1,40 @@
 # Reactor
 
-Starter monorepo for React 19, Convex, Clerk, Tailwind CSS, Vitest, and Playwright.
+Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and Marketing (Astro) with Convex backend and Clerk authentication.
 
 ## Tech Stack
 
-- **Frontend**: React 19 + Tailwind CSS (`apps/web/`)
-- **Backend**: Convex + Clerk auth (`convex/`)
-- **Shared UI**: Tailwind/shadcn components (`packages/ui/`)
-- **Shared Utils**: Common helpers including `cn()` (`packages/utils/`)
-- **Testing**: Vitest (unit), Playwright (e2e)
+### Applications
+
+- **Web App**: React 19 + Vite + Tailwind CSS v4 + Zustand (`apps/web/`)
+- **Mobile App**: React Native CLI + NativeWind (`apps/mobile/`) - scaffold
+- **Marketing Site**: Astro + Tailwind CSS (`apps/marketing/`) - scaffold
+
+### Backend
+
+- **Database & API**: Convex (`convex/`)
+- **Authentication**: Clerk
+
+### State Management
+
+- **Server State**: Convex (useQuery, useMutation)
+- **Global UI State**: Zustand (theme, i18n, complex UI state)
+- **Local UI State**: React useState
+
+### Shared Packages
+
+- **UI Web**: Web components with shadcn/ui patterns (`packages/ui-web/`)
+- **UI Mobile**: React Native components (`packages/ui-mobile/`) - scaffold
+- **UI Astro**: Astro component utilities (`packages/ui-astro/`) - scaffold
+- **UI Shared**: Design tokens and TypeScript interfaces (`packages/ui-shared/`)
+- **Utils**: Common helpers (cn, theme, i18n) (`packages/utils/`)
+- **Test Utils**: Testing utilities and mocks (`packages/test-utils/`)
+
+### Testing
+
+- **Unit Tests**: Vitest
+- **E2E Tests (Web)**: Playwright
+- **E2E Tests (Mobile)**: Detox (after setup)
 
 ## Quick Start
 
@@ -44,25 +70,38 @@ cd reactor
 npm run clean-install
 ```
 
-Then follow [docs/setup.md](docs/setup.md) to scaffold your frontend and backend
+Then follow [docs/setup.md](docs/setup.md) to scaffold your platforms:
+
+- **Web App**: Ready to use, just configure Convex and Clerk
+- **Mobile App**: Follow `apps/mobile/README.md` to initialize React Native
+- **Marketing Site**: Follow `apps/marketing/README.md` to initialize Astro
 
 ## Project Structure
 
 ```text
 apps/
-  web/                  # React frontend
+  web/                    # React 19 web application
+  mobile/                 # React Native mobile app (scaffold)
+  marketing/              # Astro marketing site (scaffold)
+
 packages/
-  ui/                   # Shared UI components
-  utils/                # Shared utilities
-convex/                 # Backend schema & functions
-docs/                   # Documentation
-prompts/                # AI prompt templates
+  ui-web/                 # Web UI components (shadcn/Tailwind)
+  ui-mobile/              # Mobile UI components (NativeWind)
+  ui-astro/               # Astro component utilities
+  ui-shared/              # Design tokens and shared types
+  utils/                  # Platform-agnostic utilities
+  test-utils/             # Testing utilities
+
+convex/                   # Backend schema & functions
+docs/                     # Documentation
+prompts/                  # AI prompt templates
 ```
 
 ## Documentation
 
 - **[Setup Guide](docs/setup.md)** - Initial project scaffolding and configuration
 - **[Architecture](docs/architecture.md)** - System design and technical decisions
+- **[Multi-Platform Architecture](docs/web+mobile+marketing.md)** - Platform strategy and package responsibilities
 - **[Product Requirements](docs/product.md)** - Business requirements and user stories
 - **[Architecture Decisions](docs/adr/)** - Record of architectural decision records
 - **[AI Prompt Templates](prompts/)** - Standardized prompts for development workflows
@@ -70,19 +109,44 @@ prompts/                # AI prompt templates
 ## Core Commands
 
 ```bash
+# Quality checks
 npm run lint           # Lint all packages
 npm run format         # Check formatting (Prettier)
 npm run format:fix     # Fix formatting
 npm run typecheck      # Type check all packages
 npm run typecheck:refs # Type check with project references
+
+# Build & clean
 npm run build          # Build all TypeScript projects
 npm run clean          # Clean TypeScript build artifacts
+
+# Testing
 npm test               # Run all unit tests
 npm run e2e:install    # Install Playwright browsers (one-time)
+
+# Dependencies
 npm run install        # Install dependencies (ignore scripts)
 npm run clean-install  # Clean install (npm ci, ignore scripts)
 npm run outdated       # Check for outdated dependencies
 npm run update         # Update dependencies within semver ranges
+```
+
+### Platform-Specific Commands
+
+```bash
+# Web app
+npm run -w apps/web dev           # Start dev server
+npm run -w apps/web build         # Production build
+npm run -w apps/web e2e           # Run Playwright tests
+
+# Mobile app (after React Native setup)
+npm run -w apps/mobile start      # Start Metro bundler
+npm run -w apps/mobile ios        # Run on iOS
+npm run -w apps/mobile android    # Run on Android
+
+# Marketing site (after Astro setup)
+npm run -w apps/marketing dev     # Start dev server
+npm run -w apps/marketing build   # Production build
 ```
 
 ## Development Workflow
@@ -146,6 +210,6 @@ Useful for E2E test development, debugging, and automated browser testing workfl
 
 ### CI/CD Overview
 
-- **CI (Push/PR to main):** Runs in [ci.yml](.github/workflows/ci.yml). Detects changes in frontend (apps/web, packages/ui, packages/utils) and backend (convex, packages/ui, packages/utils). For changed areas, executes `npm ci`, `npm run lint`, `npm run format`, `npm run typecheck`, and `npm test`
-- **CD (Release published):** Runs in [cd.yml](.github/workflows/cd.yml). Parses tags `frontend-vX.Y.Z` or `backend-vX.Y.Z` and performs the same checks for the targeted area. Add platform-specific deploy steps later
-- **Release Planning (Manual):** [release.yml](.github/workflows/release.yml) analyzes changes for `frontend`/`backend`, increments versions per selection (patch/minor/major), and creates GitHub releases. It preserves the concept of releasing frontend or backend independently
+- **CI (Push/PR to main):** Runs in [ci.yml](.github/workflows/ci.yml). Detects changes in web, mobile, marketing, and convex. For changed areas, executes lint, format, typecheck, and tests
+- **CD (Release published):** Runs in [cd.yml](.github/workflows/cd.yml). Parses tags `web-vX.Y.Z`, `mobile-vX.Y.Z`, `marketing-vX.Y.Z`, or `convex-vX.Y.Z` and performs deployment for the targeted platform
+- **Release Planning (Manual):** [release.yml](.github/workflows/release.yml) analyzes changes for each platform, increments versions per selection (patch/minor/major), and creates GitHub releases

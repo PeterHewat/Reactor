@@ -13,8 +13,10 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      frontend: ${{ steps.detect.outputs.frontend }}
-      backend: ${{ steps.detect.outputs.backend }}
+      web: ${{ steps.detect.outputs.web }}
+      mobile: ${{ steps.detect.outputs.mobile }}
+      marketing: ${{ steps.detect.outputs.marketing }}
+      convex: ${{ steps.detect.outputs.convex }}
       shared: ${{ steps.detect.outputs.shared }}
       any: ${{ steps.detect.outputs.any }}
     steps:
@@ -34,31 +36,44 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          frontend=false
-          backend=false
+          web=false
+          mobile=false
+          marketing=false
+          convex=false
           shared=false
 
           for file in $CHANGED_FILES; do
-            if [[ $file == apps/web/* ]]; then frontend=true; fi
-            if [[ $file == convex/* ]]; then backend=true; fi
-            if [[ $file == packages/ui/* ]] || [[ $file == packages/utils/* ]]; then shared=true; fi
+            if [[ $file == apps/web/* ]]; then web=true; fi
+            if [[ $file == apps/mobile/* ]]; then mobile=true; fi
+            if [[ $file == apps/marketing/* ]]; then marketing=true; fi
+            if [[ $file == convex/* ]]; then convex=true; fi
+            if [[ $file == packages/ui-web/* ]]; then shared=true; fi
+            if [[ $file == packages/ui-mobile/* ]]; then shared=true; fi
+            if [[ $file == packages/ui-astro/* ]]; then shared=true; fi
+            if [[ $file == packages/ui-shared/* ]]; then shared=true; fi
+            if [[ $file == packages/utils/* ]]; then shared=true; fi
+            if [[ $file == packages/test-utils/* ]]; then shared=true; fi
           done
 
-          # If shared packages changed, both frontend and backend need checking
+          # If shared packages changed, all platforms need checking
           if [ "$shared" = "true" ]; then
-            frontend=true
-            backend=true
+            web=true
+            mobile=true
+            marketing=true
+            convex=true
           fi
 
           # Determine if any changes require checks
           any=false
-          if [ "$frontend" = "true" ] || [ "$backend" = "true" ]; then
+          if [ "$web" = "true" ] || [ "$mobile" = "true" ] || [ "$marketing" = "true" ] || [ "$convex" = "true" ]; then
             any=true
           fi
 
-          echo "Detected changes: frontend=$frontend, backend=$backend, shared=$shared, any=$any"
-          echo "frontend=$frontend" >> $GITHUB_OUTPUT
-          echo "backend=$backend" >> $GITHUB_OUTPUT
+          echo "Detected changes: web=$web, mobile=$mobile, marketing=$marketing, convex=$convex, shared=$shared, any=$any"
+          echo "web=$web" >> $GITHUB_OUTPUT
+          echo "mobile=$mobile" >> $GITHUB_OUTPUT
+          echo "marketing=$marketing" >> $GITHUB_OUTPUT
+          echo "convex=$convex" >> $GITHUB_OUTPUT
           echo "shared=$shared" >> $GITHUB_OUTPUT
           echo "any=$any" >> $GITHUB_OUTPUT
 
@@ -100,13 +115,13 @@ jobs:
         run: npm run typecheck
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Frontend Tests
+  # Web Tests
   # ─────────────────────────────────────────────────────────────────────────────
-  tests-frontend:
-    name: Frontend Tests
+  tests-web:
+    name: Web Tests
     runs-on: ubuntu-latest
     needs: [detect-changes, checks-shared]
-    if: needs.detect-changes.outputs.frontend == 'true'
+    if: needs.detect-changes.outputs.web == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -114,20 +129,20 @@ jobs:
           node-version: "24.x"
           cache: "npm"
       - run: npm ci --ignore-scripts
-      - name: Run frontend tests
+      - name: Run web tests
         run: |
           npm run test -w apps/web
-          npm run test -w packages/ui
+          npm run test -w packages/ui-web
           npm run test -w packages/utils
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Backend Tests
+  # Mobile Tests (placeholder - runs after React Native setup)
   # ─────────────────────────────────────────────────────────────────────────────
-  tests-backend:
-    name: Backend Tests
+  tests-mobile:
+    name: Mobile Tests
     runs-on: ubuntu-latest
     needs: [detect-changes, checks-shared]
-    if: needs.detect-changes.outputs.backend == 'true'
+    if: needs.detect-changes.outputs.mobile == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -135,21 +150,64 @@ jobs:
           node-version: "24.x"
           cache: "npm"
       - run: npm ci --ignore-scripts
-      - name: Run backend tests
+      - name: Run mobile tests
+        run: |
+          echo "Mobile tests will run after React Native setup"
+          # Uncomment after setting up React Native:
+          # npm run test -w apps/mobile
+          # npm run test -w packages/ui-mobile
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Marketing Tests (placeholder - runs after Astro setup)
+  # ─────────────────────────────────────────────────────────────────────────────
+  tests-marketing:
+    name: Marketing Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, checks-shared]
+    if: needs.detect-changes.outputs.marketing == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci --ignore-scripts
+      - name: Run marketing tests
+        run: |
+          echo "Marketing tests will run after Astro setup"
+          # Uncomment after setting up Astro:
+          # npm run test -w apps/marketing
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Convex Tests
+  # ─────────────────────────────────────────────────────────────────────────────
+  tests-convex:
+    name: Convex Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, checks-shared]
+    if: needs.detect-changes.outputs.convex == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: "npm"
+      - run: npm ci --ignore-scripts
+      - name: Run Convex tests
         run: npm run test -w convex
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Frontend E2E (Playwright)
+  # Web E2E (Playwright)
   # Runs on: main branch pushes OR PRs with 'e2e' label
   # Optimizations: No video recording, limited workers, fail-fast, HTML report
   # ─────────────────────────────────────────────────────────────────────────────
-  frontend-e2e:
-    name: Frontend E2E
+  web-e2e:
+    name: Web E2E
     runs-on: ubuntu-latest
-    needs: [detect-changes, tests-frontend]
+    needs: [detect-changes, tests-web]
     # Run on main branch pushes OR PRs with 'e2e' label
     if: |
-      needs.detect-changes.outputs.frontend == 'true' && (
+      needs.detect-changes.outputs.web == 'true' && (
         github.ref == 'refs/heads/main' ||
         (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e'))
       )

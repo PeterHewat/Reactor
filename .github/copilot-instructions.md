@@ -12,7 +12,7 @@
 - `convex/` - Backend (Convex + Clerk)
 - `packages/ui-web/` - Web components (shadcn/Tailwind)
 - `packages/ui-mobile/` - Mobile components (NativeWind)
-- `packages/ui-astro/` - Astro utilities
+- `packages/ui-marketing/` - Astro utilities
 - `packages/ui-shared/` - Design tokens and types
 - `packages/utils/` - Shared utilities (cn, theme, i18n)
 
@@ -60,7 +60,7 @@
 
 - **Framework**: Astro with static site generation
 - **Content**: Use content collections for blog/docs
-- **Components**: Import from `@repo/ui-astro`
+- **Components**: Import from `@repo/ui-marketing`
 - **SEO**: Leverage Astro's built-in meta tags, sitemap, RSS
 
 ## Theming
@@ -103,5 +103,5 @@ After changes, run:
 - [ ] Is `useEffect` used for data? (Use `useQuery` instead)
 - [ ] Are inputs validated with `v` schema?
 - [ ] Are Tailwind classes merged via `cn()`?
-- [ ] Am I using the correct platform package (`ui-web`, `ui-mobile`, `ui-astro`)?
+- [ ] Am I using the correct platform package (`ui-web`, `ui-mobile`, `ui-marketing`)?
 - [ ] Are sensitive variables protected from logs?

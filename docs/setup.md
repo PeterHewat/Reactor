@@ -222,7 +222,7 @@ Imports are simplified via TypeScript `paths`:
 
 - `@repo/ui-web` → Web UI components
 - `@repo/ui-mobile` → Mobile UI components
-- `@repo/ui-astro` → Astro utilities
+- `@repo/ui-marketing` → Astro utilities
 - `@repo/ui-shared` → Design tokens and types
 - `@repo/utils` → Utilities like `cn()` and env helpers
 

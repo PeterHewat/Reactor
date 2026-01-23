@@ -1,6 +1,6 @@
 ---
 description: Marketing platform standards (Astro)
-globs: ["apps/marketing/**/*", "packages/ui-astro/**/*"]
+globs: ["apps/marketing/**/*", "packages/ui-marketing/**/*"]
 alwaysApply: false
 ---
 
@@ -11,14 +11,14 @@ alwaysApply: false
 - **Astro**: Static site generation
 - **Styling**: Tailwind CSS v4 with shared design tokens
 - **Components**: `.astro` files in `apps/marketing/src/components/`
-- **Utilities**: Import from `@repo/ui-astro`
+- **Utilities**: Import from `@repo/ui-marketing`
 
 ## Astro Components
 
 ```astro
 ---
 // Frontmatter (runs at build time)
-import { colors } from "@repo/ui-astro";
+import { colors } from "@repo/ui-marketing";
 const { title } = Astro.props;
 ---
 

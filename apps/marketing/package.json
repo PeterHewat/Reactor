@@ -1,16 +1,20 @@
 {
   "name": "@repo/marketing",
-  "version": "0.0.0",
+  "type": "module",
+  "version": "0.0.1",
   "private": true,
-  "description": "Astro marketing site - scaffold only, see README.md",
+  "description": "Astro marketing site",
   "scripts": {
-    "setup": "echo 'See README.md for setup instructions'",
-    "typecheck": "echo 'Run after Astro setup'",
-    "lint": "echo 'Run after Astro setup'",
-    "test": "echo 'Run after Astro setup'"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
-    "@repo/ui-astro": "file:../../packages/ui-astro",
-    "@repo/ui-shared": "file:../../packages/ui-shared"
+    "@repo/ui-marketing": "file:../../packages/ui-marketing",
+    "@repo/ui-shared": "file:../../packages/ui-shared",
+    "@tailwindcss/vite": "^4.1.18",
+    "astro": "^5.16.15",
+    "tailwindcss": "^4.1.18"
   }
 }

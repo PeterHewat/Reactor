@@ -1,10 +1,11 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
+    "composite": true,
     "noEmit": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "setupTests.ts"],
-  "exclude": ["dist"]
+  "exclude": ["dist"],
+  "references": [{ "path": "../utils" }, { "path": "../test-utils" }]
 }

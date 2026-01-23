@@ -7,8 +7,8 @@ Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and M
 ### Applications
 
 - **Web App**: React 19 + Vite + Tailwind CSS v4 + Zustand (`apps/web/`)
-- **Mobile App**: React Native CLI + NativeWind (`apps/mobile/`) - scaffold
-- **Marketing Site**: Astro + Tailwind CSS (`apps/marketing/`) - scaffold
+- **Mobile App**: React Native CLI + NativeWind (`apps/mobile/`)
+- **Marketing Site**: Astro + Tailwind CSS (`apps/marketing/`)
 
 ### Backend
 
@@ -24,8 +24,8 @@ Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and M
 ### Shared Packages
 
 - **UI Web**: Web components with shadcn/ui patterns (`packages/ui-web/`)
-- **UI Mobile**: React Native components (`packages/ui-mobile/`) - scaffold
-- **UI Astro**: Astro component utilities (`packages/ui-astro/`) - scaffold
+- **UI Mobile**: React Native components (`packages/ui-mobile/`)
+- **UI Marketing**: Astro component utilities (`packages/ui-marketing/`)
 - **UI Shared**: Design tokens and TypeScript interfaces (`packages/ui-shared/`)
 - **Utils**: Common helpers (cn, theme, i18n) (`packages/utils/`)
 - **Test Utils**: Testing utilities and mocks (`packages/test-utils/`)
@@ -54,13 +54,13 @@ npm -v
 
 Recommended IDEs:
 
-- [VS Code](https://code.visualstudio.com/) with [Copilot](https://github.com/features/copilot)
+- [VS Code](https://code.visualstudio.com/) with [Copilot](https://github.com/features/copilot), [KiloCode](https://kilocode.com/), [Cline](https://cline.bot/) or other AI coding assistants
 - [Cursor](https://cursor.com/)
 - [Claude Code](https://claude.com/product/claude-code)
 
 ### Setup Steps
 
-This is a **minimal scaffold** - you run the scaffolding commands yourself to maintain ownership of configuration and credentials. The repo provides structure, tooling, and guidance while keeping you in control.
+The repo provides structure, tooling, and guidance while keeping you in control.
 
 Clone the repository and install dependencies
 
@@ -74,20 +74,20 @@ Then follow [docs/setup.md](docs/setup.md) to scaffold your platforms:
 
 - **Web App**: Ready to use, just configure Convex and Clerk
 - **Mobile App**: Follow `apps/mobile/README.md` to initialize React Native
-- **Marketing Site**: Follow `apps/marketing/README.md` to initialize Astro
+- **Marketing Site**: Ready to use, just configure your domain and content.
 
 ## Project Structure
 
 ```text
 apps/
   web/                    # React 19 web application
-  mobile/                 # React Native mobile app (scaffold)
-  marketing/              # Astro marketing site (scaffold)
+  mobile/                 # React Native mobile app
+  marketing/              # Astro marketing site
 
 packages/
   ui-web/                 # Web UI components (shadcn/Tailwind)
   ui-mobile/              # Mobile UI components (NativeWind)
-  ui-astro/               # Astro component utilities
+  ui-marketing/           # Marketing components (Astro utilities)
   ui-shared/              # Design tokens and shared types
   utils/                  # Platform-agnostic utilities
   test-utils/             # Testing utilities

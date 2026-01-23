@@ -17,7 +17,7 @@ alwaysApply: true
 - Backend/Database: `convex/`
 - Web UI: `packages/ui-web/`
 - Mobile UI: `packages/ui-mobile/`
-- Astro UI: `packages/ui-astro/`
+- Astro UI: `packages/ui-marketing/`
 - Shared Tokens: `packages/ui-shared/`
 - Utilities: `packages/utils/`
 

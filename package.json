@@ -16,7 +16,7 @@
     "packages/test-utils",
     "packages/ui-web",
     "packages/ui-mobile",
-    "packages/ui-astro",
+    "packages/ui-marketing",
     "packages/ui-shared",
     "packages/utils"
   ],

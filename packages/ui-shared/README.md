@@ -10,7 +10,7 @@ This package contains:
 - **Component Types**: TypeScript interfaces for component props
 - **Theme Types**: Types for theme and locale management
 
-Platform-specific UI packages (`@repo/ui-web`, `@repo/ui-mobile`, `@repo/ui-astro`) consume these tokens and implement the component interfaces.
+Platform-specific UI packages (`@repo/ui-web`, `@repo/ui-mobile`, `@repo/ui-marketing`) consume these tokens and implement the component interfaces.
 
 ## Installation
 

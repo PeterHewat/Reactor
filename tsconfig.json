@@ -1,15 +1,15 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.base.json",
   "files": [],
   "references": [
-    { "path": "packages/utils" },
+    { "path": "apps/marketing" },
+    { "path": "apps/web" },
+    { "path": "convex" },
+    { "path": "packages/test-utils" },
+    { "path": "packages/ui-marketing" },
+    { "path": "packages/ui-mobile" },
     { "path": "packages/ui-shared" },
     { "path": "packages/ui-web" },
-    { "path": "packages/ui-mobile" },
-    { "path": "packages/ui-astro" },
-    { "path": "packages/test-utils" },
-    { "path": "apps/web" },
-    { "path": "convex" }
+    { "path": "packages/utils" }
   ]
 }

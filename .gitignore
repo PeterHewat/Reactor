@@ -48,6 +48,10 @@ Thumbs.db
 # Environment variables (keep .env.example for documentation)
 .env
 .env.local
+.env.development
+.env.test
+.env.production
+.env.staging
 !.env.example
 
 # Docker

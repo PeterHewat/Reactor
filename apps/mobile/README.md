@@ -285,7 +285,7 @@ Update `apps/mobile/package.json`:
     "test:e2e:ios": "detox test --configuration ios.sim.debug",
     "test:e2e:android": "detox test --configuration android.emu.debug",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc"
   }
 }
 ```

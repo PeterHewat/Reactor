@@ -19,7 +19,13 @@
       "type": "node-terminal"
     },
     {
-      "command": "npx convex dev",
+      "command": "npm run -w apps/marketing dev",
+      "name": "Marketing Dev Server",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "command": "npm run -w convex dev",
       "name": "Convex Dev Server",
       "request": "launch",
       "type": "node-terminal"

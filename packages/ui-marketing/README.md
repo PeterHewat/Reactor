@@ -1,4 +1,4 @@
-# @repo/ui-astro
+# @repo/ui-marketing
 
 Astro components and utilities for the Reactor marketing site. Provides TypeScript utilities and design tokens for building marketing pages with consistent styling.
 
@@ -45,7 +45,7 @@ Update `apps/marketing/tailwind.config.mjs`:
 export default {
   content: [
     "./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}",
-    "../../packages/ui-astro/src/**/*.{ts,tsx}",
+    "../../packages/ui-marketing/src/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
@@ -112,7 +112,7 @@ Update `apps/marketing/tsconfig.json`:
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@repo/ui-astro": ["../../packages/ui-astro/src/index.ts"],
+      "@repo/ui-marketing": ["../../packages/ui-marketing/src/index.ts"],
       "@repo/ui-shared": ["../../packages/ui-shared/src/index.ts"]
     }
   }
@@ -127,7 +127,7 @@ Create `apps/marketing/src/components/Button.astro`:
 
 ```astro
 ---
-import type { ButtonVariant, ButtonSize } from "@repo/ui-astro";
+import type { ButtonVariant, ButtonSize } from "@repo/ui-marketing";
 
 interface Props {
   variant?: ButtonVariant;
@@ -232,7 +232,7 @@ Import tokens directly in Astro components:
 
 ```astro
 ---
-import { spacing, colors } from "@repo/ui-astro";
+import { spacing, colors } from "@repo/ui-marketing";
 
 // Use in inline styles or logic
 const paddingValue = spacing[8]; // 32
@@ -273,13 +273,13 @@ import Layout from "../layouts/Layout.astro";
 
 ```bash
 # Type check
-npm run typecheck -w packages/ui-astro
+npm run typecheck -w packages/ui-marketing
 
 # Build
-npm run build -w packages/ui-astro
+npm run build -w packages/ui-marketing
 
 # Lint
-npm run lint -w packages/ui-astro
+npm run lint -w packages/ui-marketing
 ```
 
 ## Dependencies

@@ -1,5 +1,5 @@
 /**
- * @repo/ui-astro
+ * @repo/ui-marketing
  *
  * Astro components for the Reactor marketing site.
  * Built with Tailwind CSS for consistent styling with the web app.

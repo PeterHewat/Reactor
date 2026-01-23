@@ -151,7 +151,7 @@ jobs:
             case $component in
               "web") echo "apps/web/ packages/ui-web/ packages/ui-shared/ packages/utils/" ;;
               "mobile") echo "apps/mobile/ packages/ui-mobile/ packages/ui-shared/ packages/utils/" ;;
-              "marketing") echo "apps/marketing/ packages/ui-astro/ packages/ui-shared/ packages/utils/" ;;
+              "marketing") echo "apps/marketing/ packages/ui-marketing/ packages/ui-shared/ packages/utils/" ;;
               "convex") echo "convex/ packages/ui-shared/ packages/utils/" ;;
               *) echo "❌ Unknown component: $component" >&2; exit 1 ;;
             esac

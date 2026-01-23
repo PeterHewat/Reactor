@@ -49,7 +49,7 @@ jobs:
             if [[ $file == convex/* ]]; then convex=true; fi
             if [[ $file == packages/ui-web/* ]]; then shared=true; fi
             if [[ $file == packages/ui-mobile/* ]]; then shared=true; fi
-            if [[ $file == packages/ui-astro/* ]]; then shared=true; fi
+            if [[ $file == packages/ui-marketing/* ]]; then shared=true; fi
             if [[ $file == packages/ui-shared/* ]]; then shared=true; fi
             if [[ $file == packages/utils/* ]]; then shared=true; fi
             if [[ $file == packages/test-utils/* ]]; then shared=true; fi

@@ -2,7 +2,7 @@
  * Shared component type definitions for the Reactor design system.
  *
  * These interfaces define the contracts for components across platforms.
- * Platform-specific implementations (ui-web, ui-mobile, ui-astro) should
+ * Platform-specific implementations (ui-web, ui-mobile, ui-marketing) should
  * implement these interfaces while adding platform-specific props as needed.
  */
 

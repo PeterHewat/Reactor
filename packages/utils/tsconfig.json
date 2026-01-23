@@ -1,10 +1,14 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": ["node", "vitest/globals"],
-    "noEmit": true
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "outDir": "dist"
   },
   "include": ["src/**/*.ts", "setupTests.ts"],
-  "exclude": ["dist"]
+  "exclude": ["dist"],
+  "references": [{ "path": "../test-utils" }]
 }

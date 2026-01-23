@@ -8,13 +8,20 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "lint": "eslint .",
+    "typecheck": "astro check && tsc",
+    "test": "vitest run",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.0",
     "@repo/ui-marketing": "file:../../packages/ui-marketing",
     "@repo/ui-shared": "file:../../packages/ui-shared",
     "@tailwindcss/vite": "^4.1.18",
     "astro": "^5.16.15",
     "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }

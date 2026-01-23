@@ -2,7 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@repo/ui-marketing": ["../../packages/ui-marketing/src/index.ts"],
+      "@repo/ui-shared": ["../../packages/ui-shared/src/index.ts"]
+    }
   },
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["astro.config.mjs", "dist"]

@@ -40,6 +40,9 @@
   "[react]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[astro]": {
+    "editor.defaultFormatter": "astro-build.astro-vscode"
+  },
   "files.associations": {
     "*.mdc": "markdown"
     // "*.tsx": "typescript",

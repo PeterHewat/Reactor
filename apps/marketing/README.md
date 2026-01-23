@@ -38,6 +38,42 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
+## Deployment
+
+Astro builds to static HTML by default, making it easy to deploy anywhere.
+
+### Vercel
+
+```bash
+npx astro add vercel
+```
+
+### Netlify
+
+```bash
+npx astro add netlify
+```
+
+### Cloudflare Pages
+
+```bash
+npx astro add cloudflare
+```
+
+### Static Hosting
+
+Build and deploy the `dist/` folder to any static host:
+
+```bash
+npm run build
+# Upload dist/ to your host
+```
+
 ## 👀 Want to learn more?
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- [Astro Documentation](https://docs.astro.build/)
+- [Astro + Tailwind](https://docs.astro.build/en/guides/integrations-guide/tailwind/)
+- [Content Collections](https://docs.astro.build/en/guides/content-collections/)
+- [Astro SEO](https://docs.astro.build/en/guides/seo/)
+- [Deploy Astro](https://docs.astro.build/en/guides/deploy/)
+- [Discord Server](https://astro.build/chat)

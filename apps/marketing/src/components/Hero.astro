@@ -1,0 +1,16 @@
+---
+const { title, subtitle, ctaText, ctaHref } = Astro.props;
+---
+
+<section class="hero bg-linear-to-r from-blue-500 to-purple-600 text-white py-20">
+  <div class="container mx-auto px-4 text-center">
+    <h1 class="text-5xl font-bold mb-4">{title}</h1>
+    <p class="text-xl mb-8">{subtitle}</p>
+    <a
+      href={ctaHref}
+      class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+    >
+      {ctaText}
+    </a>
+  </div>
+</section>

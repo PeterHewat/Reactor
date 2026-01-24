@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@repo/utils";
-import { SUPPORTED_LOCALES, useI18nStore, type Locale } from "@repo/utils";
+import { cn, SUPPORTED_LOCALES, useI18nStore, type Locale } from "@repo/utils";
 import type { Ref, SelectHTMLAttributes } from "react";
+import { memo } from "react";
 
 /**
  * Props for the LanguageSwitcher component.
@@ -42,7 +42,7 @@ const sizeClasses = {
  * // Custom labels
  * <LanguageSwitcher localeLabels={{ en: "English (US)", es: "Spanish" }} />
  */
-export function LanguageSwitcher({
+export const LanguageSwitcher = memo(function LanguageSwitcher({
   className,
   size = "md",
   showFullName = true,
@@ -85,4 +85,4 @@ export function LanguageSwitcher({
       ))}
     </select>
   );
-}
+});

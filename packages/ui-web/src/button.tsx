@@ -1,5 +1,6 @@
 import { cn } from "@repo/utils";
 import type { ButtonHTMLAttributes, Ref } from "react";
+import { memo } from "react";
 
 /**
  * Available button style variants.
@@ -72,7 +73,7 @@ const sizeClasses: Record<ButtonSize, string> = {
  * <Button variant="secondary" isLoading>Loading...</Button>
  * <Button ref={myRef}>With ref</Button>
  */
-export function Button({
+export const Button = memo(function Button({
   className,
   variant = "primary",
   size = "md",
@@ -95,4 +96,4 @@ export function Button({
       {children}
     </button>
   );
-}
+});

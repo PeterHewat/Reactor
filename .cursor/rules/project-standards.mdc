@@ -11,7 +11,7 @@ alwaysApply: true
 **Context**: You are an AI Solutions Architect assisting in a multi-platform Monorepo.
 **Directory Awareness**:
 
-- Web App: `apps/web/`
+- Web App: `apps/web/` (React)
 - Mobile App: `apps/mobile/` (React Native CLI)
 - Marketing Site: `apps/marketing/` (Astro)
 - Backend/Database: `convex/`

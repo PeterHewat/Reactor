@@ -3,7 +3,12 @@ import Features from "../components/Features.astro";
 import Hero from "../components/Hero.astro";
 import Layout from "../layouts/Layout.astro";
 
-const { title, description, image } = Astro.props;
+// SEO props for the page
+const title = "Reactor - Modern Monorepo Starter";
+const description =
+  "A production-ready monorepo template for web, mobile, and marketing with React 19, Convex, Clerk, and Tailwind CSS.";
+const author = "Peter Hewat";
+const image = "/favicon.svg";
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -16,17 +21,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
-    <!-- Open Graph -->
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonicalURL} />
-    <meta property="og:image" content={image} />
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="author" content={author} />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#000000" />
+    <link rel="apple-touch-icon" href="/favicon.ico" />
   </head>
   <body>
     <Layout title="Reactor - Modern Monorepo Starter">

@@ -27,7 +27,7 @@
     "test": "echo \"See apps/mobile for tests\" && exit 0"
   },
   "peerDependencies": {
-    "react": "^19.2.3",
+    "react": "^19.2.4",
     "react-native": "^0.83.1"
   }
 }

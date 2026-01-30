@@ -16,22 +16,22 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.59.6",
+    "@clerk/clerk-react": "^5.60.0",
     "@repo/ui-web": "file:../../packages/ui-web",
     "@repo/utils": "file:../../packages/utils",
-    "convex": "^1.31.6",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "convex": "^1.31.7",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.0",
+    "@playwright/test": "^1.58.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.18",
-    "autoprefixer": "^10.4.23",
+    "autoprefixer": "^10.4.24",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18"

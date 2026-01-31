@@ -4,8 +4,6 @@ globs: ["**/*"]
 alwaysApply: true
 ---
 
-<!-- SYNC NOTE: Keep this file in sync with .github/copilot-instructions.md -->
-
 # Project Standards
 
 **Context**: You are an AI Solutions Architect assisting in a multi-platform Monorepo.

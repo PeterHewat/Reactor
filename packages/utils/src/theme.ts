@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 /**
  * Available theme modes.
@@ -101,6 +101,21 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: "theme",
+      storage: createJSONStorage(() => {
+        if (typeof window !== "undefined" && window.localStorage) {
+          return window.localStorage;
+        }
+        const store = new Map<string, string>();
+        return {
+          getItem: (name: string) => store.get(name) ?? null,
+          setItem: (name: string, value: string) => {
+            store.set(name, value);
+          },
+          removeItem: (name: string) => {
+            store.delete(name);
+          },
+        };
+      }),
       partialize: (state) => ({ mode: state.mode }),
       onRehydrateStorage: () => (state) => {
         // Apply theme after rehydration from localStorage
@@ -128,6 +143,9 @@ export const useThemeStore = create<ThemeState>()(
  * }, []);
  */
 export function initializeTheme(): () => void {
+  if (typeof window === "undefined" || !window.matchMedia) {
+    return () => {};
+  }
   // Apply initial theme
   const { mode, updateResolvedTheme } = useThemeStore.getState();
   applyThemeToDOM(resolveTheme(mode));

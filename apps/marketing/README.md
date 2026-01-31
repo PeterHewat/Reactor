@@ -1,75 +1,47 @@
-# Astro Starter Kit: Minimal
+# Marketing Site (Astro)
 
-```sh
-npm create astro@latest -- --template minimal
-```
+The marketing site is an Astro-based static site intended for product landing pages, documentation, and SEO-focused content.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Quick Start
 
-## 🚀 Project Structure
+From the repository root:
 
-Inside of your Astro project, you'll see the following folders and files:
+- Start dev server: `npm run -w apps/marketing dev`
+- Build production assets: `npm run -w apps/marketing build`
+
+## Project Structure
 
 ```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+apps/marketing/
+	public/            # Static assets
+	src/
+		components/      # Marketing components
+		layouts/         # Page layouts
+		pages/           # Routes
+		styles/          # Global styles
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Styling
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+- Tailwind CSS is configured at the app level.
+- Use tokens and shared design language from packages when possible.
 
 ## Deployment
 
-Astro builds to static HTML by default, making it easy to deploy anywhere.
+Astro outputs static assets to `dist/`. Deploy to any static host.
 
-### Vercel
+Common choices:
 
-```bash
-npx astro add vercel
-```
+- Vercel
+- Netlify
+- Cloudflare Pages
 
-### Netlify
+## Notes
 
-```bash
-npx astro add netlify
-```
+- Keep SEO metadata in page frontmatter and layout defaults.
+- Prefer lightweight components and minimal client-side JS.
 
-### Cloudflare Pages
-
-```bash
-npx astro add cloudflare
-```
-
-### Static Hosting
-
-Build and deploy the `dist/` folder to any static host:
-
-```bash
-npm run build
-# Upload dist/ to your host
-```
-
-## 👀 Want to learn more?
+## Want to learn more?
 
 - [Astro Documentation](https://docs.astro.build/)
 - [Astro + Tailwind](https://docs.astro.build/en/guides/integrations-guide/tailwind/)

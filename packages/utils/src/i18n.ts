@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 /**
  * Supported locales.
@@ -157,6 +157,26 @@ interface I18nState {
  * const { locale, setLocale } = useI18nStore();
  * setLocale("es");
  */
+const memoryStorage = (() => {
+  const store = new Map<string, string>();
+  return {
+    getItem: (name: string) => store.get(name) ?? null,
+    setItem: (name: string, value: string) => {
+      store.set(name, value);
+    },
+    removeItem: (name: string) => {
+      store.delete(name);
+    },
+  };
+})();
+
+const getStorage = () => {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return window.localStorage;
+  }
+  return memoryStorage;
+};
+
 export const useI18nStore = create<I18nState>()(
   persist(
     (set) => ({
@@ -165,6 +185,7 @@ export const useI18nStore = create<I18nState>()(
     }),
     {
       name: "i18n",
+      storage: createJSONStorage(getStorage),
     },
   ),
 );
@@ -227,7 +248,8 @@ export function getBrowserLocale(): Locale {
  * Only sets locale if user hasn't already set a preference.
  */
 export function initializeI18n(): void {
-  const stored = localStorage.getItem("i18n");
+  const storage = getStorage();
+  const stored = storage.getItem("i18n");
   if (!stored) {
     const browserLocale = getBrowserLocale();
     useI18nStore.getState().setLocale(browserLocale);

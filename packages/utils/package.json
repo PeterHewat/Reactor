@@ -16,11 +16,7 @@
       "default": "./src/index.ts"
     }
   },
-  "devDependencies": {
-    "@testing-library/react": "^16.3.2",
-    "@vitest/coverage-v8": "^4.0.18",
-    "jsdom": "^27.4.0"
-  },
+  "devDependencies": {},
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
@@ -30,6 +26,6 @@
   },
   "dependencies": {
     "tailwind-merge": "^3.4.0",
-    "zustand": "^5.0.10"
+    "zustand": "^5.0.11"
   }
 }

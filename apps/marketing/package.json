@@ -18,10 +18,7 @@
     "@repo/ui-marketing": "file:../../packages/ui-marketing",
     "@repo/ui-shared": "file:../../packages/ui-shared",
     "@tailwindcss/vite": "^4.1.18",
-    "astro": "^5.17.1",
     "tailwindcss": "^4.1.18"
   },
-  "devDependencies": {
-    "vitest": "^4.0.18"
-  }
+  "devDependencies": {}
 }

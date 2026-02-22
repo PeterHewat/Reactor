@@ -19,7 +19,6 @@
   "dependencies": {
     "@repo/utils": "file:../utils"
   },
-  "devDependencies": {},
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",

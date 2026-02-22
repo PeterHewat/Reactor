@@ -1,10 +1,9 @@
+import eslintReact from "@eslint-react/eslint-plugin";
 import eslint from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import prettierConfig from "eslint-config-prettier";
 import prettierPlugin from "eslint-plugin-prettier";
-import reactPlugin from "eslint-plugin-react";
-import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 export default [
   eslint.configs.recommended,
@@ -33,17 +32,12 @@ export default [
     },
     plugins: {
       "@typescript-eslint": tseslint,
+      ...eslintReact.configs.recommended.plugins,
       prettier: prettierPlugin,
-      react: reactPlugin,
-      "react-hooks": reactHooksPlugin,
-    },
-    settings: {
-      react: {
-        version: "detect",
-      },
     },
     rules: {
       ...tseslint.configs.recommended.rules,
+      ...eslintReact.configs.recommended.rules,
       ...prettierConfig.rules,
       "prettier/prettier": "error",
       "no-undef": "off",
@@ -54,14 +48,6 @@ export default [
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-explicit-any": "error",
       "no-console": "off",
-      // React 17+ JSX transform
-      "react/react-in-jsx-scope": "off",
-      "react/jsx-uses-react": "off",
-      // Helpful React rules
-      "react/jsx-no-useless-fragment": "warn",
-      // React Hooks
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
     },
   },
   {
@@ -73,6 +59,7 @@ export default [
       "**/*.config.js",
       "**/*.config.mjs",
       "**/*.config.ts",
+      "**/.astro/**",
     ],
   },
 ];

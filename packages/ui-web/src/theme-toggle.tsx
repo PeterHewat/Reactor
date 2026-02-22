@@ -114,12 +114,14 @@ export const ThemeToggle = memo(function ThemeToggle({
 }: ThemeToggleProps) {
   const { resolvedTheme, setMode } = useThemeStore();
 
+  const nextMode = getNextMode(resolvedTheme);
+
   const handleClick = () => {
-    setMode(getNextMode(resolvedTheme));
+    setMode(nextMode);
   };
 
   const mergedLabels = { ...defaultLabels, ...labels };
-  const currentLabel = mergedLabels[resolvedTheme];
+  const targetLabel = mergedLabels[nextMode];
 
   return (
     <button
@@ -133,12 +135,12 @@ export const ThemeToggle = memo(function ThemeToggle({
         showLabel ? sizeWithLabelClasses[size] : sizeClasses[size],
         className,
       )}
-      aria-label={`Current theme: ${currentLabel}. Click to switch theme.`}
-      title={`Theme: ${currentLabel}`}
+      aria-label={`Switch to ${targetLabel} theme.`}
+      title={`Switch to ${targetLabel}`}
       {...props}
     >
-      {ThemeIcons[resolvedTheme]}
-      {showLabel && <span>{currentLabel}</span>}
+      {ThemeIcons[nextMode]}
+      {showLabel && <span>{targetLabel}</span>}
     </button>
   );
 });

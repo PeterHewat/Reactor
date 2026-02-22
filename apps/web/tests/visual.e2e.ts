@@ -47,11 +47,10 @@ test.describe.skip("Visual Regression", () => {
 
   test.describe("Dark Mode", () => {
     test.beforeEach(async () => {
-      // Toggle until we reach dark mode (aria-label contains "Dark")
+      // Toggle until we reach dark mode
       let attempts = 0;
       while (attempts < 2) {
-        const label = await homePage.themeToggle.getAttribute("aria-label");
-        if (label?.includes("Dark")) break;
+        if (await homePage.isDarkMode()) break;
         await homePage.toggleTheme();
         attempts++;
       }

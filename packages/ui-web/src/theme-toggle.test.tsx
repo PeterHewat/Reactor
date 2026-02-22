@@ -26,7 +26,7 @@ describe("ThemeToggle", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders with light mode icon", () => {
+  it("renders with dark mode icon when light", () => {
     mockUseThemeStore.mockReturnValue({
       mode: "light",
       resolvedTheme: "light",
@@ -37,10 +37,10 @@ describe("ThemeToggle", () => {
     render(<ThemeToggle />);
     const button = screen.getByRole("button");
     expect(button).toBeInTheDocument();
-    expect(button).toHaveAttribute("aria-label", expect.stringContaining("Light"));
+    expect(button).toHaveAttribute("aria-label", expect.stringContaining("Dark"));
   });
 
-  it("renders with dark mode icon", () => {
+  it("renders with light mode icon when dark", () => {
     mockUseThemeStore.mockReturnValue({
       mode: "dark",
       resolvedTheme: "dark",
@@ -50,7 +50,7 @@ describe("ThemeToggle", () => {
 
     render(<ThemeToggle />);
     const button = screen.getByRole("button");
-    expect(button).toHaveAttribute("aria-label", expect.stringContaining("Dark"));
+    expect(button).toHaveAttribute("aria-label", expect.stringContaining("Light"));
   });
 
   it("cycles from light to dark on click", async () => {
@@ -90,7 +90,7 @@ describe("ThemeToggle", () => {
     });
 
     render(<ThemeToggle showLabel />);
-    expect(screen.getByText("Light")).toBeInTheDocument();
+    expect(screen.getByText("Dark")).toBeInTheDocument();
   });
 
   it("uses custom labels", () => {
@@ -101,8 +101,8 @@ describe("ThemeToggle", () => {
       updateResolvedTheme: vi.fn(),
     });
 
-    render(<ThemeToggle showLabel labels={{ light: "Claro" }} />);
-    expect(screen.getByText("Claro")).toBeInTheDocument();
+    render(<ThemeToggle showLabel labels={{ dark: "Oscuro" }} />);
+    expect(screen.getByText("Oscuro")).toBeInTheDocument();
   });
 
   it("applies size classes", () => {

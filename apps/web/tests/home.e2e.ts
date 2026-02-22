@@ -48,11 +48,10 @@ test.describe("Home Page", () => {
 
     test("toggles between light and dark mode", async () => {
       // First, ensure we're in a known state by toggling until we reach light mode
-      // (identified by aria-label containing "Light")
+      // (identified by a non-dark mode)
       let attempts = 0;
       while (attempts < 2) {
-        const label = await homePage.themeToggle.getAttribute("aria-label");
-        if (label?.includes("Light")) break;
+        if (!(await homePage.isDarkMode())) break;
         await homePage.toggleTheme();
         attempts++;
       }

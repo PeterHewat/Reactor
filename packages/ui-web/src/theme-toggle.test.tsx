@@ -53,19 +53,6 @@ describe("ThemeToggle", () => {
     expect(button).toHaveAttribute("aria-label", expect.stringContaining("Dark"));
   });
 
-  it("renders with system mode icon", () => {
-    mockUseThemeStore.mockReturnValue({
-      mode: "system",
-      resolvedTheme: "light",
-      setMode: mockSetMode,
-      updateResolvedTheme: vi.fn(),
-    });
-
-    render(<ThemeToggle />);
-    const button = screen.getByRole("button");
-    expect(button).toHaveAttribute("aria-label", expect.stringContaining("System"));
-  });
-
   it("cycles from light to dark on click", async () => {
     const user = userEvent.setup();
     mockUseThemeStore.mockReturnValue({
@@ -80,25 +67,11 @@ describe("ThemeToggle", () => {
     expect(mockSetMode).toHaveBeenCalledWith("dark");
   });
 
-  it("cycles from dark to system on click", async () => {
+  it("cycles from dark to light on click", async () => {
     const user = userEvent.setup();
     mockUseThemeStore.mockReturnValue({
       mode: "dark",
       resolvedTheme: "dark",
-      setMode: mockSetMode,
-      updateResolvedTheme: vi.fn(),
-    });
-
-    render(<ThemeToggle />);
-    await user.click(screen.getByRole("button"));
-    expect(mockSetMode).toHaveBeenCalledWith("system");
-  });
-
-  it("cycles from system to light on click", async () => {
-    const user = userEvent.setup();
-    mockUseThemeStore.mockReturnValue({
-      mode: "system",
-      resolvedTheme: "light",
       setMode: mockSetMode,
       updateResolvedTheme: vi.fn(),
     });

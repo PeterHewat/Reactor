@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, useThemeStore, type ThemeMode } from "@repo/utils";
+import { cn, useThemeStore, type ResolvedTheme } from "@repo/utils";
 import type { ButtonHTMLAttributes, Ref } from "react";
 import { memo } from "react";
 
@@ -75,46 +75,22 @@ const ThemeIcons = {
       <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
     </svg>
   ),
-  system: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      width="20"
-      height="20"
-      aria-hidden="true"
-    >
-      <rect x="2" y="3" width="20" height="14" rx="2" />
-      <path d="M8 21h8M12 17v4" />
-    </svg>
-  ),
 };
 
 const defaultLabels = {
   light: "Light",
   dark: "Dark",
-  system: "System",
 };
 
 /**
- * Get the next theme mode in the cycle: system -> light -> dark -> light...
- * When in system mode, first toggle goes to light.
+ * Get the next theme mode in the cycle: light -> dark -> light...
  */
-function getNextMode(current: ThemeMode): ThemeMode {
-  if (current === "system") {
-    // First toggle from system: go to light
-    return "light";
-  }
-  // Cycle between light and dark
+function getNextMode(current: ResolvedTheme): ResolvedTheme {
   return current === "light" ? "dark" : "light";
 }
 
 /**
- * A button that cycles through theme modes (light, dark).
+ * A button that toggles between light and dark.
  *
  * @example
  * // Icon only
@@ -136,16 +112,14 @@ export const ThemeToggle = memo(function ThemeToggle({
   ref,
   ...props
 }: ThemeToggleProps) {
-  const { mode, resolvedTheme, setMode } = useThemeStore();
+  const { resolvedTheme, setMode } = useThemeStore();
 
   const handleClick = () => {
-    setMode(getNextMode(mode));
+    setMode(getNextMode(resolvedTheme));
   };
 
   const mergedLabels = { ...defaultLabels, ...labels };
-  // When in system mode, show the current resolved theme's icon and label
-  const displayMode = mode === "system" ? resolvedTheme : mode;
-  const currentLabel = mergedLabels[displayMode];
+  const currentLabel = mergedLabels[resolvedTheme];
 
   return (
     <button
@@ -163,7 +137,7 @@ export const ThemeToggle = memo(function ThemeToggle({
       title={`Theme: ${currentLabel}`}
       {...props}
     >
-      {ThemeIcons[displayMode]}
+      {ThemeIcons[resolvedTheme]}
       {showLabel && <span>{currentLabel}</span>}
     </button>
   );

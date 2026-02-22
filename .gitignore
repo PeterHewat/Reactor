@@ -71,6 +71,7 @@ public/themes/
 test-results/
 coverage/
 playwright-report/
+.vitest-reports/
 
 # SSL certificates
 cert.pem

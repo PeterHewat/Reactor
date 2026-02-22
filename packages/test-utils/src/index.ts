@@ -4,4 +4,4 @@
  * @packageDocumentation
  */
 
-export { setupMatchMedia, mockMatchMedia, type MockMatchMedia } from "./mocks/match-media";
+export { mockMatchMedia, setupMatchMedia, type MockMatchMedia } from "./mocks/match-media";

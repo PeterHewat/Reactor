@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../../packages/ui-web/src/**/*.{ts,tsx}";
 
 /*
  * Tailwind CSS v4 Theme Configuration
@@ -42,6 +43,10 @@
  * CSS Variables for light/dark mode
  * These are referenced by the @theme colors above
  */
+html {
+  color-scheme: light;
+}
+
 :root {
   /* Background colors */
   --background: 0 0% 100%;
@@ -78,6 +83,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   /* Background colors */
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
@@ -128,19 +134,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Smooth theme transitions */
 @media (prefers-reduced-motion: no-preference) {
-  :root {
+  html.theme-transition body,
+  html.theme-transition button,
+  html.theme-transition [role="button"],
+  html.theme-transition select {
     transition:
-      background-color 0.2s ease-in-out,
-      color 0.2s ease-in-out;
+      background-color 0.3s ease-in-out,
+      color 0.3s ease-in-out,
+      border-color 0.3s ease-in-out;
   }
-}
-
-/* Interactive element cursor - Tailwind v4 may not generate cursor utilities by default */
-button,
-select,
-[role="button"],
-.cursor-pointer {
-  cursor: pointer;
 }

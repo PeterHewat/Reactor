@@ -148,6 +148,16 @@ interface I18nState {
   setLocale: (locale: Locale) => void;
 }
 
+const RTL_LOCALES: Locale[] = [];
+let hasLangSubscription = false;
+
+function applyDocumentLanguage(locale: Locale): void {
+  if (typeof document === "undefined") return;
+
+  document.documentElement.lang = locale;
+  document.documentElement.dir = RTL_LOCALES.includes(locale) ? "rtl" : "ltr";
+}
+
 /**
  * Zustand store for i18n state management.
  *
@@ -181,11 +191,19 @@ export const useI18nStore = create<I18nState>()(
   persist(
     (set) => ({
       locale: DEFAULT_LOCALE,
-      setLocale: (locale: Locale) => set({ locale }),
+      setLocale: (locale: Locale) => {
+        set({ locale });
+        applyDocumentLanguage(locale);
+      },
     }),
     {
       name: "i18n",
       storage: createJSONStorage(getStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state?.locale) {
+          applyDocumentLanguage(state.locale);
+        }
+      },
     },
   ),
 );
@@ -254,4 +272,15 @@ export function initializeI18n(): void {
     const browserLocale = getBrowserLocale();
     useI18nStore.getState().setLocale(browserLocale);
   }
+
+  if (!hasLangSubscription && typeof window !== "undefined") {
+    hasLangSubscription = true;
+    useI18nStore.subscribe((state, prevState) => {
+      if (state.locale !== prevState.locale) {
+        applyDocumentLanguage(state.locale);
+      }
+    });
+  }
+
+  applyDocumentLanguage(useI18nStore.getState().locale);
 }

@@ -68,7 +68,7 @@ export const LanguageSwitcher = memo(function LanguageSwitcher({
       value={locale}
       onChange={handleChange}
       className={cn(
-        "border-border bg-background text-foreground rounded-md border transition-colors",
+        "border-border bg-background text-foreground rounded-md border",
         "hover:bg-secondary hover:text-secondary-foreground",
         "focus-visible:ring-ring focus:outline-none focus-visible:ring-2",
         "cursor-pointer appearance-none",

@@ -25,6 +25,11 @@ import { initializeTranslations } from "./locales";
 // Initialize theme (applies saved preference or system default)
 const cleanupTheme = initializeTheme();
 
+// Enable theme transitions after first paint to avoid initial-load fade.
+requestAnimationFrame(() => {
+  document.documentElement.classList.add("theme-transition");
+});
+
 // Initialize i18n (loads translations and detects browser locale)
 initializeTranslations();
 initializeI18n();

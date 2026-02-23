@@ -1,16 +1,14 @@
 "use client";
 
 import { cn, useThemeStore, type ResolvedTheme } from "@repo/utils";
-import type { ButtonHTMLAttributes, Ref } from "react";
+import type { ReactNode, Ref } from "react";
 import { memo } from "react";
+import { Button, type ButtonProps } from "./button";
 
 /**
  * Props for the ThemeToggle component.
  */
-export interface ThemeToggleProps extends Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  "children"
-> {
+export interface ThemeToggleProps extends Omit<ButtonProps, "children" | "size"> {
   /** Ref to the button element */
   ref?: Ref<HTMLButtonElement>;
   /** Size of the toggle button */
@@ -39,42 +37,40 @@ const sizeWithLabelClasses = {
 /**
  * Icons for each theme mode.
  * Using simple SVG icons to avoid external dependencies.
- * Using inline styles for dimensions to ensure they work across all Tailwind versions.
+ * Using Tailwind size utilities for consistent rendering.
  */
+function ThemeIcon({ children, className }: { children: ReactNode; className: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn("shrink-0", className)}
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
 const ThemeIcons = {
   light: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      width="20"
-      height="20"
-      aria-hidden="true"
-    >
+    <>
       <circle cx="12" cy="12" r="4" />
       <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
+    </>
   ),
-  dark: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      width="20"
-      height="20"
-      aria-hidden="true"
-    >
-      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-    </svg>
-  ),
+  dark: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />,
+};
+
+const iconSizeClasses = {
+  sm: "h-4 w-4",
+  md: "h-5 w-5",
+  lg: "h-6 w-6",
 };
 
 const defaultLabels = {
@@ -122,14 +118,17 @@ export const ThemeToggle = memo(function ThemeToggle({
 
   const mergedLabels = { ...defaultLabels, ...labels };
   const targetLabel = mergedLabels[nextMode];
+  const iconClassName = iconSizeClasses[size];
 
   return (
-    <button
+    <Button
       ref={ref}
       type="button"
       onClick={handleClick}
+      variant="ghost"
+      size={size}
       className={cn(
-        "border-border bg-background text-foreground inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border transition-colors",
+        "border-border bg-background text-foreground gap-2 border",
         "hover:bg-secondary hover:text-secondary-foreground",
         "focus-visible:ring-ring focus:outline-none focus-visible:ring-2",
         showLabel ? sizeWithLabelClasses[size] : sizeClasses[size],
@@ -139,8 +138,8 @@ export const ThemeToggle = memo(function ThemeToggle({
       title={`Switch to ${targetLabel}`}
       {...props}
     >
-      {ThemeIcons[nextMode]}
+      <ThemeIcon className={iconClassName}>{ThemeIcons[nextMode]}</ThemeIcon>
       {showLabel && <span>{targetLabel}</span>}
-    </button>
+    </Button>
   );
 });

@@ -5,11 +5,11 @@ function App() {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center p-8">
+    <div className="flex min-h-screen flex-col items-center justify-center p-8">
       {/* Header with theme and language controls */}
       <header className="fixed top-4 right-4 flex items-center gap-2">
-        <LanguageSwitcher size="sm" />
-        <ThemeToggle size="sm" />
+        <LanguageSwitcher />
+        <ThemeToggle />
       </header>
 
       {/* Main content */}

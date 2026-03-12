@@ -14,13 +14,13 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.0",
+    "@astrojs/sitemap": "^3.7.1",
     "@repo/ui-marketing": "file:../../packages/ui-marketing",
     "@repo/ui-shared": "file:../../packages/ui-shared"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
-    "astro": "^5.18.0",
-    "tailwindcss": "^4.1.18"
+    "astro": "^6.0.4",
+    "tailwindcss": "^4.2.1"
   }
 }

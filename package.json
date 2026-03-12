@@ -36,23 +36,23 @@
     "update": "npm update --save --ignore-scripts"
   },
   "overrides": {
-    "minimatch": "^10.2.2",
+    "minimatch": "^10.2.4",
     "glob": "^13.0.6",
     "test-exclude": "^8.0.0"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^3.0.0-next.60",
+    "@eslint-react/eslint-plugin": "^3.0.0-rc.1",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^25.3.2",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
-    "@typescript-eslint/parser": "^8.56.1",
-    "@vitest/coverage-v8": "^4.0.18",
-    "eslint": "^10.0.2",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "jsdom": "^28.1.0",
@@ -61,7 +61,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "typescript": "~5.9.3",
-    "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
   }
 }

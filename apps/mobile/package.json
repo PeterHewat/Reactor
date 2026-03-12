@@ -10,8 +10,8 @@
     "test": "echo 'Run after React Native setup'"
   },
   "dependencies": {
-    "@repo/ui-mobile": "file:../../packages/ui-mobile",
-    "@repo/ui-shared": "file:../../packages/ui-shared",
-    "@repo/utils": "file:../../packages/utils"
+    "@repo/ui-mobile": "workspace:*",
+    "@repo/ui-shared": "workspace:*",
+    "@repo/utils": "workspace:*"
   }
 }

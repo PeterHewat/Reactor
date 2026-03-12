@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.3",
-    "@repo/ui-web": "file:../../packages/ui-web",
-    "@repo/utils": "file:../../packages/utils",
+    "@repo/ui-web": "workspace:*",
+    "@repo/utils": "workspace:*",
     "convex": "^1.32.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

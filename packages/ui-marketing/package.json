@@ -17,7 +17,7 @@
     }
   },
   "dependencies": {
-    "@repo/ui-shared": "file:../ui-shared"
+    "@repo/ui-shared": "workspace:*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

@@ -17,7 +17,7 @@
     }
   },
   "dependencies": {
-    "@repo/utils": "file:../utils"
+    "@repo/utils": "workspace:*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

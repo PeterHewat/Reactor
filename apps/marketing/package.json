@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.1",
-    "@repo/ui-marketing": "file:../../packages/ui-marketing",
-    "@repo/ui-shared": "file:../../packages/ui-shared"
+    "@repo/ui-marketing": "workspace:*",
+    "@repo/ui-shared": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",

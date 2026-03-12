@@ -1,6 +1,4 @@
-# GitHub Copilot Instructions
-
-> This file mirrors the project's [AGENTS.md](../AGENTS.md). Keep them in sync.
+# AGENTS.md
 
 ## Project Conventions
 

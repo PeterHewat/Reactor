@@ -154,7 +154,7 @@ jobs:
           # bun run --filter @repo/ui-mobile test
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Marketing Tests (placeholder - runs after Astro setup)
+  # Marketing Tests
   # ─────────────────────────────────────────────────────────────────────────────
   tests-marketing:
     name: Marketing Tests
@@ -168,10 +168,7 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - name: Run marketing tests
-        run: |
-          echo "Marketing tests will run after Astro setup"
-          # Uncomment after setting up Astro:
-          # bun run --filter @repo/marketing test
+        run: bun run --filter @repo/marketing test
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Convex Tests
@@ -219,6 +216,37 @@ jobs:
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-web
           path: apps/web/playwright-report/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Marketing E2E (Playwright)
+  # Runs on: main branch pushes OR PRs with 'e2e' label
+  # ─────────────────────────────────────────────────────────────────────────────
+  marketing-e2e:
+    name: Marketing E2E
+    runs-on: ubuntu-latest
+    needs: [detect-changes, tests-marketing]
+    if: |
+      needs.detect-changes.outputs.marketing == 'true' && (
+        github.ref == 'refs/heads/main' ||
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'e2e'))
+      )
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: bun run e2e:install
+      - name: Run Playwright tests (marketing)
+        run: bun run --filter @repo/marketing e2e
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-marketing
+          path: apps/marketing/playwright-report/
           retention-days: 7

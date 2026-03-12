@@ -40,6 +40,7 @@
         "@repo/ui-shared": "workspace:*",
       },
       "devDependencies": {
+        "@playwright/test": "^1.58.2",
         "@tailwindcss/vite": "^4.2.1",
         "astro": "^6.0.4",
         "tailwindcss": "^4.2.1",

@@ -223,7 +223,7 @@ jobs:
       - name: Run Playwright tests (web)
         run: npm run -w apps/web e2e
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report

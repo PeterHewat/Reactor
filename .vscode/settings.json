@@ -54,7 +54,7 @@
     "**/.astro": true,
     "**/.DS_Store": true,
     "**/build": true,
-    "**/package-lock.json": true,
+    "**/bun.lock": true,
     "**/dist": true,
     "**/node_modules": true
   },
@@ -66,8 +66,9 @@
     "**/convex/_generated": true
   },
   "html.format.wrapAttributes": "force-expand-multiline",
-  "javascript.updateImportsOnFileMove.enabled": "always",
-  "typescript.updateImportsOnFileMove.enabled": "always",
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "npm.packageManager": "bun",
+  "npm.scriptRunner": "bun",
   "i18n-ally.localesPaths": ["locales"],
   "i18n-ally.sourceLanguage": "en",
   "i18n-ally.keystyle": "nested",

@@ -13,19 +13,19 @@
       "webRoot": "${workspaceFolder}/apps/web/src"
     },
     {
-      "command": "npm run -w apps/web dev",
+      "command": "bun run --filter @repo/web dev",
       "name": "Web Dev Server",
       "request": "launch",
       "type": "node-terminal"
     },
     {
-      "command": "npm run -w apps/marketing dev",
+      "command": "bun run --filter @repo/marketing dev",
       "name": "Marketing Dev Server",
       "request": "launch",
       "type": "node-terminal"
     },
     {
-      "command": "npm run -w convex dev",
+      "command": "bun run --filter @repo/convex dev",
       "name": "Convex Dev Server",
       "request": "launch",
       "type": "node-terminal"

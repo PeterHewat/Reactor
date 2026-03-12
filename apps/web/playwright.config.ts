@@ -33,7 +33,7 @@ export default defineConfig({
   ],
   /* Run local dev server before starting tests */
   webServer: {
-    command: "npm run dev",
+    command: "bun run dev",
     url: baseURL,
     reuseExistingServer: !isCI,
     timeout: 120_000,

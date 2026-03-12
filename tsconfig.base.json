@@ -5,7 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ESNext", "DOM"],
-    "types": ["node", "react", "astro"],
+    "types": ["bun-types", "node", "react", "astro"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

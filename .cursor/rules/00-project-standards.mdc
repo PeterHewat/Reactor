@@ -48,7 +48,7 @@ alwaysApply: true
 
 - **Context Analysis**: Reuse utilities in `packages/utils/` rather than recreating.
 - **Platform Awareness**: Identify platform (web, mobile, marketing) and use appropriate packages.
-- **Verification**: Run `npm run lint`, `npm run typecheck`, and tests after changes.
+- **Verification**: Run `bun run lint`, `bun run typecheck`, and tests after changes.
 
 ## Pre-Response Checklist
 

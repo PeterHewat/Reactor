@@ -43,13 +43,12 @@ Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and M
 Install the following software:
 
 - [git-scm](https://git-scm.com/download/)
-- [Node.js](https://nodejs.org/en/) (v24.0.0 or higher)
+- [Bun](https://bun.sh/) (latest version)
 
 Check that tools are available on PATH:
 
 ```bash
-node -v
-npm -v
+bun --version
 ```
 
 Recommended IDEs:
@@ -67,7 +66,7 @@ Clone the repository and install dependencies
 ```bash
 git clone git@github.com:PeterHewat/Reactor.git
 cd reactor
-npm run clean-install
+bun install
 ```
 
 Then follow [docs/setup.md](docs/setup.md) to scaffold your platforms:
@@ -110,43 +109,43 @@ prompts/                  # AI prompt templates
 
 ```bash
 # Quality checks
-npm run lint           # Lint all packages
-npm run format         # Check formatting (Prettier)
-npm run format:fix     # Fix formatting
-npm run typecheck      # Type check all packages
-npm run typecheck:refs # Type check with project references
+bun run lint           # Lint all packages
+bun run format         # Check formatting (Prettier)
+bun run format:fix     # Fix formatting
+bun run typecheck      # Type check all packages
+bun run typecheck:refs # Type check with project references
 
 # Build & clean
-npm run build          # Build all TypeScript projects
-npm run clean          # Clean TypeScript build artifacts
+bun run build          # Build all TypeScript projects
+bun run clean          # Clean TypeScript build artifacts
 
 # Testing
-npm test               # Run all unit tests
-npm run e2e:install    # Install Playwright browsers (one-time)
+bun run test           # Run all unit tests
+bun run e2e:install    # Install Playwright browsers (one-time)
 
 # Dependencies
-npm run install        # Install dependencies (ignore scripts)
-npm run clean-install  # Clean install (npm ci, ignore scripts)
-npm run outdated       # Check for outdated dependencies
-npm run update         # Update dependencies within semver ranges
+bun install            # Install dependencies
+bun run clean-install  # Clean install
+bun run outdated       # Check for outdated dependencies
+bun run update         # Update dependencies within semver ranges
 ```
 
 ### Platform-Specific Commands
 
 ```bash
 # Web app
-npm run -w apps/web dev           # Start dev server
-npm run -w apps/web build         # Production build
-npm run -w apps/web e2e           # Run Playwright tests
+bun run --filter @repo/web dev           # Start dev server
+bun run --filter @repo/web build         # Production build
+bun run --filter @repo/web e2e           # Run Playwright tests
 
 # Mobile app (after React Native setup)
-npm run -w apps/mobile start      # Start Metro bundler
-npm run -w apps/mobile ios        # Run on iOS
-npm run -w apps/mobile android    # Run on Android
+bun run --filter @repo/mobile start      # Start Metro bundler
+bun run --filter @repo/mobile ios        # Run on iOS
+bun run --filter @repo/mobile android    # Run on Android
 
 # Marketing site (after Astro setup)
-npm run -w apps/marketing dev     # Start dev server
-npm run -w apps/marketing build   # Production build
+bun run --filter @repo/marketing dev     # Start dev server
+bun run --filter @repo/marketing build   # Production build
 ```
 
 ## Development Workflow
@@ -172,20 +171,20 @@ Reference: [How to Write a Git Commit Message](https://chris.beams.io/posts/git-
 
 ### Dependencies & Semver
 
-- Check updates: `npm run outdated`
-- Update within declared semver ranges: `npm run update`
+- Check updates: `bun run outdated`
+- Update within declared semver ranges: `bun run update`
 - Semver reminder:
   - `*` latest stable
   - `^` update minor
   - `~` update patch
   - pinned version = no updates
 
-To update outside ranges, edit `package.json` versions, then run `npm update`.
+To update outside ranges, edit `package.json` versions, then run `bun update`.
 
 ### E2E Tests (Playwright)
 
-- **Install Browsers (once):** `npm run e2e:install` (runs Playwright install in `apps/web`)
-- **Run tests locally:** `npm run -w apps/web e2e`
+- **Install Browsers (once):** `bun run e2e:install` (runs Playwright install in `apps/web`)
+- **Run tests locally:** `bun run --filter @repo/web e2e`
 - **CI (opt-in on PRs):** Add the `e2e` label to your Pull Request to run Playwright tests in CI. E2E only runs when frontend changes are detected and the label is present
 - **Naming convention:** Playwright looks for `*.e2e.ts` files
 

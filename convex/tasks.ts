@@ -4,14 +4,14 @@
  * This demonstrates common patterns for CRUD operations with Convex.
  *
  * SETUP INSTRUCTIONS:
- * 1. Run `npx convex dev` from the repository root to scaffold Convex
+ * 1. Run `bunx convex dev` from the repository root to scaffold Convex
  * 2. Rename this file from tasks.example.ts to tasks.ts
  * 3. Uncomment the code below and modify for your domain
  *
  * @see https://docs.convex.dev/functions
  */
 
-// NOTE: Uncomment after running `npx convex dev` and setting up schema.ts
+// NOTE: Uncomment after running `bunx convex dev` and setting up schema.ts
 //
 // import { ConvexError, v } from "convex/values";
 // import { mutation, query } from "./_generated/server";

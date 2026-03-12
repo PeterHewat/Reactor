@@ -52,7 +52,7 @@ cd apps/mobile
 
 # Initialize React Native in the current directory
 # The CLI will create the project structure alongside existing files
-npx @react-native-community/cli init ReactorMobile --template react-native-template-typescript
+bunx @react-native-community/cli init ReactorMobile --template react-native-template-typescript
 
 # Move generated files to current directory and clean up
 mv ReactorMobile/* . 2>/dev/null || true
@@ -69,7 +69,7 @@ The existing `package.json` already has the workspace name and dependencies. Aft
 
 ```bash
 # Install React Native dependencies (these will be added by the CLI)
-npm install react-native
+bun install react-native
 
 # The workspace dependencies are already configured:
 # "@repo/ui-mobile", "@repo/ui-shared", "@repo/utils"
@@ -108,8 +108,8 @@ module.exports = mergeConfig(getDefaultConfig(projectRoot), config);
 
 ```bash
 cd apps/mobile
-npm install nativewind
-npm install -D tailwindcss@^3.4.0
+bun install nativewind
+bun install -D tailwindcss@^3.4.0
 ```
 
 Create `apps/mobile/tailwind.config.js`:
@@ -154,7 +154,7 @@ module.exports = {
 ### 5. Install Clerk (Authentication)
 
 ```bash
-npm install @clerk/clerk-expo
+bun install @clerk/clerk-expo
 ```
 
 Configure in your app entry:
@@ -174,7 +174,7 @@ export default function App() {
 ### 6. Install Convex (Backend)
 
 ```bash
-npm install convex
+bun install convex
 ```
 
 Configure the Convex client:
@@ -192,8 +192,8 @@ export default function App() {
 ### 7. Install React Navigation
 
 ```bash
-npm install @react-navigation/native @react-navigation/native-stack
-npm install react-native-screens react-native-safe-area-context
+bun install @react-navigation/native @react-navigation/native-stack
+bun install react-native-screens react-native-safe-area-context
 ```
 
 For iOS:
@@ -208,23 +208,23 @@ cd ios && pod install && cd ..
 
 ```bash
 # Start Metro bundler
-npm start
+bun start
 
 # In another terminal, run iOS
-npm run ios
+bun run ios
 
 # Or specify a simulator
-npm run ios -- --simulator="iPhone 15 Pro"
+bun run ios -- --simulator="iPhone 15 Pro"
 ```
 
 ### Android
 
 ```bash
 # Start Metro bundler
-npm start
+bun start
 
 # In another terminal, run Android
-npm run android
+bun run android
 ```
 
 ## Project Structure
@@ -253,17 +253,17 @@ apps/mobile/
 ### Unit Tests (Vitest + React Native Testing Library)
 
 ```bash
-npm install -D vitest @testing-library/react-native
+bun install -D vitest @testing-library/react-native
 ```
 
 ### E2E Tests (Detox)
 
 ```bash
 # Install Detox CLI globally
-npm install -g detox-cli
+bun install -g detox-cli
 
 # Install Detox in project
-npm install -D detox
+bun install -D detox
 
 # Initialize Detox
 detox init
@@ -298,7 +298,7 @@ React Native supports Fast Refresh out of the box. Changes to JavaScript/TypeScr
 
 - **React Native Debugger**: Standalone app for debugging
 - **Flipper**: Facebook's mobile debugging platform
-- **Chrome DevTools**: Connect via `npx react-devtools`
+- **Chrome DevTools**: Connect via `bunx react-devtools`
 
 ## Shared Code Usage
 
@@ -368,7 +368,7 @@ Create platform-specific versions:
 
 ```bash
 # Clear Metro cache
-npm start -- --reset-cache
+bun start -- --reset-cache
 
 # Clear watchman
 watchman watch-del-all
@@ -396,7 +396,7 @@ cd ..
 If packages aren't resolving:
 
 1. Check `metro.config.js` has correct paths
-2. Run `npm install` from repository root
+2. Run `bun install` from repository root
 3. Restart Metro bundler with cache clear
 
 ## Resources

@@ -79,11 +79,11 @@ const env = loadEnv({
 
 ```bash
 # Run tests
-npm test -w packages/utils
+bun run --filter @repo/utils test
 
 # Type check
-npm run typecheck -w packages/utils
+bun run --filter @repo/utils typecheck
 
 # Build
-npm run build -w packages/utils
+bun run --filter @repo/utils build
 ```

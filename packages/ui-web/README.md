@@ -52,13 +52,13 @@ Plus all standard `<button>` HTML attributes.
 
 ```bash
 # Run tests
-npm test -w packages/ui-web
+bun run --filter @repo/ui-web test
 
 # Type check
-npm run typecheck -w packages/ui-web
+bun run --filter @repo/ui-web typecheck
 
 # Build
-npm run build -w packages/ui-web
+bun run --filter @repo/ui-web build
 ```
 
 ## Dependencies

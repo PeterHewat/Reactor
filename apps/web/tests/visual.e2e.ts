@@ -6,7 +6,7 @@ import { HomePage } from "./pom/HomePage";
  * These tests capture screenshots and compare them against baseline images.
  *
  * Currently skipped - enable when you have a stable UI to capture baselines.
- * To run: remove .skip and run: npx playwright test --update-snapshots
+ * To run: remove .skip and run: bunx playwright test --update-snapshots
  */
 test.describe.skip("Visual Regression", () => {
   let homePage: HomePage;

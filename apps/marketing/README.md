@@ -6,8 +6,8 @@ The marketing site is an Astro-based static site intended for product landing pa
 
 From the repository root:
 
-- Start dev server: `npm run -w apps/marketing dev`
-- Build production assets: `npm run -w apps/marketing build`
+- Start dev server: `bun run --filter @repo/marketing dev`
+- Build production assets: `bun run --filter @repo/marketing build`
 
 ## Project Structure
 

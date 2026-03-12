@@ -47,6 +47,6 @@ Configure for monorepo in `metro.config.js`:
 
 ## Common Issues
 
-- **Metro cache**: `npm start -- --reset-cache`
+- **Metro cache**: `bun start -- --reset-cache`
 - **iOS pods**: `cd ios && pod deintegrate && pod install`
 - **Android build**: `cd android && ./gradlew clean`

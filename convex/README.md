@@ -7,14 +7,14 @@ This folder contains the Convex backend for the application.
 ### Prerequisites
 
 - A [Convex account](https://dashboard.convex.dev) (free tier available)
-- Node.js 24+ installed
+- [Bun](https://bun.sh/) installed
 
 ### Step 1: Initialize Convex
 
 Run the Convex CLI from the **repository root** (not this folder):
 
 ```bash
-npx convex dev
+bunx convex dev
 ```
 
 This interactive command will:
@@ -102,7 +102,7 @@ To integrate Clerk authentication with Convex:
 ### 1. Install Clerk in the web app
 
 ```bash
-npm install -w apps/web @clerk/clerk-react
+bun install --filter @repo/web @clerk/clerk-react
 ```
 
 ### 2. Configure Clerk Provider

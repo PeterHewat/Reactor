@@ -45,22 +45,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "24.x"
-          cache: "npm"
-      - run: npm ci --ignore-scripts
+          bun-version: latest
+      - run: bun install --frozen-lockfile
 
       - name: Run checks
         run: |
-          npm run lint
-          npm run format
-          npm run typecheck
+          bun run lint
+          bun run format
+          bun run typecheck
 
       - name: Deploy to Convex
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-        run: npx convex deploy --cmd 'npm run build'
+        run: bunx convex deploy --cmd 'bun run build'
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Web Deployment
@@ -75,24 +74,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "24.x"
-          cache: "npm"
-      - run: npm ci --ignore-scripts
+          bun-version: latest
+      - run: bun install --frozen-lockfile
 
       - name: Run checks
         run: |
-          npm run lint
-          npm run format
-          npm run typecheck
-          npm test
+          bun run lint
+          bun run format
+          bun run typecheck
+          bun run test
 
       - name: Build web app
         env:
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-        run: npm run build -w apps/web
+        run: bun run --filter @repo/web build
 
       # ─────────────────────────────────────────────────────────────────────────
       # DEPLOYMENT OPTIONS (uncomment one)
@@ -147,17 +145,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "24.x"
-          cache: "npm"
-      - run: npm ci --ignore-scripts
+          bun-version: latest
+      - run: bun install --frozen-lockfile
 
       - name: Run checks
         run: |
-          npm run lint
-          npm run format
-          npm run typecheck
+          bun run lint
+          bun run format
+          bun run typecheck
 
       - name: Mobile deployment placeholder
         run: |
@@ -194,17 +191,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "24.x"
-          cache: "npm"
-      - run: npm ci --ignore-scripts
+          bun-version: latest
+      - run: bun install --frozen-lockfile
 
       - name: Run checks
         run: |
-          npm run lint
-          npm run format
-          npm run typecheck
+          bun run lint
+          bun run format
+          bun run typecheck
 
       - name: Marketing deployment placeholder
         run: |
@@ -219,7 +215,7 @@ jobs:
 
       # Uncomment after setting up Astro:
       # - name: Build marketing site
-      #   run: npm run build -w apps/marketing
+      #   run: bun run --filter @repo/marketing build
 
       # - name: Deploy to Cloudflare Pages
       #   uses: cloudflare/pages-action@v1

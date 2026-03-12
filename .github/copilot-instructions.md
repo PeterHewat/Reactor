@@ -92,9 +92,9 @@
 
 After changes, run:
 
-- `npm run lint`
-- `npm run typecheck`
-- `npm test`
+- `bun run lint`
+- `bun run typecheck`
+- `bun run test`
 
 ## Pre-Response Checklist
 

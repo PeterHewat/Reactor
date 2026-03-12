@@ -21,10 +21,10 @@ The web app is already scaffolded and ready to use. Dependencies are managed at 
 To start development:
 
 ```bash
-npm run -w apps/web dev
+bun run --filter @repo/web dev
 ```
 
-> **Note**: If creating a new web app from scratch, use `npm create vite@latest` with the `react-ts` template, then configure Tailwind CSS v4 with `@tailwindcss/postcss`.
+> **Note**: If creating a new web app from scratch, use `bun create vite@latest` with the `react-ts` template, then configure Tailwind CSS v4 with `@tailwindcss/postcss`.
 
 ## Scaffold Mobile App (React Native CLI)
 
@@ -36,13 +36,13 @@ The mobile app requires React Native CLI setup. See `apps/mobile/README.md` for 
 cd apps/mobile
 
 # Initialize React Native in a temp directory, then move files
-npx @react-native-community/cli init ReactorMobile --template react-native-template-typescript
+bunx @react-native-community/cli init ReactorMobile --template react-native-template-typescript
 mv ReactorMobile/* . 2>/dev/null || true
 mv ReactorMobile/.* . 2>/dev/null || true
 rm -rf ReactorMobile
 
 # Install React Native (merges with existing package.json)
-npm install react-native
+bun install react-native
 ```
 
 ### Key Configuration Steps
@@ -65,16 +65,16 @@ The marketing site uses Astro for static site generation. See `apps/marketing/RE
 cd apps/marketing
 
 # Initialize Astro in a temp directory, then move files
-npm create astro@latest temp-astro -- --template minimal --typescript strict
+bun create astro@latest temp-astro -- --template minimal --typescript strict
 mv temp-astro/* . 2>/dev/null || true
 mv temp-astro/.* . 2>/dev/null || true
 rm -rf temp-astro
 
 # Install Astro (merges with existing package.json)
-npm install astro
+bun install astro
 
 # Add Tailwind CSS
-npx astro add tailwind
+bunx astro add tailwind
 ```
 
 ### Key Configuration Steps
@@ -90,7 +90,7 @@ See `apps/marketing/README.md` for complete setup instructions.
 The `convex/` folder contains a minimal placeholder. Run the Convex CLI from the repository root to initialize your project:
 
 ```bash
-npx convex dev
+bunx convex dev
 ```
 
 This will:
@@ -104,7 +104,7 @@ This will:
 
 After initializing Convex, integrate Clerk for authentication:
 
-1. Install Clerk: `npm install -w apps/web @clerk/clerk-react`
+1. Install Clerk: `bun install --filter @repo/web @clerk/clerk-react`
 2. Configure `ClerkProvider` and `ConvexProviderWithClerk` in your app entry
 3. Create `convex/auth.config.ts` with your Clerk domain
 4. Use `ctx.auth.getUserIdentity()` in Convex functions to verify users
@@ -236,7 +236,7 @@ import { cn, loadEnv } from "@repo/utils";
 
 ### Convex Schema Example
 
-After running `npx convex dev`, create `convex/schema.ts` and validate inputs with `v`. Example:
+After running `bunx convex dev`, create `convex/schema.ts` and validate inputs with `v`. Example:
 
 ```ts
 // convex/schema.ts
@@ -279,7 +279,7 @@ On the client, use `useQuery`/`useMutation` for data and `useConvexAuth()` for a
 Unit test Convex functions with `convex-test`:
 
 ```bash
-npm install -D convex-test
+bun install -D convex-test
 ```
 
 ```ts

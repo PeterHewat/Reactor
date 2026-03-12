@@ -26,14 +26,14 @@ This package provides:
 
 ```bash
 # From repository root
-npm create astro@latest apps/marketing -- --template minimal --typescript strict
+bun create astro@latest apps/marketing -- --template minimal --typescript strict
 ```
 
 ### 2. Install Tailwind CSS
 
 ```bash
 cd apps/marketing
-npx astro add tailwind
+bunx astro add tailwind
 ```
 
 ### 3. Configure Tailwind for Monorepo
@@ -273,13 +273,13 @@ import Layout from "../layouts/Layout.astro";
 
 ```bash
 # Type check
-npm run typecheck -w packages/ui-marketing
+bun run --filter @repo/ui-marketing typecheck
 
 # Build
-npm run build -w packages/ui-marketing
+bun run --filter @repo/ui-marketing build
 
 # Lint
-npm run lint -w packages/ui-marketing
+bun run --filter @repo/ui-marketing lint
 ```
 
 ## Dependencies

@@ -5,9 +5,6 @@
   "author": "Peter Hewat <peter.hewat@gmail.com>",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=24.0.0"
-  },
   "workspaces": [
     "apps/web",
     "apps/mobile",
@@ -28,12 +25,12 @@
     "typecheck:refs": "tsc -b",
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "test": "npm run test --workspaces --if-present",
-    "e2e:install": "npx -w apps/web playwright install chromium",
-    "install": "npm i --ignore-scripts",
-    "clean-install": "npm ci --ignore-scripts",
-    "outdated": "npm outdated",
-    "update": "npm update --save --ignore-scripts"
+    "test": "bun run --filter '*' test",
+    "e2e:install": "bun --filter @repo/web playwright install chromium",
+    "install:all": "bun install",
+    "clean-install": "bun install",
+    "outdated": "bun outdated",
+    "update": "bun update"
   },
   "overrides": {
     "minimatch": "^10.2.4",
@@ -46,12 +43,14 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/bun": "^1.3.10",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
     "@vitest/coverage-v8": "^4.1.0",
+    "bun-types": "^1.3.10",
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",

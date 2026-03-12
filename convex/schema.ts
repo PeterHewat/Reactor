@@ -4,14 +4,14 @@
  * This file defines your database tables and their structure.
  *
  * SETUP INSTRUCTIONS:
- * 1. Run `npx convex dev` from the repository root to scaffold Convex
+ * 1. Run `bunx convex dev` from the repository root to scaffold Convex
  * 2. Rename this file from schema.example.ts to schema.ts
  * 3. Modify the schema to match your domain
  *
  * @see https://docs.convex.dev/database/schemas
  */
 
-// NOTE: Uncomment and modify after running `npx convex dev`
+// NOTE: Uncomment and modify after running `bunx convex dev`
 //
 // import { defineSchema, defineTable } from "convex/server";
 // import { v } from "convex/values";

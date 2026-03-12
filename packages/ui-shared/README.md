@@ -174,11 +174,11 @@ Use the same CSS custom properties approach as web, or import tokens directly in
 
 ```bash
 # Type check
-npm run typecheck -w packages/ui-shared
+bun run --filter @repo/ui-shared typecheck
 
 # Build
-npm run build -w packages/ui-shared
+bun run --filter @repo/ui-shared build
 
 # Lint
-npm run lint -w packages/ui-shared
+bun run --filter @repo/ui-shared lint
 ```

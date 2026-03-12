@@ -20,8 +20,8 @@ Before implementing components, ensure `apps/mobile/` is set up with:
 
 ```bash
 # In apps/mobile/
-npm install nativewind
-npm install -D tailwindcss@^3.4.0
+bun install nativewind
+bun install -D tailwindcss@^3.4.0
 ```
 
 ### 2. Configure Tailwind for React Native
@@ -230,13 +230,13 @@ test("Button renders and handles press", () => {
 
 ```bash
 # Type check
-npm run typecheck -w packages/ui-mobile
+bun run --filter @repo/ui-mobile typecheck
 
 # Build
-npm run build -w packages/ui-mobile
+bun run --filter @repo/ui-mobile build
 
 # Lint
-npm run lint -w packages/ui-mobile
+bun run --filter @repo/ui-mobile lint
 ```
 
 ## Dependencies

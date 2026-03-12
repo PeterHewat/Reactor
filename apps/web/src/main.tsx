@@ -8,7 +8,7 @@ import { initializeTranslations } from "./locales";
 // ============================================================================
 // CONVEX + CLERK SETUP (uncomment when ready)
 // ============================================================================
-// 1. Run `npx convex dev` from the repository root to scaffold Convex
+// 1. Run `bunx convex dev` from the repository root to scaffold Convex
 // 2. Create a Clerk account and get your publishable key
 // 3. Add environment variables to apps/web/.env.local:
 //    VITE_CONVEX_URL=https://your-project.convex.cloud

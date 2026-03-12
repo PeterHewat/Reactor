@@ -34,8 +34,8 @@ const { title } = Astro.props;
 ## SEO
 
 - Use `<head>` for meta tags
-- Add sitemap: `npx astro add sitemap`
-- Add RSS: `npx astro add rss`
+- Add sitemap: `bunx astro add sitemap`
+- Add RSS: `bunx astro add rss`
 - Use canonical URLs
 
 ## Static Generation
@@ -59,4 +59,4 @@ const { title } = Astro.props;
 
 - Builds to `dist/` folder
 - Deploy to any static host
-- Use `npx astro add vercel/netlify/cloudflare` for adapters
+- Use `bunx astro add vercel/netlify/cloudflare` for adapters

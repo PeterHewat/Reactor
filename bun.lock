@@ -1805,6 +1805,22 @@
 
     "@react-native/dev-middleware/ws": ["ws@7.5.10", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": "^5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-+dbF1tHwZpXcbOJdVOkzLDxZP1ailvSxM6ZweXTegylPny803bFhA+vqBYw4s31NSAk4S2Qz+AKXK9a4wkdjcQ=="],
 
+    "@repo/marketing/@repo/ui-shared": ["@repo/ui-shared@file:packages/ui-shared", {}],
+
+    "@repo/mobile/@repo/ui-shared": ["@repo/ui-shared@file:packages/ui-shared", {}],
+
+    "@repo/mobile/@repo/utils": ["@repo/utils@file:packages/utils", { "dependencies": { "tailwind-merge": "^3.5.0", "zustand": "^5.0.11" } }],
+
+    "@repo/ui-marketing/@repo/ui-shared": ["@repo/ui-shared@file:packages/ui-shared", {}],
+
+    "@repo/ui-mobile/@repo/ui-shared": ["@repo/ui-shared@file:packages/ui-shared", {}],
+
+    "@repo/ui-mobile/@repo/utils": ["@repo/utils@file:packages/utils", { "dependencies": { "tailwind-merge": "^3.5.0", "zustand": "^5.0.11" } }],
+
+    "@repo/ui-web/@repo/utils": ["@repo/utils@file:packages/utils", { "dependencies": { "tailwind-merge": "^3.5.0", "zustand": "^5.0.11" } }],
+
+    "@repo/web/@repo/utils": ["@repo/utils@file:packages/utils", { "dependencies": { "tailwind-merge": "^3.5.0", "zustand": "^5.0.11" } }],
+
     "@rollup/pluginutils/estree-walker": ["estree-walker@2.0.2", "", {}, "sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w=="],
 
     "@tailwindcss/node/lightningcss": ["lightningcss@1.31.1", "", { "dependencies": { "detect-libc": "^2.0.3" }, "optionalDependencies": { "lightningcss-android-arm64": "1.31.1", "lightningcss-darwin-arm64": "1.31.1", "lightningcss-darwin-x64": "1.31.1", "lightningcss-freebsd-x64": "1.31.1", "lightningcss-linux-arm-gnueabihf": "1.31.1", "lightningcss-linux-arm64-gnu": "1.31.1", "lightningcss-linux-arm64-musl": "1.31.1", "lightningcss-linux-x64-gnu": "1.31.1", "lightningcss-linux-x64-musl": "1.31.1", "lightningcss-win32-arm64-msvc": "1.31.1", "lightningcss-win32-x64-msvc": "1.31.1" } }, "sha512-l51N2r93WmGUye3WuFoN5k10zyvrVs0qfKBhyC5ogUQ6Ew6JUSswh78mbSO+IU3nTWsyOArqPCcShdQSadghBQ=="],

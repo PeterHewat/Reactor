@@ -1805,7 +1805,11 @@
 
     "@react-native/dev-middleware/ws": ["ws@7.5.10", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": "^5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-+dbF1tHwZpXcbOJdVOkzLDxZP1ailvSxM6ZweXTegylPny803bFhA+vqBYw4s31NSAk4S2Qz+AKXK9a4wkdjcQ=="],
 
+    "@repo/marketing/@repo/ui-marketing": ["@repo/ui-marketing@file:packages/ui-marketing", { "dependencies": { "@repo/ui-shared": "file:../ui-shared" }, "peerDependencies": { "astro": "^6.0.4" } }],
+
     "@repo/marketing/@repo/ui-shared": ["@repo/ui-shared@file:packages/ui-shared", {}],
+
+    "@repo/mobile/@repo/ui-mobile": ["@repo/ui-mobile@file:packages/ui-mobile", { "dependencies": { "@repo/ui-shared": "file:../ui-shared", "@repo/utils": "file:../utils" }, "peerDependencies": { "react": "^19.2.4", "react-native": "^0.84.1" } }],
 
     "@repo/mobile/@repo/ui-shared": ["@repo/ui-shared@file:packages/ui-shared", {}],
 
@@ -1818,6 +1822,8 @@
     "@repo/ui-mobile/@repo/utils": ["@repo/utils@file:packages/utils", { "dependencies": { "tailwind-merge": "^3.5.0", "zustand": "^5.0.11" } }],
 
     "@repo/ui-web/@repo/utils": ["@repo/utils@file:packages/utils", { "dependencies": { "tailwind-merge": "^3.5.0", "zustand": "^5.0.11" } }],
+
+    "@repo/web/@repo/ui-web": ["@repo/ui-web@file:packages/ui-web", { "dependencies": { "@repo/utils": "file:../utils" }, "peerDependencies": { "react": "^19.2.4", "react-dom": "^19.2.4" } }],
 
     "@repo/web/@repo/utils": ["@repo/utils@file:packages/utils", { "dependencies": { "tailwind-merge": "^3.5.0", "zustand": "^5.0.11" } }],
 
@@ -1964,6 +1970,14 @@
     "@istanbuljs/load-nyc-config/find-up/locate-path": ["locate-path@5.0.0", "", { "dependencies": { "p-locate": "^4.1.0" } }, "sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g=="],
 
     "@istanbuljs/load-nyc-config/js-yaml/argparse": ["argparse@1.0.10", "", { "dependencies": { "sprintf-js": "~1.0.2" } }, "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg=="],
+
+    "@repo/marketing/@repo/ui-marketing/@repo/ui-shared": ["@repo/ui-shared@file:packages\\ui-shared", {}],
+
+    "@repo/mobile/@repo/ui-mobile/@repo/ui-shared": ["@repo/ui-shared@file:packages\\ui-shared", {}],
+
+    "@repo/mobile/@repo/ui-mobile/@repo/utils": ["@repo/utils@file:packages\\utils", {}],
+
+    "@repo/web/@repo/ui-web/@repo/utils": ["@repo/utils@file:packages\\utils", {}],
 
     "@tailwindcss/node/lightningcss/lightningcss-android-arm64": ["lightningcss-android-arm64@1.31.1", "", { "os": "android", "cpu": "arm64" }, "sha512-HXJF3x8w9nQ4jbXRiNppBCqeZPIAfUo8zE/kOEGbW5NZvGc/K7nMxbhIr+YlFlHW5mpbg/YFPdbnCh1wAXCKFg=="],
 

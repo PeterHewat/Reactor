@@ -11,6 +11,6 @@
     "test": "echo \"No tests configured for convex yet\" && exit 0"
   },
   "dependencies": {
-    "convex": "^1.32.0"
+    "convex": "^1.33.1"
   }
 }

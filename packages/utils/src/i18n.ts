@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { getLocalStorageOrMemory } from "./storage";
 
 /**
  * Supported locales.
@@ -167,26 +168,6 @@ function applyDocumentLanguage(locale: Locale): void {
  * const { locale, setLocale } = useI18nStore();
  * setLocale("es");
  */
-const memoryStorage = (() => {
-  const store = new Map<string, string>();
-  return {
-    getItem: (name: string) => store.get(name) ?? null,
-    setItem: (name: string, value: string) => {
-      store.set(name, value);
-    },
-    removeItem: (name: string) => {
-      store.delete(name);
-    },
-  };
-})();
-
-const getStorage = () => {
-  if (typeof window !== "undefined" && window.localStorage) {
-    return window.localStorage;
-  }
-  return memoryStorage;
-};
-
 export const useI18nStore = create<I18nState>()(
   persist(
     (set) => ({
@@ -198,7 +179,7 @@ export const useI18nStore = create<I18nState>()(
     }),
     {
       name: "i18n",
-      storage: createJSONStorage(getStorage),
+      storage: createJSONStorage(getLocalStorageOrMemory),
       onRehydrateStorage: () => (state) => {
         if (state?.locale) {
           applyDocumentLanguage(state.locale);
@@ -266,7 +247,7 @@ export function getBrowserLocale(): Locale {
  * Only sets locale if user hasn't already set a preference.
  */
 export function initializeI18n(): void {
-  const storage = getStorage();
+  const storage = getLocalStorageOrMemory();
   const stored = storage.getItem("i18n");
   if (!stored) {
     const browserLocale = getBrowserLocale();

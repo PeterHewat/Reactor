@@ -47,19 +47,10 @@ export default [
       ],
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-explicit-any": "error",
-      "no-console": "off",
+      "no-console": "warn",
     },
   },
   {
-    ignores: [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/build/**",
-      "**/coverage/**",
-      "**/*.config.js",
-      "**/*.config.mjs",
-      "**/*.config.ts",
-      "**/.astro/**",
-    ],
+    ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/coverage/**", "**/.astro/**"],
   },
 ];

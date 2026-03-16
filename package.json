@@ -28,7 +28,7 @@
     "test": "bun run --filter '*' test",
     "e2e:install": "bunx playwright install chromium",
     "install:all": "bun install",
-    "clean-install": "bun install",
+    "clean-install": "rm -rf node_modules && bun install",
     "outdated": "bun outdated",
     "update": "bun update"
   },

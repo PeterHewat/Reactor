@@ -47,8 +47,4 @@ What becomes easier or more difficult to do and any risks introduced by this cha
 
 ## Index of ADRs
 
-As you create ADRs, list them here:
-
-- ADR-001: [Title] - [Status] - [Date]
-- ADR-002: [Title] - [Status] - [Date]
-- ...
+- [ADR-001: Convex as the Backend over tRPC/Supabase](001-convex-over-trpc-supabase.md) - Accepted - 2026-03-16

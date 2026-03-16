@@ -10,7 +10,7 @@ export default defineConfig({
   site: "https://reactor.dev",
 
   vite: {
-    // @ts-ignore - Type mismatch due to Vite version differences in monorepo
+    // @ts-expect-error - Type mismatch due to Vite version differences in monorepo
     plugins: [tailwindcss()],
   },
 

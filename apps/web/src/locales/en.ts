@@ -1,9 +1,13 @@
 import type { TranslationDictionary } from "@repo/utils";
 
 /**
- * English translations.
+ * English translations — the canonical source of truth for all translation keys.
+ *
+ * Other locale files must match this structure exactly.
+ * The `as const satisfies` pattern preserves literal types for key extraction
+ * while ensuring the shape conforms to `TranslationDictionary`.
  */
-const en: TranslationDictionary = {
+const en = {
   common: {
     welcome: "Welcome",
     loading: "Loading...",
@@ -47,6 +51,6 @@ const en: TranslationDictionary = {
     serverError: "Server error. Please try again later.",
     networkError: "Network error. Please check your connection.",
   },
-};
+} as const satisfies TranslationDictionary;
 
 export default en;

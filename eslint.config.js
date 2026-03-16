@@ -1,42 +1,27 @@
 import eslintReact from "@eslint-react/eslint-plugin";
 import eslint from "@eslint/js";
-import tseslint from "@typescript-eslint/eslint-plugin";
-import tsparser from "@typescript-eslint/parser";
 import prettierConfig from "eslint-config-prettier";
 import prettierPlugin from "eslint-plugin-prettier";
+import { defineConfig, globalIgnores } from "eslint/config";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
-export default [
+export default defineConfig(
   eslint.configs.recommended,
+  tseslint.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
     languageOptions: {
-      parser: tsparser,
-      parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-      },
       globals: {
-        console: "readonly",
-        process: "readonly",
-        Buffer: "readonly",
-        fetch: "readonly",
-        performance: "readonly",
-        setTimeout: "readonly",
-        globalThis: "readonly",
-        URL: "readonly",
-        Request: "readonly",
-        Response: "readonly",
-        document: "readonly",
-        window: "readonly",
+        ...globals.browser,
+        ...globals.node,
       },
     },
     plugins: {
-      "@typescript-eslint": tseslint,
       ...eslintReact.configs.recommended.plugins,
       prettier: prettierPlugin,
     },
     rules: {
-      ...tseslint.configs.recommended.rules,
       ...eslintReact.configs.recommended.rules,
       ...prettierConfig.rules,
       "prettier/prettier": "error",
@@ -50,7 +35,11 @@ export default [
       "no-console": "warn",
     },
   },
-  {
-    ignores: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/coverage/**", "**/.astro/**"],
-  },
-];
+  globalIgnores([
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/.astro/**",
+  ]),
+);

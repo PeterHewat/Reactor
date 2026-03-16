@@ -21,8 +21,7 @@
     "@repo/utils": "workspace:*",
     "convex": "^1.33.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "zustand": "^5.0.12"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

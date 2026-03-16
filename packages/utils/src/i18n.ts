@@ -32,6 +32,23 @@ export interface TranslationDictionary {
 }
 
 /**
+ * Recursively flattens a nested translation dictionary type into a union
+ * of dot-notation key strings.
+ *
+ * Use with `as const satisfies TranslationDictionary` on your canonical
+ * locale to derive a compile-time union of every valid translation key.
+ *
+ * @example
+ * const en = { home: { title: "Hi" } } as const satisfies TranslationDictionary;
+ * type Key = FlattenKeys<typeof en>; // "home.title"
+ */
+export type FlattenKeys<T extends TranslationDictionary, Prefix extends string = ""> = {
+  [K in keyof T & string]: T[K] extends TranslationDictionary
+    ? FlattenKeys<T[K], `${Prefix}${K}.`>
+    : `${Prefix}${K}`;
+}[keyof T & string];
+
+/**
  * Flattened translations with dot-notation keys.
  */
 export type FlatTranslations = Record<string, string>;

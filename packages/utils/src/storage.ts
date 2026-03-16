@@ -33,9 +33,16 @@ export function createMemoryStorage(): StorageLike {
   };
 }
 
+/** Cached memory storage singleton for SSR/test environments. */
+let memoryStorageSingleton: StorageLike | null = null;
+
 /**
- * Returns `localStorage` when available, otherwise falls back to an
- * in-memory storage implementation.
+ * Returns `localStorage` when available, otherwise falls back to a
+ * singleton in-memory storage implementation.
+ *
+ * The memory fallback is cached so that repeated calls in SSR or test
+ * environments share the same store instance, preventing data loss
+ * between calls.
  *
  * Safe to call in SSR environments (e.g., during Vite SSR or Node tests).
  *
@@ -49,5 +56,8 @@ export function getLocalStorageOrMemory(): StorageLike {
   if (typeof window !== "undefined" && window.localStorage) {
     return window.localStorage;
   }
-  return createMemoryStorage();
+  if (!memoryStorageSingleton) {
+    memoryStorageSingleton = createMemoryStorage();
+  }
+  return memoryStorageSingleton;
 }

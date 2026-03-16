@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "@repo/ui-web";
 import { initializeI18n, initializeTheme } from "@repo/utils";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -42,9 +43,11 @@ if (!root) throw new Error("Root element not found");
 // ============================================================================
 // createRoot(root).render(
 //   <StrictMode>
-//     <ConvexProvider client={convex}>
-//       <App />
-//     </ConvexProvider>
+//     <ErrorBoundary>
+//       <ConvexProvider client={convex}>
+//         <App />
+//       </ConvexProvider>
+//     </ErrorBoundary>
 //   </StrictMode>,
 // );
 
@@ -53,11 +56,13 @@ if (!root) throw new Error("Root element not found");
 // ============================================================================
 // createRoot(root).render(
 //   <StrictMode>
-//     <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string}>
-//       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-//         <App />
-//       </ConvexProviderWithClerk>
-//     </ClerkProvider>
+//     <ErrorBoundary>
+//       <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string}>
+//         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+//           <App />
+//         </ConvexProviderWithClerk>
+//       </ClerkProvider>
+//     </ErrorBoundary>
 //   </StrictMode>,
 // );
 
@@ -66,7 +71,9 @@ if (!root) throw new Error("Root element not found");
 // ============================================================================
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
 

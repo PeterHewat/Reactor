@@ -78,7 +78,7 @@ export {
   t,
   useI18nStore,
 } from "./i18n";
-export type { FlatTranslations, Locale, TranslationDictionary } from "./i18n";
+export type { FlattenKeys, FlatTranslations, Locale, TranslationDictionary } from "./i18n";
 
 // i18n React hook
 export { useTranslation } from "./use-translation";

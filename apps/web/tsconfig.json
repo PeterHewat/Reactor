@@ -5,5 +5,10 @@
     "noEmit": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "setupTests.ts"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["dist", "node_modules"],
+  "references": [
+    { "path": "../../packages/ui-web" },
+    { "path": "../../packages/utils" },
+    { "path": "../../packages/test-utils" }
+  ]
 }

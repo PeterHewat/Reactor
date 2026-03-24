@@ -1,11 +1,9 @@
-import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
-    environment: "jsdom",
+    environment: "happy-dom",
     globals: true,
     setupFiles: ["./setupTests.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
@@ -23,6 +21,6 @@ export default defineConfig({
       "@repo/ui-web": path.resolve(__dirname, "../../packages/ui-web/src/index.ts"),
       "@repo/test-utils": path.resolve(__dirname, "../../packages/test-utils/src/index.ts"),
     },
-    dedupe: ["react", "react-dom", "zustand"],
+    dedupe: ["react", "react-dom"],
   },
 });

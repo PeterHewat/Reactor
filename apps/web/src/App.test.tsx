@@ -1,12 +1,35 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import { initializeTranslations } from "./locales";
+
+// Mock @repo/utils to avoid useSyncExternalStore dispatcher issues in tests
+vi.mock("@repo/utils", async () => {
+  const actual = await vi.importActual("@repo/utils");
+  return {
+    ...actual,
+    useTranslation: vi.fn(),
+  };
+});
+
+import { useTranslation } from "@repo/utils";
+const mockUseTranslation = vi.mocked(useTranslation);
 
 describe("App", () => {
   beforeEach(() => {
-    // Initialize translations before each test
-    initializeTranslations();
+    // Mock translation function with English translations
+    mockUseTranslation.mockReturnValue({
+      t: (key: string) => {
+        const translations: Record<string, string> = {
+          "home.title": "Reactor",
+          "home.subtitle": "A modern React monorepo starter",
+          "home.viewOnGitHub": "View on GitHub",
+          "home.features": "Features",
+        };
+        return translations[key] || key;
+      },
+      locale: "en",
+      setLocale: vi.fn(),
+    });
   });
 
   it("renders the heading", () => {

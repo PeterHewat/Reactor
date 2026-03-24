@@ -22,8 +22,6 @@ interface UseTranslationReturn {
 /**
  * React hook for translations with automatic re-rendering on locale change.
  *
- * Uses useSyncExternalStore for optimal performance and concurrent mode compatibility.
- *
  * @returns Translation utilities and current locale
  *
  * @example
@@ -42,7 +40,6 @@ interface UseTranslationReturn {
  * }
  */
 export function useTranslation(): UseTranslationReturn {
-  // Subscribe to locale changes using useSyncExternalStore for React 18+ compatibility
   const locale = useSyncExternalStore(
     useI18nStore.subscribe,
     () => useI18nStore.getState().locale,

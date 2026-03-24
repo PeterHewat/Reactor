@@ -3,8 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // Use jsdom for theme and i18n tests that need window/localStorage
-    environment: "jsdom",
+    environment: "happy-dom",
     globals: true,
     setupFiles: ["./setupTests.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
@@ -20,5 +19,6 @@ export default defineConfig({
     alias: {
       "@repo/test-utils": path.resolve(__dirname, "../test-utils/src/index.ts"),
     },
+    dedupe: ["react", "react-dom"],
   },
 });

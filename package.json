@@ -35,7 +35,9 @@
   "overrides": {
     "minimatch": "^10.2.4",
     "glob": "^13.0.6",
-    "test-exclude": "^8.0.0"
+    "test-exclude": "^8.0.0",
+    "h3": "^1.15.9",
+    "flatted": "^3.4.2"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^3.0.0",

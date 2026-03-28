@@ -37,7 +37,11 @@
     "glob": "^13.0.6",
     "test-exclude": "^8.0.0",
     "h3": "^1.15.9",
-    "flatted": "^3.4.2"
+    "flatted": "^3.4.2",
+    "smol-toml": "^1.6.1",
+    "yaml": "^2.8.3",
+    "brace-expansion": "^5.0.5",
+    "picomatch": "^2.3.2"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^3.0.0",

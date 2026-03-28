@@ -2,6 +2,8 @@
 
 Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and Marketing (Astro) with Convex backend and Clerk authentication.
 
+[![CI](https://github.com/PeterHewat/Reactor/actions/workflows/ci.yml/badge.svg)](https://github.com/PeterHewat/Reactor/actions/workflows/ci.yml)
+
 ## Tech Stack
 
 ### Applications

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and Marketing (Astro) with Convex + Clerk + Tailwind CSS",
   "author": "Peter Hewat <peter.hewat@gmail.com>",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "workspaces": [

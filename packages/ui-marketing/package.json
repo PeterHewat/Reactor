@@ -25,6 +25,6 @@
     "lint": "eslint ."
   },
   "peerDependencies": {
-    "astro": "^6.1.3"
+    "astro": "^6.1.9"
   }
 }

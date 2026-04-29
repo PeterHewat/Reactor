@@ -45,7 +45,7 @@
     "picomatch": "^4.0.4"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^4.2.3",
+    "@eslint-react/eslint-plugin": "^5.6.0",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -62,7 +62,7 @@
     "globals": "^17.5.0",
     "happy-dom": "^20.9.0",
     "prettier": "^3.8.3",
-    "prettier-plugin-tailwindcss": "^0.7.3",
+    "prettier-plugin-tailwindcss": "^0.8.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "typescript": "~6.0.3",

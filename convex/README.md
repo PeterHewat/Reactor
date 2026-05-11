@@ -102,7 +102,7 @@ To integrate Clerk authentication with Convex:
 ### 1. Install Clerk in the web app
 
 ```bash
-bun install --filter @repo/web @clerk/clerk-react
+bun install --filter @repo/web @clerk/react
 ```
 
 ### 2. Configure Clerk Provider
@@ -110,7 +110,7 @@ bun install --filter @repo/web @clerk/clerk-react
 In `apps/web/src/main.tsx`:
 
 ```tsx
-import { ClerkProvider, useAuth } from "@clerk/clerk-react";
+import { ClerkProvider, useAuth } from "@clerk/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
 

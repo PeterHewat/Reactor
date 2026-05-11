@@ -104,7 +104,7 @@ This will:
 
 After initializing Convex, integrate Clerk for authentication:
 
-1. Install Clerk: `bun install --filter @repo/web @clerk/clerk-react`
+1. Install Clerk: `bun install --filter @repo/web @clerk/react`
 2. Configure `ClerkProvider` and `ConvexProviderWithClerk` in your app entry
 3. Create `convex/auth.config.ts` with your Clerk domain
 4. Use `ctx.auth.getUserIdentity()` in Convex functions to verify users

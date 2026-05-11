@@ -17,7 +17,7 @@ import { initializeTranslations } from "./locales";
 // 4. Uncomment the imports and providers below
 // ============================================================================
 
-// import { ClerkProvider, useAuth } from "@clerk/clerk-react";
+// import { ClerkProvider, useAuth } from "@clerk/react";
 // import { ConvexProviderWithClerk } from "convex/react-clerk";
 // import { ConvexReactClient } from "convex/react";
 

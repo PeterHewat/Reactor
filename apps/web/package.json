@@ -16,19 +16,19 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@clerk/react": "^6.6.2",
+    "@clerk/react": "^6.6.6",
     "@repo/ui-web": "workspace:*",
     "@repo/utils": "workspace:*",
-    "convex": "^1.38.0",
+    "convex": "^1.39.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.3.0",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.0",
-    "postcss": "^8.5.14",
+    "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0"
   }
 }

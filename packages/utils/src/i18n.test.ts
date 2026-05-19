@@ -11,6 +11,7 @@ import {
   t,
   useI18nStore,
 } from "./i18n";
+import { clearPersistedStorage, getLocalStorageOrMemory } from "./storage";
 
 describe("i18n utilities", () => {
   beforeEach(() => {
@@ -18,8 +19,7 @@ describe("i18n utilities", () => {
     useI18nStore.setState({ locale: DEFAULT_LOCALE });
     // Clear translations
     clearTranslations();
-    // Clear localStorage
-    localStorage.clear();
+    clearPersistedStorage();
   });
 
   afterEach(() => {
@@ -179,7 +179,7 @@ describe("i18n utilities", () => {
     it("persists locale to localStorage", () => {
       useI18nStore.getState().setLocale("es");
 
-      const stored = localStorage.getItem("i18n");
+      const stored = getLocalStorageOrMemory().getItem("i18n");
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored ?? "{}");
       expect(parsed.state.locale).toBe("es");

@@ -12,14 +12,14 @@ import {
   t,
   useI18nStore,
 } from "./i18n";
+import { clearPersistedStorage, getLocalStorageOrMemory } from "./storage";
 
 describe("i18n Integration", () => {
   beforeEach(() => {
     // Reset store to default state
     useI18nStore.setState({ locale: DEFAULT_LOCALE });
 
-    // Clear localStorage
-    localStorage.clear();
+    clearPersistedStorage();
 
     // Clear translations
     clearTranslations();
@@ -78,7 +78,10 @@ describe("i18n Integration", () => {
 
     it("respects stored preference over browser locale", () => {
       // Store English preference
-      localStorage.setItem("i18n", JSON.stringify({ state: { locale: "en" }, version: 0 }));
+      getLocalStorageOrMemory().setItem(
+        "i18n",
+        JSON.stringify({ state: { locale: "en" }, version: 0 }),
+      );
 
       // Mock navigator.language to Spanish
       vi.stubGlobal("navigator", { language: "es-ES" });
@@ -235,7 +238,7 @@ describe("i18n Integration", () => {
     it("persists locale to localStorage", () => {
       useI18nStore.getState().setLocale("es");
 
-      const stored = localStorage.getItem("i18n");
+      const stored = getLocalStorageOrMemory().getItem("i18n");
       expect(stored).toBeTruthy();
 
       const parsed = JSON.parse(stored!);
@@ -285,7 +288,7 @@ describe("i18n Integration", () => {
       expect(t("common.hello")).toBe("Hello");
 
       // 5. Verify persistence
-      const stored = JSON.parse(localStorage.getItem("i18n")!);
+      const stored = JSON.parse(getLocalStorageOrMemory().getItem("i18n")!);
       expect(stored.state.locale).toBe("en");
     });
   });

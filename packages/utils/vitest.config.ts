@@ -4,6 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "happy-dom",
+    execArgv: ["--disable-warning=ExperimentalWarning"],
     globals: true,
     setupFiles: ["./setupTests.ts"],
     include: ["src/**/*.test.{ts,tsx}"],

@@ -13,7 +13,7 @@ const posts = await getCollection("blog");
       {
         posts.map((post) => (
           <li>
-            <a href={`/blog/${post.slug}`} class="text-primary hover:underline">
+            <a href={`/blog/${post.id}`} class="text-primary hover:underline">
               {post.data.title}
             </a>
             <p class="text-muted-foreground">{post.data.description}</p>

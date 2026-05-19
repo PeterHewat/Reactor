@@ -7,6 +7,7 @@ import {
   type ResolvedTheme,
   type ThemeMode,
 } from "./theme";
+import { clearPersistedStorage, getLocalStorageOrMemory } from "./storage";
 
 // Mock matchMedia
 const mockMatchMedia = (matches: boolean) => {
@@ -29,8 +30,7 @@ describe("theme utilities", () => {
   beforeEach(() => {
     // Reset store state before each test
     useThemeStore.setState({ mode: "system", resolvedTheme: "light" });
-    // Clear localStorage
-    localStorage.clear();
+    clearPersistedStorage();
     // Reset document classes
     document.documentElement.classList.remove("dark");
   });
@@ -127,7 +127,7 @@ describe("theme utilities", () => {
       useThemeStore.getState().setMode("dark");
 
       // Check localStorage
-      const stored = localStorage.getItem("theme");
+      const stored = getLocalStorageOrMemory().getItem("theme");
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored ?? "{}");
       expect(parsed.state.mode).toBe("dark");
@@ -136,7 +136,7 @@ describe("theme utilities", () => {
     it("does not persist resolvedTheme to localStorage", () => {
       useThemeStore.getState().setMode("dark");
 
-      const stored = localStorage.getItem("theme");
+      const stored = getLocalStorageOrMemory().getItem("theme");
       const parsed = JSON.parse(stored ?? "{}");
       // resolvedTheme should not be in storage (partialize excludes it)
       expect(parsed.state.resolvedTheme).toBeUndefined();

@@ -6,6 +6,7 @@ import {
   resolveTheme,
   useThemeStore,
 } from "./theme";
+import { clearPersistedStorage, getLocalStorageOrMemory } from "./storage";
 
 describe("Theme Integration", () => {
   let originalMatchMedia: typeof window.matchMedia;
@@ -47,8 +48,7 @@ describe("Theme Integration", () => {
     // Reset store to default state
     useThemeStore.setState({ mode: "system", resolvedTheme: "light" });
 
-    // Clear localStorage
-    localStorage.clear();
+    clearPersistedStorage();
 
     // Clear listeners
     mediaQueryListeners = [];
@@ -228,7 +228,7 @@ describe("Theme Integration", () => {
     it("persists mode to localStorage", () => {
       useThemeStore.getState().setMode("dark");
 
-      const stored = localStorage.getItem("theme");
+      const stored = getLocalStorageOrMemory().getItem("theme");
       expect(stored).toBeTruthy();
 
       const parsed = JSON.parse(stored!);
@@ -238,7 +238,7 @@ describe("Theme Integration", () => {
     it("does not persist resolvedTheme to localStorage", () => {
       useThemeStore.getState().setMode("dark");
 
-      const stored = localStorage.getItem("theme");
+      const stored = getLocalStorageOrMemory().getItem("theme");
       const parsed = JSON.parse(stored!);
 
       // resolvedTheme should not be in persisted state (partialize excludes it)

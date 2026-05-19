@@ -5,6 +5,7 @@ export interface StorageLike {
   getItem(name: string): string | null;
   setItem(name: string, value: string): void;
   removeItem(name: string): void;
+  clear(): void;
 }
 
 /**
@@ -30,6 +31,9 @@ export function createMemoryStorage(): StorageLike {
     removeItem: (name: string) => {
       store.delete(name);
     },
+    clear: () => {
+      store.clear();
+    },
   };
 }
 
@@ -54,10 +58,22 @@ let memoryStorageSingleton: StorageLike | null = null;
  */
 export function getLocalStorageOrMemory(): StorageLike {
   if (typeof window !== "undefined" && window.localStorage) {
-    return window.localStorage;
+    return window.localStorage as StorageLike;
   }
   if (!memoryStorageSingleton) {
     memoryStorageSingleton = createMemoryStorage();
   }
   return memoryStorageSingleton;
+}
+
+/**
+ * Clears all entries from persisted storage (localStorage or in-memory fallback).
+ *
+ * @example
+ * beforeEach(() => {
+ *   clearPersistedStorage();
+ * });
+ */
+export function clearPersistedStorage(): void {
+  getLocalStorageOrMemory().clear();
 }

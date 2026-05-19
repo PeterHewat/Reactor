@@ -51,7 +51,7 @@ export function cn(...classes: ClassValue[]): string {
 export { asBoolean, asInt, asString, loadEnv } from "./env";
 
 // Storage utilities
-export { createMemoryStorage, getLocalStorageOrMemory } from "./storage";
+export { clearPersistedStorage, createMemoryStorage, getLocalStorageOrMemory } from "./storage";
 export type { StorageLike } from "./storage";
 
 // Theme utilities

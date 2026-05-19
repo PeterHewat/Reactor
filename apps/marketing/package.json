@@ -5,6 +5,7 @@
   "private": true,
   "description": "Astro marketing site",
   "scripts": {
+    "postinstall": "ASTRO_TELEMETRY_DISABLED=1 astro sync",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
@@ -16,14 +17,18 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.9",
     "@astrojs/sitemap": "^3.7.2",
     "@repo/ui-marketing": "workspace:*",
-    "@repo/ui-shared": "workspace:*"
+    "@repo/ui-shared": "workspace:*",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "@tailwindcss/vite": "^4.3.0",
+    "@tailwindcss/postcss": "^4.3.0",
     "astro": "^6.3.5",
-    "tailwindcss": "^4.3.0"
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0",
+    "vite": "^7.3.2"
   }
 }

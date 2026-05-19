@@ -29,5 +29,9 @@
   },
   "peerDependencies": {
     "react": "^19.2.6"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.9.0",
+    "vitest": "^4.1.6"
   }
 }

@@ -31,9 +31,12 @@
     "install:all": "bun install",
     "clean-install": "rm -rf node_modules && bun install",
     "outdated": "bun outdated",
-    "update": "bun update"
+    "update": "bun update",
+    "audit": "bun audit"
   },
   "overrides": {
+    "ws": "^8.20.1",
+    "devalue": "^5.8.1",
     "minimatch": "^10.2.5",
     "glob": "^13.0.6",
     "test-exclude": "^8.0.0",

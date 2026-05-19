@@ -2,11 +2,7 @@
 
 Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and Marketing (Astro) with Convex backend and Clerk authentication.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/PeterHewat/Reactor/ci.yml?branch=main&label=CI)](https://github.com/PeterHewat/Reactor/actions/workflows/ci.yml)
-[![Lint](https://img.shields.io/github/actions/workflow/status/PeterHewat/Reactor/ci.yml?branch=main&job=lint&label=Lint)](https://github.com/PeterHewat/Reactor/actions/workflows/ci.yml)
-[![Format](https://img.shields.io/github/actions/workflow/status/PeterHewat/Reactor/ci.yml?branch=main&job=format&label=Format)](https://github.com/PeterHewat/Reactor/actions/workflows/ci.yml)
-[![Typecheck](https://img.shields.io/github/actions/workflow/status/PeterHewat/Reactor/ci.yml?branch=main&job=typecheck&label=Typecheck)](https://github.com/PeterHewat/Reactor/actions/workflows/ci.yml)
-
+[![CI](https://img.shields.io/github/actions/workflow/status/PeterHewat/Reactor/ci.yml?branch=main)](https://github.com/PeterHewat/Reactor/actions/workflows/ci.yml)
 [![Bun](https://img.shields.io/badge/Bun-000?style=flat&logo=bun&logoColor=fff)](https://bun.sh/)
 [![Convex](https://img.shields.io/badge/Convex-EE342F?logo=convex&logoColor=fff)](https://convex.dev/)
 [![Clerk](https://img.shields.io/badge/Clerk-835FFF?logo=clerk&logoColor=fff)](https://clerk.com/)

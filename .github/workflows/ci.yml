@@ -24,7 +24,10 @@ jobs:
       convex: ${{ steps.detect.outputs.convex }}
       shared: ${{ steps.detect.outputs.shared }}
       any: ${{ steps.detect.outputs.any }}
+      convex_ci_tests: ${{ steps.ci-flags.outputs.convex_ci_tests }}
     steps:
+      - id: ci-flags
+        run: echo "convex_ci_tests=${{ env.CONVEX_CI_TESTS }}" >> $GITHUB_OUTPUT
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -171,7 +174,7 @@ jobs:
     name: Convex Tests
     runs-on: ubuntu-latest
     needs: [detect-changes, lint, format, typecheck]
-    if: needs.detect-changes.outputs.convex == 'true' && env.CONVEX_CI_TESTS == 'true'
+    if: needs.detect-changes.outputs.convex == 'true' && needs.detect-changes.outputs.convex_ci_tests == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-bun

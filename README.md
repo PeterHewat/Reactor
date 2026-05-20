@@ -182,6 +182,10 @@ bun run --filter @repo/marketing build   # Production build
 
 ## Development Workflow
 
+### Git hooks (Husky)
+
+After `bun install`, Husky runs **lint-staged** on commit: ESLint with `--fix` and Prettier on staged files. Bypass with `git commit --no-verify` if needed; CI still enforces full-repo checks.
+
 ### Branching & PR Workflow
 
 - `main` holds the latest stable code and should be protected

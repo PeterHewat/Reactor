@@ -35,7 +35,15 @@
     "clean-install": "rm -rf node_modules && bun install",
     "outdated": "bun outdated",
     "update": "bun update",
-    "audit": "bun audit"
+    "audit": "bun audit",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css,html,astro}": "prettier --write"
   },
   "overrides": {
     "ws": "^8.20.1",
@@ -67,6 +75,8 @@
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.6.0",
     "happy-dom": "^20.9.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "react": "^19.2.6",

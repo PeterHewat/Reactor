@@ -19,6 +19,7 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_VERSION: "24"
   PREVIEW_NAME: pr-${{ github.event.pull_request.number }}
 
 jobs:
@@ -81,6 +82,9 @@ jobs:
       convex_url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: .bun-version
@@ -106,6 +110,9 @@ jobs:
       vercel_url: ${{ steps.vercel.outputs.preview-url }}
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: .bun-version
@@ -140,6 +147,9 @@ jobs:
       vercel_url: ${{ steps.vercel.outputs.preview-url }}
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: .bun-version

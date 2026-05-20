@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-This project targets a multi-platform product (web, mobile, marketing) that requires:
+This project targets a multi-surface product (web app, marketing site) that requires:
 
 - Real-time data synchronization across clients
 - A type-safe API layer shared between frontend and backend
@@ -25,7 +25,7 @@ Three candidates were evaluated:
 | Offline / optimistic UI | ✅ Built-in optimistic updates  | ❌ Manual                                  | ⚠️ Manual                             |
 | Vendor lock-in          | ⚠️ Convex-specific query model  | ✅ Portable (any HTTP server)              | ⚠️ Supabase-specific APIs             |
 | Local dev experience    | ✅ `convex dev` with hot reload | ✅ Runs anywhere                           | ✅ Local Docker stack                 |
-| React Native support    | ✅ Official SDK                 | ✅ Works anywhere                          | ✅ Works anywhere                     |
+| Native client SDKs      | ✅ Official SDK                 | ✅ Works anywhere                          | ✅ Works anywhere                     |
 
 ### Why not tRPC?
 

@@ -24,7 +24,6 @@ on:
         options:
           - "all"
           - "web"
-          - "mobile"
           - "marketing"
           - "convex"
         default: "all"
@@ -149,10 +148,9 @@ jobs:
           get_component_paths() {
             local component=$1
             case $component in
-              "web") echo "apps/web/ packages/ui-web/ packages/ui-shared/ packages/utils/" ;;
-              "mobile") echo "apps/mobile/ packages/ui-mobile/ packages/ui-shared/ packages/utils/" ;;
-              "marketing") echo "apps/marketing/ packages/ui-marketing/ packages/ui-shared/ packages/utils/" ;;
-              "convex") echo "convex/ packages/ui-shared/ packages/utils/" ;;
+              "web") echo "apps/web/ packages/ui-web/ packages/utils/" ;;
+              "marketing") echo "apps/marketing/ packages/utils/" ;;
+              "convex") echo "convex/ packages/utils/" ;;
               *) echo "❌ Unknown component: $component" >&2; exit 1 ;;
             esac
           }
@@ -212,7 +210,7 @@ jobs:
 
           # Determine which components to process
           if [ "$RELEASE_SCOPE" = "all" ]; then
-            COMPONENTS=("web" "mobile" "marketing" "convex")
+            COMPONENTS=("web" "marketing" "convex")
             echo "📋 Analyzing all components: ${COMPONENTS[*]}"
           else
             COMPONENTS=("$RELEASE_SCOPE")

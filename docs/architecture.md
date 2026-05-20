@@ -1,6 +1,6 @@
 # Architecture
 
-> Document your business logic architecture and system design here.
+> **Template — replace me.** This file is a placeholder in the Reactor starter. Document your product’s domains, boundaries, and key decisions when you fork the repo.
 
 ## Purpose
 
@@ -33,7 +33,7 @@ This document should capture the high-level design decisions that drive your app
 
 ### Business Domains
 
-```
+```text
 User Management → Authentication, profiles, preferences
 Content System → Creation, editing, publishing workflow
 Notification Engine → Real-time alerts, email campaigns

@@ -6,9 +6,6 @@
     { "path": "apps/web" },
     { "path": "convex" },
     { "path": "packages/test-utils" },
-    { "path": "packages/ui-marketing" },
-    { "path": "packages/ui-mobile" },
-    { "path": "packages/ui-shared" },
     { "path": "packages/ui-web" },
     { "path": "packages/utils" }
   ]

@@ -2,7 +2,7 @@
 
 The marketing site is an Astro-based static site intended for product landing pages, documentation, and SEO-focused content.
 
-**Stack:** [Astro 7 alpha](https://github.com/withastro/astro/releases) + Vite 8 (Rust compiler). Pin is intentional while the starter matures ahead of Astro 7 stable.
+**Stack:** [Astro 6](https://docs.astro.build/) + Vite 7 (bundled with Astro) + Tailwind CSS v4 via `@tailwindcss/vite`. The web app uses Vite 8 separately at the repo root.
 
 ## Quick Start
 
@@ -15,32 +15,32 @@ From the repository root:
 
 ```text
 apps/marketing/
-	public/            # Static assets
-	src/
-		components/      # Marketing components
-		layouts/         # Page layouts
-		pages/           # Routes
-		styles/          # Global styles
+  public/            # Static assets
+  src/
+    components/      # Marketing components
+    layouts/         # Page layouts
+    pages/           # Routes
+    styles/          # Global styles
 ```
 
 ## Styling
 
-- Tailwind CSS v4 via `@tailwindcss/vite` in `astro.config.mjs` (required for Vite 8; PostCSS-only setup fails on `@import "tailwindcss"`).
-- Use tokens and shared design language from packages when possible.
+- Tailwind CSS v4 via `@tailwindcss/vite` in `astro.config.mjs`.
+- Theme tokens live in `tailwind.config.mjs` and `src/styles/`; align with the web app’s CSS variables where useful.
 
 ## Requirements
 
-- Node.js **>= 22.12.0** (Astro 7 alpha)
+- Node.js **>= 22.12.0** (Astro 6)
 
-## Deployment
+## Deployment (Vercel)
 
-Astro outputs static assets to `dist/`. Deploy to any static host.
+Astro outputs static assets to `dist/`. This template uses **Vercel** with `vercel.json` (monorepo install/build from repo root).
 
-Common choices:
+1. Create a Vercel project with root directory `apps/marketing`
+2. Add `VERCEL_MARKETING_PROJECT_ID` to GitHub Actions secrets
+3. Publish a release tagged `marketing-v1.0.0` to trigger [cd.yml](../../.github/workflows/cd.yml)
 
-- Vercel
-- Netlify
-- Cloudflare Pages
+See [docs/ci-cd.md](../../docs/ci-cd.md#vercel-web--marketing) for tokens and org ID.
 
 ## Notes
 

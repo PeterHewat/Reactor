@@ -1,0 +1,275 @@
+name: Preview Deployments
+
+# Opt-in PR previews: add the `preview` label (Convex preview + Vercel preview URLs).
+# Requires secrets: CONVEX_PREVIEW_DEPLOY_KEY, VERCEL_*, VITE_CLERK_PUBLISHABLE_KEY (web only).
+# See docs/ci-cd.md#pr-preview-deployments
+
+on:
+  pull_request:
+    types: [labeled, synchronize, opened, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  BUN_VERSION: "1.3.13"
+  PREVIEW_NAME: pr-${{ github.event.pull_request.number }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'preview')
+    outputs:
+      web: ${{ steps.detect.outputs.web }}
+      marketing: ${{ steps.detect.outputs.marketing }}
+      convex: ${{ steps.detect.outputs.convex }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed projects
+        id: detect
+        run: |
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} 2>/dev/null || echo "")
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          web=false
+          marketing=false
+          convex=false
+          shared=false
+          config=false
+
+          for file in $CHANGED_FILES; do
+            if [[ $file == apps/web/* ]]; then web=true; fi
+            if [[ $file == apps/marketing/* ]]; then marketing=true; fi
+            if [[ $file == convex/* ]]; then convex=true; fi
+            if [[ $file == packages/ui-web/* ]]; then shared=true; fi
+            if [[ $file == packages/utils/* ]]; then shared=true; fi
+            if [[ $file == packages/test-utils/* ]]; then shared=true; fi
+            if [[ $file == package.json ]] || [[ $file == bun.lock ]] || [[ $file == eslint.config.js ]] || [[ $file == tsconfig.json ]] || [[ $file == tsconfig.* ]] || [[ $file == .github/workflows/* ]] || [[ $file == .github/actions/* ]]; then
+              config=true
+            fi
+          done
+
+          if [ "$shared" = "true" ] || [ "$config" = "true" ]; then
+            web=true
+            marketing=true
+            convex=true
+          fi
+
+          echo "web=$web" >> $GITHUB_OUTPUT
+          echo "marketing=$marketing" >> $GITHUB_OUTPUT
+          echo "convex=$convex" >> $GITHUB_OUTPUT
+
+  preview-convex:
+    name: Convex preview
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      (needs.detect-changes.outputs.convex == 'true' || needs.detect-changes.outputs.web == 'true')
+    outputs:
+      convex_url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Deploy Convex preview
+        id: deploy
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_DEPLOY_KEY }}
+        run: |
+          bunx convex deploy --preview-create "${{ env.PREVIEW_NAME }}"
+          URL=$(grep -E '^CONVEX_URL=' .env.local 2>/dev/null | cut -d= -f2- || true)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+  preview-web:
+    name: Web preview (Vercel)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, preview-convex]
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      needs.detect-changes.outputs.web == 'true'
+    outputs:
+      vercel_url: ${{ steps.vercel.outputs.preview-url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Build web app
+        env:
+          VITE_CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+        run: bun run --filter @repo/web build
+      - name: Deploy to Vercel (web preview)
+        id: vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          working-directory: apps/web
+          github-comment: false
+        env:
+          VITE_CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+
+  preview-marketing:
+    name: Marketing preview (Vercel)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      needs.detect-changes.outputs.marketing == 'true'
+    outputs:
+      vercel_url: ${{ steps.vercel.outputs.preview-url }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Build marketing site
+        run: bun run --filter @repo/marketing build
+      - name: Deploy to Vercel (marketing preview)
+        id: vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_MARKETING_PROJECT_ID }}
+          working-directory: apps/marketing
+          github-comment: false
+
+  preview-comment:
+    name: Preview summary
+    runs-on: ubuntu-latest
+    needs: [detect-changes, preview-convex, preview-web, preview-marketing]
+    if: |
+      always() &&
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      needs.detect-changes.result == 'success'
+    steps:
+      - name: Comment on pull request
+        uses: actions/github-script@v7
+        env:
+          CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
+          PREVIEW_NAME: ${{ env.PREVIEW_NAME }}
+          WEB_URL: ${{ needs.preview-web.outputs.vercel_url }}
+          MARKETING_URL: ${{ needs.preview-marketing.outputs.vercel_url }}
+          CONVEX_RESULT: ${{ needs.preview-convex.result }}
+          WEB_RESULT: ${{ needs.preview-web.result }}
+          MARKETING_RESULT: ${{ needs.preview-marketing.result }}
+          WEB_REQUESTED: ${{ needs.detect-changes.outputs.web }}
+          MARKETING_REQUESTED: ${{ needs.detect-changes.outputs.marketing }}
+          CONVEX_REQUESTED: ${{ needs.detect-changes.outputs.convex }}
+        with:
+          script: |
+            const lines = [
+              "## Preview deployments",
+              "",
+              "Triggered by the `preview` label. Push new commits or re-apply the label to refresh.",
+              "",
+            ];
+
+            const convexRequested =
+              process.env.CONVEX_REQUESTED === "true" || process.env.WEB_REQUESTED === "true";
+            const anyRequested =
+              convexRequested ||
+              process.env.WEB_REQUESTED === "true" ||
+              process.env.MARKETING_REQUESTED === "true";
+
+            if (convexRequested) {
+              if (process.env.CONVEX_RESULT === "success") {
+                const url = process.env.CONVEX_URL;
+                const name = process.env.PREVIEW_NAME;
+                lines.push(
+                  "### Convex",
+                  url
+                    ? `- Deployment URL: ${url}`
+                    : `- Preview deployment \`${name}\` (open the [Convex dashboard](https://dashboard.convex.dev) → Deployments)`,
+                  "",
+                );
+              } else if (process.env.CONVEX_RESULT === "skipped") {
+                lines.push("### Convex", "- Skipped (no `convex/` or `apps/web/` changes)", "");
+              } else {
+                lines.push(
+                  "### Convex",
+                  "- Failed — check workflow logs (is `CONVEX_PREVIEW_DEPLOY_KEY` set?)",
+                  "",
+                );
+              }
+            }
+
+            if (process.env.WEB_REQUESTED === "true") {
+              if (process.env.WEB_RESULT === "success" && process.env.WEB_URL) {
+                lines.push("### Web (Vercel)", `- ${process.env.WEB_URL}`, "");
+              } else if (process.env.WEB_RESULT === "skipped") {
+                lines.push("### Web (Vercel)", "- Skipped", "");
+              } else {
+                lines.push(
+                  "### Web (Vercel)",
+                  "- Failed — check workflow logs (`VERCEL_*`, `VITE_CLERK_PUBLISHABLE_KEY`)",
+                  "",
+                );
+              }
+            }
+
+            if (process.env.MARKETING_REQUESTED === "true") {
+              if (process.env.MARKETING_RESULT === "success" && process.env.MARKETING_URL) {
+                lines.push("### Marketing (Vercel)", `- ${process.env.MARKETING_URL}`, "");
+              } else if (process.env.MARKETING_RESULT === "skipped") {
+                lines.push("### Marketing (Vercel)", "- Skipped", "");
+              } else {
+                lines.push(
+                  "### Marketing (Vercel)",
+                  "- Failed — check workflow logs (`VERCEL_*`)",
+                  "",
+                );
+              }
+            }
+
+            if (!anyRequested) {
+              lines.push(
+                "_No deployable paths changed (`apps/web`, `apps/marketing`, `convex/`)._",
+                "",
+              );
+            }
+
+            const marker = "<!-- reactor-preview-deployments -->";
+            const body = `${marker}\n${lines.join("\n")}`;
+            const prNumber = context.payload.pull_request.number;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }

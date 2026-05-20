@@ -1,24 +1,27 @@
 {
   "name": "reactor-monorepo",
   "version": "0.1.0",
-  "description": "Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and Marketing (Astro) with Convex + Clerk + Tailwind CSS",
+  "description": "Starter monorepo for Web (React 19), Marketing (Astro), and Convex + Clerk + Tailwind CSS",
   "author": "Peter Hewat <peter.hewat@gmail.com>",
   "license": "MIT",
   "private": true,
+  "packageManager": "bun@1.3.13",
+  "engines": {
+    "bun": ">=1.3.13",
+    "node": ">=22.12.0"
+  },
   "type": "module",
   "workspaces": [
     "apps/web",
-    "apps/mobile",
     "apps/marketing",
     "convex",
     "packages/test-utils",
     "packages/ui-web",
-    "packages/ui-mobile",
-    "packages/ui-marketing",
-    "packages/ui-shared",
     "packages/utils"
   ],
   "scripts": {
+    "dev:web": "bun run --filter @repo/web dev",
+    "dev:marketing": "bun run --filter @repo/marketing dev",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
@@ -26,7 +29,7 @@
     "typecheck:refs": "tsc -b",
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "test": "bun run --filter '*' test",
+    "test": "bun run --filter '@repo/web' --filter '@repo/marketing' --filter '@repo/convex' --filter '@repo/ui-web' --filter '@repo/utils' test",
     "e2e:install": "bunx playwright install chromium",
     "install:all": "bun install",
     "clean-install": "rm -rf node_modules && bun install",

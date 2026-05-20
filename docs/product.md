@@ -1,6 +1,6 @@
 # Product Documentation
 
-> Document your product requirements, features, and user stories here.
+> **Template — replace me.** This file is a placeholder in the Reactor starter. Add your vision, users, and requirements when you fork the repo.
 
 ## Product Vision
 
@@ -95,5 +95,5 @@ What data and functionality does the frontend need?
 
 - Scalability plans
 - Internationalization needs
-- Mobile app potential
+- Additional surfaces (e.g. native apps) out of scope for this template
 - Integration opportunities

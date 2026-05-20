@@ -7,5 +7,5 @@
     "noEmit": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "_generated", "dist"]
+  "exclude": ["node_modules", "dist"]
 }

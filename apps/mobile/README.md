@@ -37,6 +37,7 @@ React Native mobile application for iOS and Android. This is a **scaffold direct
    - Configure `ANDROID_HOME` environment variable
 
 3. **Watchman** (recommended)
+
    ```bash
    brew install watchman
    ```
@@ -157,15 +158,31 @@ module.exports = {
 bun install @clerk/clerk-expo
 ```
 
-Configure in your app entry:
+Add to `apps/mobile/.env` (React Native CLI — not Expo):
+
+```text
+CLERK_PUBLISHABLE_KEY=pk_test_...
+CONVEX_URL=https://your-project.convex.cloud
+```
+
+Use `@repo/utils` `loadEnv` in a small `src/env.ts` module, then wire providers:
 
 ```tsx
 import { ClerkProvider } from "@clerk/clerk-expo";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { loadEnv, asString } from "@repo/utils";
+
+const env = loadEnv({
+  clerkPublishableKey: { key: "CLERK_PUBLISHABLE_KEY", parse: asString },
+  convexUrl: { key: "CONVEX_URL", parse: asString },
+});
+
+const convex = new ConvexReactClient(env.convexUrl);
 
 export default function App() {
   return (
-    <ClerkProvider publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-      {/* Your app */}
+    <ClerkProvider publishableKey={env.clerkPublishableKey}>
+      <ConvexProvider client={convex}>{/* Your app */}</ConvexProvider>
     </ClerkProvider>
   );
 }
@@ -177,17 +194,7 @@ export default function App() {
 bun install convex
 ```
 
-Configure the Convex client:
-
-```tsx
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-
-const convex = new ConvexReactClient(process.env.CONVEX_URL!);
-
-export default function App() {
-  return <ConvexProvider client={convex}>{/* Your app */}</ConvexProvider>;
-}
-```
+Run `bunx convex dev` from the **repository root** (same deployment as web). See [convex/README.md](../../convex/README.md).
 
 ### 7. Install React Navigation
 
@@ -231,7 +238,7 @@ bun run android
 
 After setup, your mobile app structure should look like:
 
-```
+```text
 apps/mobile/
 ├── android/              # Android native code
 ├── ios/                  # iOS native code

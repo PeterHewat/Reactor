@@ -2,6 +2,9 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  env: {
+    VITE_CONVEX_URL: "https://test-project.convex.cloud",
+  },
   test: {
     environment: "happy-dom",
     globals: true,

@@ -1,0 +1,24 @@
+name: Setup Bun
+description: Install pinned Bun with install cache and frozen lockfile install
+inputs:
+  bun-version:
+    description: Bun version to install
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 24
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+    - uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          bun-${{ runner.os }}-
+    - name: Install dependencies
+      run: bun install --frozen-lockfile
+      shell: bash

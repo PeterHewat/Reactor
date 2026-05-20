@@ -8,9 +8,13 @@
     "dev": "convex dev",
     "deploy": "convex deploy",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"No tests configured for convex yet\" && exit 0"
+    "test": "vitest run"
   },
   "dependencies": {
     "convex": "^1.39.1"
+  },
+  "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
+    "convex-test": "^0.0.53"
   }
 }

@@ -1,6 +1,6 @@
 # Reactor
 
-Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and Marketing (Astro) with Convex backend and Clerk authentication.
+Starter monorepo for Web (React 19), Marketing (Astro), Convex backend, and Clerk authentication.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/PeterHewat/Reactor/ci.yml?branch=main)](https://github.com/PeterHewat/Reactor/actions/workflows/ci.yml)
 [![Bun](https://img.shields.io/badge/Bun-000?style=flat&logo=bun&logoColor=fff)](https://bun.sh/)
@@ -10,17 +10,45 @@ Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and M
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=000)](https://react.dev/)
-[![React Native](https://img.shields.io/badge/React%20Native-61DAFB?logo=react&logoColor=000)](https://reactnative.dev/)
 [![Tailwind](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?logo=tailwindcss&logoColor=fff)](https://tailwindcss.com/)
 [![Astro](https://img.shields.io/badge/Astro-BC52EE?logo=astro&logoColor=fff)](https://astro.build/)
+
+## Quick start (copy-paste)
+
+```bash
+git clone git@github.com:PeterHewat/Reactor.git
+cd Reactor
+bun install
+bun run dev
+```
+
+| Resource                             | Purpose                                                                           |
+| ------------------------------------ | --------------------------------------------------------------------------------- |
+| [AGENTS.md](AGENTS.md)               | Rules for AI agents (verify: `bun run lint && bun run typecheck && bun run test`) |
+| [docs/setup.md](docs/setup.md)       | First-time platform setup, local dev, Convex/Clerk wiring                         |
+| [docs/ci-cd.md](docs/ci-cd.md)       | CI jobs, GitHub secrets, releases, PR previews (`e2e` / `preview` labels)         |
+| [convex/README.md](convex/README.md) | Link your Convex project, enable backend in web                                   |
+
+Backend (when ready): `cp apps/web/.env.example apps/web/.env.local` → `bunx convex dev` → wire providers per `convex/README.md`.
+
+## Platform status
+
+| Platform  | Code status | CI tests               | CD                               |
+| --------- | ----------- | ---------------------- | -------------------------------- |
+| Web       | Ready       | Vitest + Playwright    | Vercel on `web-v*` release       |
+| Marketing | Ready       | Vitest + Playwright    | Vercel on `marketing-v*` release |
+| Convex    | Scaffold    | Vitest (`convex-test`) | Deploy on `convex-v*` release    |
+
+**Scaffold** = sample backend in repo; link your Convex project with `bunx convex dev`. **Ready** = dev server and tests run from the repo as-is. Adopters use **Clerk + Convex + Vercel** (web and marketing); this template repo has no live accounts linked.
+
+See [docs/ci-cd.md](docs/ci-cd.md#ci-and-test-jobs) for workflows and opt-in PR labels (`e2e`, `preview`).
 
 ## Tech Stack
 
 ### Applications
 
 - **Web App**: React 19 + Vite 8 + Tailwind CSS v4 + Zustand (`apps/web/`)
-- **Mobile App**: React Native CLI + NativeWind (`apps/mobile/`)
-- **Marketing Site**: Astro 7 (alpha) + Vite 8 + Tailwind CSS v4 (`apps/marketing/`)
+- **Marketing Site**: Astro 6 + Vite 7 + Tailwind CSS v4 (`apps/marketing/`)
 
 ### Backend
 
@@ -36,19 +64,13 @@ Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and M
 ### Shared Packages
 
 - **UI Web**: Web components with shadcn/ui patterns (`packages/ui-web/`)
-- **UI Mobile**: React Native components (`packages/ui-mobile/`)
-- **UI Marketing**: Astro component utilities (`packages/ui-marketing/`)
-- **UI Shared**: Design tokens and TypeScript interfaces (`packages/ui-shared/`)
 - **Utils**: Common helpers (cn, theme, i18n) (`packages/utils/`)
 - **Test Utils**: Testing utilities and mocks (`packages/test-utils/`)
 
 ### Testing
 
 - **Unit Tests**: Vitest
-- **E2E Tests (Web)**: Playwright
-- **E2E Tests (Mobile)**: Detox (after setup)
-
-## Quick Start
+- **E2E Tests**: Playwright (web + marketing)
 
 ### Prerequisites
 
@@ -60,7 +82,8 @@ Install the following software:
 Check that tools are available on PATH:
 
 ```bash
-bun --version
+bun --version   # >= 1.3.13 (.bun-version)
+node --version  # >= 22.12 for marketing (Astro 6)
 ```
 
 Recommended IDEs:
@@ -77,29 +100,24 @@ Clone the repository and install dependencies
 
 ```bash
 git clone git@github.com:PeterHewat/Reactor.git
-cd reactor
+cd Reactor
 bun install
 ```
 
 Then follow [docs/setup.md](docs/setup.md) to scaffold your platforms:
 
-- **Web App**: Ready to use, just configure Convex and Clerk
-- **Mobile App**: Follow `apps/mobile/README.md` to initialize React Native
-- **Marketing Site**: Ready to use, just configure your domain and content.
+- **Web**: Ready — `bun run --filter @repo/web dev` without backend; link Convex/Clerk when you need them
+- **Marketing**: Ready — `bun run --filter @repo/marketing dev` (content and deploy config are yours)
 
 ## Project Structure
 
 ```text
 apps/
   web/                    # React 19 web application
-  mobile/                 # React Native mobile app
   marketing/              # Astro marketing site
 
 packages/
   ui-web/                 # Web UI components (shadcn/Tailwind)
-  ui-mobile/              # Mobile UI components (NativeWind)
-  ui-marketing/           # Marketing components (Astro utilities)
-  ui-shared/              # Design tokens and shared types
   utils/                  # Platform-agnostic utilities
   test-utils/             # Testing utilities
 
@@ -110,9 +128,12 @@ prompts/                  # AI prompt templates
 
 ## Documentation
 
-- **[Setup Guide](docs/setup.md)** - Initial project scaffolding and configuration
+- **[Setup Guide](docs/setup.md)** - First-time scaffolding and local configuration
+- **[CI/CD](docs/ci-cd.md)** - Workflows, secrets, releases, PR previews
+- **[Security](SECURITY.md)** - Reporting vulnerabilities and secret handling
+- **[Security headers / CSP](docs/security-headers.md)** - Examples for Vite, Vercel, Netlify, Cloudflare
 - **[Architecture](docs/architecture.md)** - System design and technical decisions
-- **[Multi-Platform Architecture](docs/web+mobile+marketing.md)** - Platform strategy and package responsibilities
+- **[Platform architecture](docs/platforms.md)** - Apps, packages, and CI expectations
 - **[Product Requirements](docs/product.md)** - Business requirements and user stories
 - **[Architecture Decisions](docs/adr/)** - Record of architectural decision records
 - **[AI Prompt Templates](prompts/)** - Standardized prompts for development workflows
@@ -150,12 +171,7 @@ bun run --filter @repo/web dev           # Start dev server
 bun run --filter @repo/web build         # Production build
 bun run --filter @repo/web e2e           # Run Playwright tests
 
-# Mobile app (after React Native setup)
-bun run --filter @repo/mobile start      # Start Metro bundler
-bun run --filter @repo/mobile ios        # Run on iOS
-bun run --filter @repo/mobile android    # Run on Android
-
-# Marketing site (after Astro setup)
+# Marketing site
 bun run --filter @repo/marketing dev     # Start dev server
 bun run --filter @repo/marketing build   # Production build
 ```
@@ -193,11 +209,18 @@ Reference: [How to Write a Git Commit Message](https://chris.beams.io/posts/git-
 
 To update outside ranges, edit `package.json` versions, then run `bun update`.
 
+### TypeScript version policy
+
+- **Root and apps** use `typescript: "~6.0.3"` — patch updates within 6.0.x only (`bun run update` will not jump to 6.1).
+- Do not mix `^6.0.3` in workspaces unless you intentionally want minor bumps; keep versions aligned with the root pin.
+- Bump TypeScript deliberately: edit `~6.0.3` in root `package.json` and workspace packages together, then `bun install`.
+
 ### E2E Tests (Playwright)
 
 - **Install Browsers (once):** `bun run e2e:install` (runs Playwright install in `apps/web`)
 - **Run tests locally:** `bun run --filter @repo/web e2e`
 - **CI (opt-in on PRs):** Add the `e2e` label to your Pull Request to run Playwright tests in CI. E2E only runs when frontend changes are detected and the label is present
+- **Preview deploys (opt-in on PRs):** Add the `preview` label for Convex + Vercel preview URLs ([preview.yml](.github/workflows/preview.yml), [ci-cd](docs/ci-cd.md#pr-preview-deployments))
 - **Naming convention:** Playwright looks for `*.e2e.ts` files
 
 ### AI Development Tools
@@ -221,6 +244,6 @@ Useful for E2E test development, debugging, and automated browser testing workfl
 
 ### CI/CD Overview
 
-- **CI (Push/PR to main):** Runs in [ci.yml](.github/workflows/ci.yml). Detects changes in web, mobile, marketing, and convex. For changed areas, executes lint, format, typecheck, and tests
-- **CD (Release published):** Runs in [cd.yml](.github/workflows/cd.yml). Parses tags `web-vX.Y.Z`, `mobile-vX.Y.Z`, `marketing-vX.Y.Z`, or `convex-vX.Y.Z` and performs deployment for the targeted platform
+- **CI (Push/PR to main):** Runs in [ci.yml](.github/workflows/ci.yml). Detects changes in web, marketing, and convex. For changed areas, executes lint, format, typecheck, and tests
+- **CD (Release published):** Runs in [cd.yml](.github/workflows/cd.yml). Parses tags `web-vX.Y.Z`, `marketing-vX.Y.Z`, or `convex-vX.Y.Z` and performs deployment for the targeted platform
 - **Release Planning (Manual):** [release.yml](.github/workflows/release.yml) analyzes changes for each platform, increments versions per selection (patch/minor/major), and creates GitHub releases

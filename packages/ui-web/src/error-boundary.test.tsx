@@ -52,6 +52,17 @@ describe("ErrorBoundary", () => {
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
 
+  it("hides error message in production-style fallback", () => {
+    render(
+      <ErrorBoundary showErrorDetails={false}>
+        <ThrowingComponent shouldThrow={true} />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.queryByText("Test error")).not.toBeInTheDocument();
+    expect(screen.getByText(/unexpected error occurred/i)).toBeInTheDocument();
+  });
+
   it("renders custom static fallback when provided", () => {
     render(
       <ErrorBoundary fallback={<div>Custom fallback</div>}>

@@ -3,13 +3,16 @@ name: Continuous Delivery
 # ============================================================================
 # REQUIRED GITHUB SECRETS
 # ============================================================================
-# Configure these in: Repository Settings > Secrets and variables > Actions
+# CONVEX_DEPLOY_KEY              - Convex production deploy key (convex-v* releases)
+# CONVEX_PREVIEW_DEPLOY_KEY        - Convex preview deploy key (PR preview label; see preview.yml)
+# VITE_CONVEX_URL                - Convex URL baked into web build
+# VITE_CLERK_PUBLISHABLE_KEY     - Clerk publishable key baked into web build
+# VERCEL_TOKEN                   - Vercel API token (web + marketing deploys)
+# VERCEL_ORG_ID                  - Vercel team/user ID
+# VERCEL_WEB_PROJECT_ID          - Vercel project linked to apps/web
+# VERCEL_MARKETING_PROJECT_ID    - Vercel project linked to apps/marketing
 #
-# CONVEX_DEPLOY_KEY    - Convex deployment key (from Convex dashboard)
-# VITE_CONVEX_URL      - Convex deployment URL (e.g., https://your-project.convex.cloud)
-# VITE_CLERK_PUBLISHABLE_KEY - Clerk publishable key (optional, if using Clerk)
-#
-# See docs/setup.md for detailed instructions on obtaining these values.
+# See docs/ci-cd.md for how to obtain these values.
 # ============================================================================
 
 on:
@@ -18,6 +21,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  BUN_VERSION: "1.3.13"
 
 jobs:
   parse-release:
@@ -31,108 +35,64 @@ jobs:
         run: |
           TAG="${{ github.ref_name }}"
           echo "Parsing tag: $TAG"
-          if [[ "$TAG" =~ ^(web|mobile|marketing|convex)-v(.+)$ ]]; then
+          if [[ "$TAG" =~ ^(web|marketing|convex)-v(.+)$ ]]; then
             echo "target=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
             echo "version=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
           else
-            echo "Invalid tag format. Expected: {web|mobile|marketing|convex}-v{version}"
+            echo "Invalid tag format. Expected: {web|marketing|convex}-v{version}"
             exit 1
           fi
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Convex Deployment
-  # ─────────────────────────────────────────────────────────────────────────────
   release-convex:
     needs: parse-release
     if: needs.parse-release.outputs.target == 'convex'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
-          node-version: 24
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-      - run: bun install --frozen-lockfile
-
+          bun-version: ${{ env.BUN_VERSION }}
       - name: Run checks
         run: |
           bun run lint
           bun run format
           bun run typecheck
-
       - name: Deploy to Convex
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: bunx convex deploy --cmd 'bun run build'
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Web Deployment
-  # ─────────────────────────────────────────────────────────────────────────────
-  # NOTE: Add your deployment provider here (Vercel, Netlify, Cloudflare, etc.)
-  # Most providers have GitHub integrations that deploy automatically on push.
-  # This job runs checks and can trigger deployments via webhooks or CLI.
-  # ─────────────────────────────────────────────────────────────────────────────
   release-web:
     needs: parse-release
     if: needs.parse-release.outputs.target == 'web'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
-          node-version: 24
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-      - run: bun install --frozen-lockfile
-
+          bun-version: ${{ env.BUN_VERSION }}
       - name: Run checks
         run: |
           bun run lint
           bun run format
           bun run typecheck
           bun run test
-
       - name: Build web app
         env:
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
         run: bun run --filter @repo/web build
-
-      # ─────────────────────────────────────────────────────────────────────────
-      # DEPLOYMENT OPTIONS (uncomment one)
-      # ─────────────────────────────────────────────────────────────────────────
-
-      # Option 1: Vercel (recommended)
-      # - name: Deploy to Vercel
-      #   uses: amondnet/vercel-action@v25
-      #   with:
-      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
-      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-      #     working-directory: apps/web
-
-      # Option 2: Netlify
-      # - name: Deploy to Netlify
-      #   uses: nwtgck/actions-netlify@v3
-      #   with:
-      #     publish-dir: apps/web/dist
-      #     production-deploy: true
-      #   env:
-      #     NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      #     NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-      # Option 3: Cloudflare Pages
-      # - name: Deploy to Cloudflare Pages
-      #   uses: cloudflare/pages-action@v1
-      #   with:
-      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      #     projectName: your-project-name
-      #     directory: apps/web/dist
-
+      - name: Deploy to Vercel (web)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          working-directory: apps/web
+          vercel-args: "--prod"
+        env:
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -140,102 +100,34 @@ jobs:
           path: apps/web/dist/
           retention-days: 30
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Mobile Deployment (React Native)
-  # ─────────────────────────────────────────────────────────────────────────────
-  # NOTE: Mobile deployment requires additional setup:
-  # - iOS: Apple Developer account, certificates, provisioning profiles
-  # - Android: Google Play Console, signing keys
-  # This job is a placeholder - implement after React Native setup.
-  # ─────────────────────────────────────────────────────────────────────────────
-  release-mobile:
-    needs: parse-release
-    if: needs.parse-release.outputs.target == 'mobile'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-      - run: bun install --frozen-lockfile
-
-      - name: Run checks
-        run: |
-          bun run lint
-          bun run format
-          bun run typecheck
-
-      - name: Mobile deployment placeholder
-        run: |
-          echo "Mobile deployment for version ${{ needs.parse-release.outputs.version }}"
-          echo ""
-          echo "To implement mobile deployment:"
-          echo "1. Set up React Native project in apps/mobile/"
-          echo "2. Configure iOS signing (Fastlane recommended)"
-          echo "3. Configure Android signing"
-          echo "4. Add deployment steps for App Store / Play Store"
-          echo ""
-          echo "See apps/mobile/README.md for setup instructions"
-
-      # Uncomment after setting up React Native and Fastlane:
-      # - name: Build iOS
-      #   run: |
-      #     cd apps/mobile/ios
-      #     fastlane build
-
-      # - name: Build Android
-      #   run: |
-      #     cd apps/mobile/android
-      #     ./gradlew assembleRelease
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Marketing Site Deployment (Astro)
-  # ─────────────────────────────────────────────────────────────────────────────
-  # NOTE: Astro builds to static HTML - deploy to any static host.
-  # This job is a placeholder - implement after Astro setup.
-  # ─────────────────────────────────────────────────────────────────────────────
   release-marketing:
     needs: parse-release
     if: needs.parse-release.outputs.target == 'marketing'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
-          node-version: 24
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-      - run: bun install --frozen-lockfile
-
+          bun-version: ${{ env.BUN_VERSION }}
       - name: Run checks
         run: |
           bun run lint
           bun run format
           bun run typecheck
-
-      - name: Marketing deployment placeholder
-        run: |
-          echo "Marketing site deployment for version ${{ needs.parse-release.outputs.version }}"
-          echo ""
-          echo "To implement marketing deployment:"
-          echo "1. Set up Astro project in apps/marketing/"
-          echo "2. Configure deployment provider (Vercel, Netlify, Cloudflare)"
-          echo "3. Add build and deploy steps"
-          echo ""
-          echo "See apps/marketing/README.md for setup instructions"
-
-      # Uncomment after setting up Astro:
-      # - name: Build marketing site
-      #   run: bun run --filter @repo/marketing build
-
-      # - name: Deploy to Cloudflare Pages
-      #   uses: cloudflare/pages-action@v1
-      #   with:
-      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      #     projectName: your-marketing-site
-      #     directory: apps/marketing/dist
+          bun run --filter @repo/marketing test
+      - name: Build marketing site
+        run: bun run --filter @repo/marketing build
+      - name: Deploy to Vercel (marketing)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_MARKETING_PROJECT_ID }}
+          working-directory: apps/marketing
+          vercel-args: "--prod"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: marketing-build-${{ needs.parse-release.outputs.version }}
+          path: apps/marketing/dist/
+          retention-days: 30

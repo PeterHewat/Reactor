@@ -41,5 +41,6 @@ export default defineConfig(
     "**/build/**",
     "**/coverage/**",
     "**/.astro/**",
+    "convex/_generated/**",
   ]),
 );

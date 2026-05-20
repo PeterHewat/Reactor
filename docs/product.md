@@ -21,23 +21,26 @@ Who are you building this for?
 List the minimum features needed for initial release:
 
 1. **Feature Name**
-   - Description: What does it do?
-   - User story: As a [user type], I want [capability] so that [benefit]
-   - Acceptance criteria: How do we know it's done?
+
+- Description: What does it do?
+- User story: As a [user type], I want [capability] so that [benefit]
+- Acceptance criteria: How do we know it's done?
 
 2. **Feature Name**
-   - Description:
-   - User story:
-   - Acceptance criteria:
+
+- Description:
+- User story:
+- Acceptance criteria:
 
 ### Future Features (Nice to Have)
 
 Features for later releases:
 
 1. **Feature Name**
-   - Description:
-   - Priority: High/Medium/Low
-   - Dependencies: What needs to be done first?
+
+- Description:
+- Priority: High/Medium/Low
+- Dependencies: What needs to be done first?
 
 ## User Flows
 

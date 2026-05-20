@@ -17,7 +17,7 @@ Do not open a public issue for undisclosed vulnerabilities.
 
 ## Dependency updates
 
-Run `bun run audit` locally. CI fails on **high** and **critical** advisories (`bun audit --audit-level=high`).
+Run `bun run audit` locally. CI fails on **high** and **critical** advisories (`bun audit --audit-level=high`). Transitive pins are documented in [docs/dependency-overrides.md](docs/dependency-overrides.md).
 
 CI also runs [Gitleaks](https://github.com/gitleaks/gitleaks) on every push/PR to detect committed secrets.
 

@@ -29,7 +29,7 @@ This directory contains standardized prompt templates for AI-assisted developmen
 
 Reference the relevant prompt when asking AI assistants for help:
 
-```
+```text
 Please review this code following the guidelines in prompts/code-review.md
 ```
 
@@ -37,7 +37,7 @@ Please review this code following the guidelines in prompts/code-review.md
 
 Reference specific sections for targeted assistance:
 
-```
+```text
 Help me refactor this component focusing on the "Anti-Pattern Detection & Elimination"
 section from prompts/refactor.md
 ```

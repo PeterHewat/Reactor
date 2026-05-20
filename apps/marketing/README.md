@@ -2,6 +2,8 @@
 
 The marketing site is an Astro-based static site intended for product landing pages, documentation, and SEO-focused content.
 
+**Stack:** [Astro 7 alpha](https://github.com/withastro/astro/releases) + Vite 8 (Rust compiler). Pin is intentional while the starter matures ahead of Astro 7 stable.
+
 ## Quick Start
 
 From the repository root:
@@ -23,8 +25,12 @@ apps/marketing/
 
 ## Styling
 
-- Tailwind CSS is configured at the app level.
+- Tailwind CSS v4 via `@tailwindcss/vite` in `astro.config.mjs` (required for Vite 8; PostCSS-only setup fails on `@import "tailwindcss"`).
 - Use tokens and shared design language from packages when possible.
+
+## Requirements
+
+- Node.js **>= 22.12.0** (Astro 7 alpha)
 
 ## Deployment
 

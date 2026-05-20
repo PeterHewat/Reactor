@@ -18,9 +18,9 @@ Multi-platform starter monorepo for Web (React 19), Mobile (React Native), and M
 
 ### Applications
 
-- **Web App**: React 19 + Vite + Tailwind CSS v4 + Zustand (`apps/web/`)
+- **Web App**: React 19 + Vite 8 + Tailwind CSS v4 + Zustand (`apps/web/`)
 - **Mobile App**: React Native CLI + NativeWind (`apps/mobile/`)
-- **Marketing Site**: Astro + Tailwind CSS (`apps/marketing/`)
+- **Marketing Site**: Astro 7 (alpha) + Vite 8 + Tailwind CSS v4 (`apps/marketing/`)
 
 ### Backend
 

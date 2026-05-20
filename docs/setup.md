@@ -72,7 +72,7 @@ After initializing Convex, integrate Clerk for authentication:
 
 1. Install Clerk: `bun install --filter @repo/web @clerk/react`
 2. Wire providers in `apps/web/src/main.tsx` — see [convex/README.md](../convex/README.md#step-3-connect-the-frontend)
-3. Create `convex/auth.config.ts` with your Clerk domain
+3. Copy `convex/auth.config.ts.example` to `convex/auth.config.ts` and set `CLERK_JWT_ISSUER_DOMAIN` in the Convex dashboard
 4. Use `ctx.auth.getUserIdentity()` in Convex functions to verify users
 5. Validate every mutation input with `v.object({ ... })` and surface errors via `ConvexError`
 
@@ -191,7 +191,7 @@ import { cn, loadEnv } from "@repo/utils";
 
 ### Convex Schema Example
 
-After running `bunx convex dev`, create `convex/schema.ts` and validate inputs with `v`. Example:
+The repo already includes `convex/schema.ts` and authenticated handlers in `convex/tasks.ts`. Example pattern:
 
 ```ts
 // convex/schema.ts
@@ -199,30 +199,34 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  todos: defineTable({
+  tasks: defineTable({
     title: v.string(),
     completed: v.boolean(),
     userId: v.string(),
-  }),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
 });
 
-// convex/mutations/addTodo.ts
-import { mutation } from "convex/server";
+// convex/tasks.ts (excerpt)
+import { mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { ConvexError } from "convex/values";
+import { requireIdentity } from "./lib/auth";
+import { parseTitle } from "./lib/validation";
 
-export const addTodo = mutation({
-  args: { title: v.string(), userId: v.string() },
+export const create = mutation({
+  args: { title: v.string() },
   handler: async (ctx, args) => {
-    if (!args.title.trim()) {
-      throw new ConvexError("Title is required");
-    }
-    const id = await ctx.db.insert("todos", {
-      title: args.title,
+    const identity = await requireIdentity(ctx);
+    const title = parseTitle(args.title);
+    const now = Date.now();
+    return await ctx.db.insert("tasks", {
+      title,
       completed: false,
-      userId: args.userId,
+      userId: identity.subject,
+      createdAt: now,
+      updatedAt: now,
     });
-    return id;
   },
 });
 ```
@@ -231,25 +235,19 @@ On the client, use `useQuery`/`useMutation` for data and `useConvexAuth()` for a
 
 ### Testing Convex Functions
 
-Unit test Convex functions with `convex-test`:
-
-```bash
-bun install -D convex-test
-```
+`convex-test` is already configured. Authenticated handlers are tested with `withIdentity`:
 
 ```ts
-// convex/mutations/addTodo.test.ts
+// convex/tasks.test.ts (excerpt)
 import { convexTest } from "convex-test";
 import { expect, test } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
+import { modules } from "./test.setup";
 
-test("addTodo creates a todo", async () => {
-  const t = convexTest(schema);
-  const id = await t.mutation(api.mutations.addTodo, {
-    title: "Test todo",
-    userId: "user123",
-  });
+test("create inserts a task for the signed-in user", async () => {
+  const t = convexTest(schema, modules).withIdentity({ subject: "user_abc" });
+  const id = await t.mutation(api.tasks.create, { title: "Test task" });
   expect(id).toBeDefined();
 });
 ```

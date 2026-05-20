@@ -181,10 +181,49 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint, format, typecheck]
+    if: needs.detect-changes.outputs.web == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build web app
+        env:
+          VITE_CONVEX_URL: https://ci-placeholder.convex.cloud
+          VITE_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
+        run: bun run --filter @repo/web build
+
+  build-marketing:
+    name: Build Marketing
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint, format, typecheck]
+    if: needs.detect-changes.outputs.marketing == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build marketing site
+        run: bun run --filter @repo/marketing build
+
   tests-web:
     name: Web Tests
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format, typecheck]
+    needs: [detect-changes, lint, format, typecheck, build-web]
     if: needs.detect-changes.outputs.web == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -205,7 +244,7 @@ jobs:
   tests-marketing:
     name: Marketing Tests
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format, typecheck]
+    needs: [detect-changes, lint, format, typecheck, build-marketing]
     if: needs.detect-changes.outputs.marketing == 'true'
     steps:
       - uses: actions/checkout@v6

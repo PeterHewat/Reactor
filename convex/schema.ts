@@ -11,7 +11,7 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     completed: v.boolean(),
-    userId: v.optional(v.string()),
+    userId: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

@@ -4,6 +4,8 @@ This folder contains the Convex backend for the application.
 
 > **Template note:** This starter repo is not linked to any Convex deployment. Sample schema and functions are committed so adopters can copy the pattern; run `bunx convex dev` in **your** fork to create and connect a real project.
 
+> **Security:** All task queries and mutations require authentication. Tasks are scoped to the signed-in user (`userId`). There are no unauthenticated read/write endpoints — safe to deploy once Clerk auth is configured.
+
 ## Initial Setup
 
 ### Prerequisites
@@ -31,7 +33,9 @@ This interactive command will:
 This starter commits:
 
 - `convex/schema.ts` — `tasks` table with indexes
-- `convex/tasks.ts` — `list` query and `create` mutation
+- `convex/tasks.ts` — authenticated `list`, `create`, `update`, `remove`
+- `convex/lib/` — shared auth and validation helpers
+- `convex/auth.config.ts.example` — copy to `auth.config.ts` when enabling Clerk
 - `convex/_generated/` — run `bunx convex dev` to refresh after you change functions
 
 Extend or replace these files for your domain.
@@ -60,11 +64,27 @@ To integrate Clerk authentication with Convex:
 
 ### 1. Install Clerk in the web app
 
+Clerk is already listed in `apps/web/package.json`. If you removed it:
+
 ```bash
 bun install --filter @repo/web @clerk/react
 ```
 
-### 2. Configure Clerk Provider
+### 2. Configure auth for Convex
+
+Copy the example auth config and set the issuer in the Convex dashboard:
+
+```bash
+cp convex/auth.config.ts.example convex/auth.config.ts
+```
+
+In the [Convex dashboard](https://dashboard.convex.dev) → Settings → Environment Variables, set:
+
+```text
+CLERK_JWT_ISSUER_DOMAIN=https://your-clerk-domain.clerk.accounts.dev
+```
+
+### 3. Configure Clerk Provider
 
 In `apps/web/src/main.tsx`:
 
@@ -84,37 +104,18 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 );
 ```
 
-### 3. Configure Convex for Clerk
-
-Create `convex/auth.config.ts`:
-
-```ts
-export default {
-  providers: [
-    {
-      domain: process.env.CLERK_JWT_ISSUER_DOMAIN,
-      applicationID: "convex",
-    },
-  ],
-};
-```
-
 ### 4. Use Authentication in Functions
 
-Use the `auth` helper in your Convex functions:
+Task functions use `requireIdentity()` from `convex/lib/auth.ts`. Pattern for new functions:
 
 ```ts
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { query } from "./_generated/server";
+import { requireIdentity } from "./lib/auth";
 
 export const getMyData = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-    // Use identity.subject as the user ID
+    const identity = await requireIdentity(ctx);
     return ctx.db
       .query("data")
       .filter((q) => q.eq(q.field("userId"), identity.subject))
@@ -154,10 +155,13 @@ After scaffolding, your convex folder will look like:
 
 ```text
 convex/
-  _generated/       # Auto-generated types (don't edit)
-  schema.ts         # Database schema
-  auth.config.ts    # Auth configuration
-  *.ts              # Your queries, mutations, actions
+  _generated/              # Auto-generated types (don't edit)
+  schema.ts                # Database schema
+  auth.config.ts           # Auth configuration (copy from auth.config.ts.example)
+  auth.config.ts.example   # Clerk auth template
+  lib/                     # Shared helpers (auth, validation)
+  tasks.ts                 # Sample authenticated CRUD
+  *.ts                     # Your queries, mutations, actions
 ```
 
 ## Resources

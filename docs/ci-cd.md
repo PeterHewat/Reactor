@@ -4,11 +4,13 @@ Ongoing reference for GitHub Actions, secrets, and deploy workflows. For first-t
 
 ## CI and test jobs
 
-| Job            | Workflow                              | When it runs        | Behavior                                              |
-| -------------- | ------------------------------------- | ------------------- | ----------------------------------------------------- |
-| `tests-convex` | [ci.yml](../.github/workflows/ci.yml) | `convex/**` changed | When `CONVEX_CI_TESTS: true` (Vitest + `convex-test`) |
+| Job               | Workflow                              | When it runs                | Behavior                                              |
+| ----------------- | ------------------------------------- | --------------------------- | ----------------------------------------------------- |
+| `build-web`       | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Production Vite build (placeholder env vars)          |
+| `build-marketing` | [ci.yml](../.github/workflows/ci.yml) | `apps/marketing/**` changed | Astro production build                                |
+| `tests-convex`    | [ci.yml](../.github/workflows/ci.yml) | `convex/**` changed         | When `CONVEX_CI_TESTS: true` (Vitest + `convex-test`) |
 
-**Tests on every PR:** `tests-web`, `tests-marketing`, shared package tests.
+**Tests on every PR:** `tests-web`, `tests-marketing`, shared package tests (after the matching build job passes).
 
 **Opt-in on PRs (labels):**
 

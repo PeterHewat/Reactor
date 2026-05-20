@@ -19,7 +19,7 @@ Starter monorepo for Web (React 19), Marketing (Astro), Convex backend, and Cler
 git clone git@github.com:PeterHewat/Reactor.git
 cd Reactor
 bun install
-bun run dev
+bun run dev:web
 ```
 
 | Resource                             | Purpose                                                                           |
@@ -29,7 +29,9 @@ bun run dev
 | [docs/ci-cd.md](docs/ci-cd.md)       | CI jobs, GitHub secrets, releases, PR previews (`e2e` / `preview` labels)         |
 | [convex/README.md](convex/README.md) | Link your Convex project, enable backend in web                                   |
 
-Backend (when ready): `cp apps/web/.env.example apps/web/.env.local` → `bunx convex dev` → wire providers per `convex/README.md`.
+Backend (when ready): `cp apps/web/.env.example apps/web/.env.local` → `bunx convex dev` → copy `convex/auth.config.ts.example` to `convex/auth.config.ts` → wire providers per `convex/README.md`.
+
+`@clerk/react` and `convex` are pre-installed in `apps/web` but not wired in `main.tsx` until you enable the backend.
 
 ## Platform status
 
@@ -83,8 +85,10 @@ Check that tools are available on PATH:
 
 ```bash
 bun --version   # >= 1.3.13 (.bun-version)
-node --version  # >= 22.12 for marketing (Astro 6)
+node --version  # 24 recommended (.node-version); >= 22.12 required for marketing (Astro 6)
 ```
+
+CI uses Node 24 (see `.node-version`). Bun runs install and scripts locally; Node is still required for Astro and some tooling.
 
 Recommended IDEs:
 

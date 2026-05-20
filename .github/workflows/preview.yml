@@ -19,7 +19,6 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  BUN_VERSION: "1.3.13"
   PREVIEW_NAME: pr-${{ github.event.pull_request.number }}
 
 jobs:
@@ -56,7 +55,7 @@ jobs:
             if [[ $file == packages/ui-web/* ]]; then shared=true; fi
             if [[ $file == packages/utils/* ]]; then shared=true; fi
             if [[ $file == packages/test-utils/* ]]; then shared=true; fi
-            if [[ $file == package.json ]] || [[ $file == bun.lock ]] || [[ $file == eslint.config.js ]] || [[ $file == tsconfig.json ]] || [[ $file == tsconfig.* ]] || [[ $file == .github/workflows/* ]] || [[ $file == .github/actions/* ]]; then
+            if [[ $file == package.json ]] || [[ $file == bun.lock ]] || [[ $file == eslint.config.js ]] || [[ $file == tsconfig.json ]] || [[ $file == tsconfig.* ]] || [[ $file == .github/workflows/* ]]; then
               config=true
             fi
           done
@@ -82,9 +81,11 @@ jobs:
       convex_url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version-file: .bun-version
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
       - name: Deploy Convex preview
         id: deploy
         env:
@@ -105,9 +106,11 @@ jobs:
       vercel_url: ${{ steps.vercel.outputs.preview-url }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version-file: .bun-version
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
       - name: Build web app
         env:
           VITE_CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
@@ -137,9 +140,11 @@ jobs:
       vercel_url: ${{ steps.vercel.outputs.preview-url }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
+      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          bun-version-file: .bun-version
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
       - name: Build marketing site
         run: bun run --filter @repo/marketing build
       - name: Deploy to Vercel (marketing preview)

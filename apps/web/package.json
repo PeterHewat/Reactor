@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@clerk/react": "^6.6.6",
+    "@clerk/react": "^6.7.1",
     "@repo/ui-web": "workspace:*",
     "@repo/utils": "workspace:*",
     "convex": "^1.39.1",

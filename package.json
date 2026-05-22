@@ -46,17 +46,17 @@
     "*.{json,md,yml,yaml,css,html,astro}": "prettier --write"
   },
   "overrides": {
-    "ws": "^8.20.1",
+    "ws": "^8.21.0",
     "devalue": "^5.8.1",
     "minimatch": "^10.2.5",
     "glob": "^13.0.6",
     "test-exclude": "^8.0.0",
     "brace-expansion": "^5.0.6",
     "picomatch": "^4.0.4",
-    "yaml": "^2.8.3"
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^5.8.3",
+    "@eslint-react/eslint-plugin": "^5.8.4",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -80,7 +80,7 @@
     "react-dom": "^19.2.6",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.59.4",
-    "vite": "^8.0.13",
+    "vite": "^8.0.14",
     "vitest": "^4.1.7"
   }
 }

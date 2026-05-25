@@ -1,6 +1,7 @@
 ---
 // src/layouts/Layout.astro
 import Analytics from "@vercel/analytics/astro";
+import SpeedInsights from "@vercel/speed-insights/astro";
 import "../styles/global.css";
 
 interface Props {
@@ -20,6 +21,7 @@ const { title, description = "Reactor - Modern Monorepo Starter" } = Astro.props
     <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <Analytics />
+    <SpeedInsights />
   </head>
   <body>
     <slot />

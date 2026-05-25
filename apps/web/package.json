@@ -19,6 +19,7 @@
     "@clerk/react": "^6.7.1",
     "@repo/ui-web": "workspace:*",
     "@repo/utils": "workspace:*",
+    "@vercel/analytics": "^2.0.1",
     "convex": "^1.39.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

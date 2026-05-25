@@ -1,5 +1,6 @@
 import { ErrorBoundary } from "@repo/ui-web";
 import { initializeI18n, initializeTheme } from "@repo/utils";
+import { Analytics } from "@vercel/analytics/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
@@ -25,6 +26,7 @@ createRoot(root).render(
   <StrictMode>
     <ErrorBoundary onError={reportError}>
       <App />
+      <Analytics />
     </ErrorBoundary>
   </StrictMode>,
 );

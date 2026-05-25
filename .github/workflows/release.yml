@@ -1,16 +1,7 @@
-# Release Workflow
+# Create GitHub releases and deploy new tags (single workflow_dispatch run).
+# Rollback / redeploy an older tag: use the Deploy workflow instead.
 #
-# SETUP REQUIRED:
-# 1. Create a 'production' environment in GitHub repo settings for manual approval
-# 2. Go to: Settings > Environments > New environment > Name: "production"
-# 3. Enable "Required reviewers" and add yourself/team members
-# 4. Uncomment the "environment: production" line in the job below
-#
-# USAGE:
-# - Manual trigger only via GitHub Actions tab
-# - Select component scope and version increment type
-# - Review release plan before approval step
-# - Automatic changelog generation via GitHub CLI
+# USAGE: Actions → Release → Run workflow (scope, version bump)
 
 name: Release
 
@@ -49,9 +40,9 @@ permissions:
 jobs:
   create-releases:
     runs-on: ubuntu-latest
-    environment: production # Requires manual approval for production releases
     outputs:
       released_components: ${{ steps.create.outputs.released_components }}
+      released_tags_json: ${{ steps.create.outputs.released_tags_json }}
       failed_components: ${{ steps.create.outputs.failed_components }}
       summary_url: ${{ steps.create.outputs.summary_url }}
     steps:
@@ -336,7 +327,7 @@ jobs:
           fi
 
           echo ""
-          echo "⚠️  Review the release plan above. Manual approval is required to proceed."
+          echo "⚠️  Review the release plan above before the create step runs."
 
       - name: Create releases
         id: create
@@ -456,7 +447,14 @@ jobs:
           CREATED_LIST=$(tr '\n' ',' < /tmp/release_state/created_releases.txt | sed 's/,$//')
           FAILED_LIST=$(tr '\n' ',' < /tmp/release_state/failed_releases.txt | sed 's/,$//')
 
+          if [ -s /tmp/release_state/created_releases.txt ]; then
+            TAGS_JSON=$(jq -Rsc 'split("\n") | map(select(length > 0))' /tmp/release_state/created_releases.txt)
+          else
+            TAGS_JSON='[]'
+          fi
+
           echo "released_components=$CREATED_LIST" >> $GITHUB_OUTPUT
+          echo "released_tags_json=$TAGS_JSON" >> $GITHUB_OUTPUT
           echo "failed_components=$FAILED_LIST" >> $GITHUB_OUTPUT
           echo "summary_url=https://github.com/${{ github.repository }}/releases" >> $GITHUB_OUTPUT
 
@@ -482,7 +480,7 @@ jobs:
           echo ""
           echo "🚀 All releases created successfully!"
           echo "🔗 View releases: https://github.com/${{ github.repository }}/releases"
-          echo "📊 Deployment progress will be visible in the CD workflow"
+          echo "📊 Deployment jobs run next in this workflow"
 
       - name: Cleanup state files
         if: always()
@@ -490,3 +488,16 @@ jobs:
           echo "🧹 Cleaning up temporary files..."
           rm -rf /tmp/release_state /tmp/gh_error_*.log 2>/dev/null || true
           echo "✅ Cleanup completed"
+
+  deploy:
+    name: Deploy ${{ matrix.tag }}
+    needs: create-releases
+    if: always() && needs.create-releases.outputs.released_tags_json != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJSON(needs.create-releases.outputs.released_tags_json) }}
+    uses: ./.github/workflows/deploy.yml
+    with:
+      tag: ${{ matrix.tag }}
+    secrets: inherit

@@ -118,23 +118,20 @@ jobs:
           bun-version-file: .bun-version
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Build web app
-        env:
-          VITE_CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-        run: bun run --filter @repo/web build
       - name: Deploy to Vercel (web preview)
         id: vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-          working-directory: apps/web
-          github-comment: false
+        working-directory: apps/web
         env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
           VITE_CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+        run: |
+          bunx vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          bunx vercel build --token="$VERCEL_TOKEN"
+          URL=$(bunx vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "preview-url=$URL" >> "$GITHUB_OUTPUT"
 
   preview-marketing:
     name: Marketing preview (Vercel)
@@ -155,17 +152,18 @@ jobs:
           bun-version-file: .bun-version
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Build marketing site
-        run: bun run --filter @repo/marketing build
       - name: Deploy to Vercel (marketing preview)
         id: vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_MARKETING_PROJECT_ID }}
-          working-directory: apps/marketing
-          github-comment: false
+        working-directory: apps/marketing
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_MARKETING_PROJECT_ID }}
+        run: |
+          bunx vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          bunx vercel build --token="$VERCEL_TOKEN"
+          URL=$(bunx vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "preview-url=$URL" >> "$GITHUB_OUTPUT"
 
   preview-comment:
     name: Preview summary
@@ -177,7 +175,7 @@ jobs:
       needs.detect-changes.result == 'success'
     steps:
       - name: Comment on pull request
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
           PREVIEW_NAME: ${{ env.PREVIEW_NAME }}
@@ -262,7 +260,7 @@ jobs:
               );
             }
 
-            const marker = "<!-- reactor-preview-deployments -->";
+            const marker = "<!-- preview-deployments -->";
             const body = `${marker}\n${lines.join("\n")}`;
             const prNumber = context.payload.pull_request.number;
 

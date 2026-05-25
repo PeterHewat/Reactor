@@ -47,7 +47,7 @@ bun run --filter @repo/marketing build
 
 1. Edit content under `apps/marketing/src/pages/` and `src/components/`
 2. Align branding via Tailwind theme and CSS variables in `src/styles/`
-3. Configure deploy in `cd.yml` when you pick a static host (see GitHub Actions secrets below)
+3. Configure deploy secrets in GitHub (see [ci-cd.md](./ci-cd.md)) and use the Release workflow
 
 If you are creating a **new** marketing app from scratch elsewhere, the historical Astro init steps are in git history; this starter no longer requires them.
 

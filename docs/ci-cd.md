@@ -2,6 +2,21 @@
 
 Ongoing reference for GitHub Actions, secrets, and deploy workflows. For first-time local setup (Convex dev, env files), see [setup.md](./setup.md).
 
+## Workflows
+
+| Workflow                                        | Required? | Purpose                                                       |
+| ----------------------------------------------- | --------- | ------------------------------------------------------------- |
+| [ci.yml](../.github/workflows/ci.yml)           | Yes       | Lint, test, and build on every PR/push to `main`              |
+| [release.yml](../.github/workflows/release.yml) | Yes       | Create GitHub release + deploy **new** tags                   |
+| [deploy.yml](../.github/workflows/deploy.yml)   | Yes       | Deploy or **rollback** to an existing tag (e.g. `web-v1.0.0`) |
+| [preview.yml](../.github/workflows/preview.yml) | Optional  | PR previews when the `preview` label is added                 |
+
+**New release:** Actions → **Release** → Run workflow (scope + version bump).
+
+**Rollback / redeploy:** Actions → **Deploy** → Run workflow → tag `web-v1.0.0` (checks out that git tag, rebuilds, deploys to production).
+
+**CI vs deploy:** [ci.yml](../.github/workflows/ci.yml) runs lint, format, typecheck, and tests on PRs and `main`. [deploy.yml](../.github/workflows/deploy.yml) only builds and ships — assume `main` is already green before releasing.
+
 ## CI and test jobs
 
 | Job               | Workflow                              | When it runs                | Behavior                                              |
@@ -47,9 +62,9 @@ Create **two** Vercel projects from this monorepo (Import Git Repository → set
 
 **Web project:** add `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY` in Vercel → Project → Settings → Environment Variables (Production + Preview).
 
-**Release deploys:** publish a GitHub release with tag `web-v1.0.0` or `marketing-v1.0.0` — [cd.yml](../.github/workflows/cd.yml) runs checks, builds, and deploys to the matching Vercel project.
+**Release deploys:** [release.yml](../.github/workflows/release.yml) only — one `workflow_dispatch` run creates the release and deploys. No PAT, no `production` environment, no second workflow.
 
-**Vercel + GitHub Actions:** If you use [preview.yml](../.github/workflows/preview.yml) for PR previews, disable automatic Vercel Git deployments so you do not deploy twice — set `git.deploymentEnabled: false` in each project’s `vercel.json` ([Vercel docs](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments)).
+**Vercel + GitHub Actions:** Deploy workflows run `vercel build` on the GitHub runner (full monorepo checkout), then `vercel deploy --prebuilt` — Vercel does not rebuild remotely. Disable automatic Vercel Git deployments: `git.deploymentEnabled: false` in each `vercel.json` ([Vercel docs](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments)).
 
 See [security-headers.md](./security-headers.md) to tune CSP in `apps/web/vercel.json` for your Clerk domain.
 
@@ -74,7 +89,7 @@ Opt-in previews for pull requests. Same pattern as the `e2e` label: add the **`p
 
 **Secrets:** `CONVEX_PREVIEW_DEPLOY_KEY` (not the production `CONVEX_DEPLOY_KEY`), plus `VERCEL_*` and `VITE_CLERK_PUBLISHABLE_KEY` for web previews.
 
-**Convex preview key:** Convex Dashboard → Project → Settings → **Generate Preview Deploy Key** → store as `CONVEX_PREVIEW_DEPLOY_KEY`. Production releases in [cd.yml](../.github/workflows/cd.yml) use `CONVEX_DEPLOY_KEY`.
+**Convex preview key:** Convex Dashboard → Project → Settings → **Generate Preview Deploy Key** → store as `CONVEX_PREVIEW_DEPLOY_KEY`. Production Convex deploys use `CONVEX_DEPLOY_KEY` via the Release workflow (`convex` scope).
 
 **Clerk:** Add your Vercel preview URL pattern to allowed origins if you test sign-in on previews.
 

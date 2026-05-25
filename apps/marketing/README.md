@@ -38,7 +38,7 @@ Astro outputs static assets to `dist/`. This template uses **Vercel** with `verc
 
 1. Create a Vercel project with root directory `apps/marketing`
 2. Add `VERCEL_MARKETING_PROJECT_ID` to GitHub Actions secrets
-3. Publish a release tagged `marketing-v1.0.0` to trigger [cd.yml](../../.github/workflows/cd.yml)
+3. Run the Release workflow (or Deploy with tag `marketing-v1.0.0`) — see [docs/ci-cd.md](../../docs/ci-cd.md)
 
 See [docs/ci-cd.md](../../docs/ci-cd.md#vercel-web--marketing) for tokens and org ID.
 

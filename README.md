@@ -253,5 +253,5 @@ Useful for E2E test development, debugging, and automated browser testing workfl
 ### CI/CD Overview
 
 - **CI (Push/PR to main):** Runs in [ci.yml](.github/workflows/ci.yml). Detects changes in web, marketing, and convex. For changed areas, executes lint, format, typecheck, and tests
-- **CD (Release published):** Runs in [cd.yml](.github/workflows/cd.yml). Parses tags `web-vX.Y.Z`, `marketing-vX.Y.Z`, or `convex-vX.Y.Z` and performs deployment for the targeted platform
-- **Release Planning (Manual):** [release.yml](.github/workflows/release.yml) analyzes changes for each platform, increments versions per selection (patch/minor/major), and creates GitHub releases
+- **Release (Manual):** [release.yml](.github/workflows/release.yml) analyzes changes, creates GitHub releases (`web-vX.Y.Z`, `marketing-vX.Y.Z`, `convex-vX.Y.Z`), and deploys via [deploy.yml](.github/workflows/deploy.yml)
+- **Deploy / rollback (Manual):** [deploy.yml](.github/workflows/deploy.yml) redeploys an existing tag without creating a new release

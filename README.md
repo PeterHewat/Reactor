@@ -26,7 +26,7 @@ bun run dev:web
 | ------------------------------------ | --------------------------------------------------------------------------------- |
 | [AGENTS.md](AGENTS.md)               | Rules for AI agents (verify: `bun run lint && bun run typecheck && bun run test`) |
 | [docs/setup.md](docs/setup.md)       | First-time platform setup, local dev, Convex/Clerk wiring                         |
-| [docs/ci-cd.md](docs/ci-cd.md)       | CI jobs, GitHub secrets, releases, PR previews (`e2e` / `preview` labels)         |
+| [docs/ci-cd.md](docs/ci-cd.md)       | CI jobs, GitHub secrets, releases, PR labels, PR previews                         |
 | [convex/README.md](convex/README.md) | Link your Convex project, enable backend in web                                   |
 
 Backend (when ready): `cp apps/web/.env.example apps/web/.env.local` → `bunx convex dev` → copy `convex/auth.config.ts.example` to `convex/auth.config.ts` → wire providers per `convex/README.md`.

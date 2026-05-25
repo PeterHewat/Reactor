@@ -11,7 +11,7 @@ Ongoing reference for GitHub Actions, secrets, and deploy workflows. For first-t
 | [deploy.yml](../.github/workflows/deploy.yml)   | Yes       | Deploy or **rollback** to an existing tag (e.g. `web-v1.0.0`) |
 | [preview.yml](../.github/workflows/preview.yml) | Optional  | PR previews when the `preview` label is added                 |
 
-**New release:** Actions → **Release** → Run workflow (scope + version bump).
+**New release:** Actions → **Release** → Run workflow (scope + version bump). Release notes are auto-generated from merged PRs using [.github/release.yml](../.github/release.yml) (label categories, exclusions).
 
 **Rollback / redeploy:** Actions → **Deploy** → Run workflow → tag `web-v1.0.0` (checks out that git tag, rebuilds, deploys to production).
 
@@ -94,3 +94,29 @@ Opt-in previews for pull requests. Same pattern as the `e2e` label: add the **`p
 **Clerk:** Add your Vercel preview URL pattern to allowed origins if you test sign-in on previews.
 
 The workflow posts (or updates) a single PR comment with Convex and Vercel links. Preview Convex deployments expire automatically ([Convex preview docs](https://docs.convex.dev/production/hosting/preview-deployments)).
+
+## PR labels and release notes
+
+Release notes group **merged PRs** by label ([release.yml](../.github/release.yml)). Squash-merge PRs so each PR becomes one commit on `main`. Use one primary label per PR (`enhancement`, `fix`, `breaking-change`, `security`, `documentation`, `dependencies`). Use `test`, `chore`, or `ignore-for-release` for work that should not appear in release notes.
+
+| Label                                                                                | Role                                          |
+| ------------------------------------------------------------------------------------ | --------------------------------------------- |
+| `enhancement`, `fix`, `breaking-change`, `security`, `documentation`, `dependencies` | Release note categories                       |
+| `bug`                                                                                | Issues (also accepted on PRs alongside `fix`) |
+| `test`, `chore`, `ignore-for-release`                                                | Excluded from release notes                   |
+| `e2e`, `preview`                                                                     | Opt-in CI/preview workflows (see above)       |
+| `duplicate`, `invalid`, `wontfix`, `question`                                        | Issue triage                                  |
+
+Dependabot applies `dependencies`, `github-actions`, `monorepo`, and `typescript`; bot PRs are excluded from notes by author.
+
+### Sync labels to GitHub
+
+Install the [GitHub CLI](https://cli.github.com/) and authenticate (`gh auth login`), then from the repo root:
+
+```bash
+brew install gh   # once, if missing
+gh auth login     # once per machine
+bash scripts/sync-github-labels.sh
+```
+
+Implementation: [scripts/sync-github-labels.sh](../scripts/sync-github-labels.sh). Safe to re-run (`gh label create --force` updates color/description).

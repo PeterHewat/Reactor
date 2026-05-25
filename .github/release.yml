@@ -1,0 +1,49 @@
+# Configures GitHub auto-generated release notes (gh release create --generate-notes).
+# PRs: label when opening; squash-merge so each PR maps to one commit on main.
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - chore
+      - test
+      - e2e
+      - preview
+      - duplicate
+      - invalid
+      - wontfix
+      - question
+    authors:
+      - dependabot[bot]
+      - github-actions[bot]
+
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking-change
+
+    - title: Security
+      labels:
+        - security
+
+    - title: Features
+      labels:
+        - enhancement
+
+    - title: Bug Fixes
+      labels:
+        - fix
+        - bug
+
+    - title: Documentation
+      labels:
+        - documentation
+
+    - title: Dependencies
+      labels:
+        - dependencies
+        - github-actions
+
+    - title: Other Changes
+      labels:
+        - "*"

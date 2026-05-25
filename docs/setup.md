@@ -18,6 +18,10 @@ For the full matrix (including CI/CD), see the [platform status table](../README
 
 For CI jobs, GitHub secrets, release deploys, and PR previews (`e2e` / `preview` labels), see [ci-cd.md](./ci-cd.md).
 
+## Install and git hooks
+
+From the repository root, `bun install` installs dependencies and runs the `prepare` script, which wires [Husky](https://typicode.github.io/husky/) git hooks under `.husky/`. The pre-commit hook runs [lint-staged](https://github.com/lint-staged/lint-staged) on staged files (ESLint + Prettier for code, Prettier for config/markup). CI still runs the full lint and test suite on push; hooks catch common issues before commit. To skip hooks for a single commit: `git commit --no-verify`.
+
 ## Web Frontend (React + Vite + Tailwind)
 
 The web app is already scaffolded and ready to use. Dependencies are managed at the monorepo root.

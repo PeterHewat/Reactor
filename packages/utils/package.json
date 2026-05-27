@@ -14,6 +14,31 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./env": {
+      "types": "./src/env.ts",
+      "import": "./src/env.ts",
+      "default": "./src/env.ts"
+    },
+    "./theme": {
+      "types": "./src/theme.ts",
+      "import": "./src/theme.ts",
+      "default": "./src/theme.ts"
+    },
+    "./i18n": {
+      "types": "./src/i18n.ts",
+      "import": "./src/i18n.ts",
+      "default": "./src/i18n.ts"
+    },
+    "./storage": {
+      "types": "./src/storage.ts",
+      "import": "./src/storage.ts",
+      "default": "./src/storage.ts"
+    },
+    "./use-translation": {
+      "types": "./src/use-translation.ts",
+      "import": "./src/use-translation.ts",
+      "default": "./src/use-translation.ts"
     }
   },
   "scripts": {

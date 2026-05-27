@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "paths": {
+      "@repo/utils": ["./packages/utils/src/index.ts"],
+      "@repo/utils/env": ["./packages/utils/src/env.ts"],
+      "@repo/utils/theme": ["./packages/utils/src/theme.ts"],
+      "@repo/utils/i18n": ["./packages/utils/src/i18n.ts"],
+      "@repo/utils/storage": ["./packages/utils/src/storage.ts"],
+      "@repo/utils/use-translation": ["./packages/utils/src/use-translation.ts"],
+      "@repo/ui-web": ["./packages/ui-web/src/index.ts"],
+      "@repo/test-utils": ["./packages/test-utils/src/index.ts"]
+    }
+  }
+}

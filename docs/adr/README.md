@@ -48,3 +48,4 @@ What becomes easier or more difficult to do and any risks introduced by this cha
 ## Index of ADRs
 
 - [ADR-001: Convex as the Backend over tRPC/Supabase](001-convex-over-trpc-supabase.md) - Accepted - 2026-03-16
+- [ADR-002: Package boundary authoring](002-package-boundary-authoring.md) - Accepted - 2026-05-26

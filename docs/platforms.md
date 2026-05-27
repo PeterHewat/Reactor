@@ -13,11 +13,11 @@ Backend lives in `convex/` at the repo root (sample schema/functions committed; 
 
 ## Shared packages
 
-| Package               | Used by  | Responsibility                   |
-| --------------------- | -------- | -------------------------------- |
-| `packages/ui-web`     | Web      | shadcn-style React components    |
-| `packages/utils`      | All apps | `cn()`, env helpers, theme, i18n |
-| `packages/test-utils` | Tests    | Shared test helpers and mocks    |
+| Package               | Used by           | Responsibility                   |
+| --------------------- | ----------------- | -------------------------------- |
+| `packages/ui-web`     | Web               | shadcn-style React components    |
+| `packages/utils`      | Web (`@repo/web`) | `cn()`, env helpers, theme, i18n |
+| `packages/test-utils` | Tests             | Shared test helpers and mocks    |
 
 Marketing `.astro` components live in `apps/marketing/src/components/`. Styling uses each app’s Tailwind config and CSS variables (`apps/marketing/src/styles/`).
 
@@ -37,12 +37,12 @@ Browser
 
 ## Platform-specific conventions
 
-| Concern       | Web / Marketing               |
-| ------------- | ----------------------------- |
-| Styling       | Tailwind v4                   |
-| Class merging | `cn()` from `@repo/utils`     |
-| Env vars      | `VITE_*` via `packages/utils` |
-| Server state  | Convex hooks (web only)       |
+| Concern       | Web / Marketing                                                    |
+| ------------- | ------------------------------------------------------------------ |
+| Styling       | Tailwind v4                                                        |
+| Class merging | `cn()` from `@repo/utils`                                          |
+| Env vars      | Web: `apps/web/src/env.ts` + `VITE_*`; Convex: `convex/lib/env.ts` |
+| Server state  | Convex hooks (web only)                                            |
 
 ## CI expectations
 
@@ -57,6 +57,7 @@ See [ci-cd.md](./ci-cd.md#ci-and-test-jobs) for details. Root lint/format/typech
 
 ## Further reading
 
+- [Monorepo structure](./monorepo-structure.md) — env layers, aliases, typecheck vs build, growth thresholds
 - [Setup Guide](./setup.md) — first-time scaffolding and local dev
 - [CI/CD](./ci-cd.md) — workflows, secrets, deploys
 - [Architecture](./architecture.md) — business/system design (template)

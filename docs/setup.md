@@ -18,6 +18,42 @@ For the full matrix (including CI/CD), see the [platform status table](../README
 
 For CI jobs, GitHub secrets, release deploys, and PR previews (`e2e` / `preview` labels), see [ci-cd.md](./ci-cd.md).
 
+For layout, aliases, release tags, and when to add feature folders, see [monorepo-structure.md](./monorepo-structure.md).
+
+## Environment variables
+
+Three intentional layers — do not import `@repo/utils` from Convex (React/Zustand peers):
+
+| Layer          | Location                                        | When to use                                                        |
+| -------------- | ----------------------------------------------- | ------------------------------------------------------------------ |
+| Generic loader | `packages/utils/src/env.ts` (`@repo/utils/env`) | `loadEnv` + parsers with any source adapter                        |
+| Web app        | `apps/web/src/env.ts`                           | `VITE_*` via `import.meta.env`; `loadWebEnv()` / `requireWebEnv()` |
+| Convex server  | `convex/lib/env.ts`                             | `requireEnv` for dashboard variables only                          |
+
+### Env file map
+
+| Template                   | Copy to                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| `.env.example` (repo root) | `.env.local` at repo root — Convex deployment, Clerk JWT issuer for dashboard |
+| `apps/web/.env.example`    | `apps/web/.env.local` — `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY`       |
+
+Never commit `.env.local` files.
+
+## Typecheck vs build
+
+| Command                  | Purpose                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `bun run typecheck`      | Solution-wide `tsc --noEmit` (no artifacts)                                                                  |
+| `bun run typecheck:refs` | Verify TS project references (`tsc -b` without caring about app bundles)                                     |
+| `bun run build`          | Emit composite `.d.ts` for packages (`tsc -b`) — not Vite/Astro production output                            |
+| `bun run build:all`      | `build` (solution `tsc -b`) then every workspace `build` (web, marketing, convex typecheck, package `.d.ts`) |
+
+Per-app production: `bun run --filter @repo/web build`, `bun run --filter @repo/marketing build`.
+
+## Dependency overrides
+
+Root `package.json` `overrides` pin transitive dependency versions. Document every change in [dependency-overrides.md](./dependency-overrides.md) (keep version column aligned with `package.json`).
+
 ## Install and git hooks
 
 From the repository root, `bun install` installs dependencies and runs the `prepare` script, which wires [Husky](https://typicode.github.io/husky/) git hooks under `.husky/`. The pre-commit hook runs [lint-staged](https://github.com/lint-staged/lint-staged) on staged files (ESLint + Prettier for code, Prettier for config/markup). CI still runs the full lint and test suite on push; hooks catch common issues before commit. To skip hooks for a single commit: `git commit --no-verify`.
@@ -159,13 +195,13 @@ Use Tailwind theme extensions and CSS variables in each app (`apps/web`, `apps/m
 
 Shared UI semantics (theme mode, locales) live in `@repo/utils` — not a separate tokens package.
 
-### Environment Config (packages/utils)
+### Environment Config (`@repo/utils/env`)
 
 Use the typed env helper to read required/optional variables safely without logging secrets:
 
 ```ts
 // Example: load env in Node contexts
-import { loadEnv, asString, asBoolean, asInt } from "@repo/utils";
+import { loadEnv, asString, asBoolean, asInt } from "@repo/utils/env";
 
 const env = loadEnv({
   CLERK_SECRET_KEY: { key: "CLERK_SECRET_KEY", parse: asString },
@@ -181,16 +217,18 @@ const env = loadEnv({
 
 ### Path Aliases
 
-Imports are simplified via TypeScript `paths`:
+Imports use workspace aliases defined in [tsconfig.paths.json](../tsconfig.paths.json) and [packages/config/aliases.ts](../packages/config/aliases.ts) (Vite/Vitest).
 
 - `@repo/ui-web` → Web UI components
-- `@repo/utils` → Utilities like `cn()`, theme, i18n, and env helpers
+- `@repo/utils` → `cn()` and barrel re-exports
+- `@repo/utils/env`, `/theme`, `/i18n`, `/storage`, `/use-translation` → narrow subpath imports
 
 Example:
 
 ```ts
 import { Button } from "@repo/ui-web";
-import { cn, loadEnv } from "@repo/utils";
+import { cn } from "@repo/utils";
+import { loadEnv } from "@repo/utils/env";
 ```
 
 ### Convex Schema Example
@@ -275,6 +313,7 @@ See [security-headers.md](./security-headers.md) for CSP when running production
 
 ## Next Steps
 
+- Follow [agent-guidance.md](./agent-guidance.md) for AGENTS.md, Copilot, prompts, and ADR precedence
 - Follow [.github/copilot-instructions.md](../.github/copilot-instructions.md) for coding standards and patterns
 - Add Vitest and Playwright after the frontend scaffold
 - See [ci-cd.md](./ci-cd.md) for GitHub Actions secrets, releases, and PR previews

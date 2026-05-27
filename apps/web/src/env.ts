@@ -1,4 +1,4 @@
-import { asString, loadEnv } from "@repo/utils";
+import { asString, loadEnv } from "@repo/utils/env";
 
 const webEnvSchema = {
   convexUrl: { key: "VITE_CONVEX_URL", parse: asString },

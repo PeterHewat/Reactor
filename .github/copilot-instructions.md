@@ -6,7 +6,9 @@
 
 - Merge Tailwind classes with `cn()` from `@repo/utils` — not raw `clsx` or `twMerge`
 - Add JSDoc with `@param`, `@returns`, `@example` on all exported functions and components
-- Use the `env.ts` abstraction (`packages/utils/src/env.ts`) for environment variables — never access `process.env` directly
+- **Environment (three layers):** `@repo/utils/env` + app wrappers (`apps/web/src/env.ts`); Convex uses `convex/lib/env.ts` `requireEnv` — never `process.env` in app code; do not import `@repo/utils` from Convex. See `docs/monorepo-structure.md`
+- Prefer `@repo/utils/*` subpath imports over growing the root barrel
+- Root `overrides`: keep `docs/dependency-overrides.md` in sync when pins change
 - Use Convex `useQuery` / `useMutation` for server data — never `useEffect` + `fetch`
 - After changes, verify with: `bun run lint && bun run typecheck && bun run test`
 

@@ -1,5 +1,5 @@
-import path from "node:path";
 import { defineConfig } from "vitest/config";
+import { createRepoAliases, dedupeReact, utilsAliasKeys } from "../config/aliases";
 
 export default defineConfig({
   test: {
@@ -17,9 +17,7 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@repo/test-utils": path.resolve(__dirname, "../test-utils/src/index.ts"),
-    },
-    dedupe: ["react", "react-dom"],
+    alias: createRepoAliases(utilsAliasKeys),
+    dedupe: [...dedupeReact],
   },
 });

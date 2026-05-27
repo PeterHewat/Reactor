@@ -48,9 +48,11 @@ You are a tool-first engineering assistant. Your purpose is to execute tasks eff
 ## Project Conventions (Reactor)
 
 - Merge Tailwind classes with `cn()` from `@repo/utils` — never raw `clsx` or `twMerge`
-- Use `packages/utils/src/env.ts` for environment variables — never `process.env` directly
+- **Environment variables (three layers):** use `loadEnv` from `@repo/utils/env` (or app wrappers like `apps/web/src/env.ts` with a Vite `import.meta.env` source); use `requireEnv` in `convex/lib/env.ts` for Convex dashboard vars — never `process.env` in app code; do not import `@repo/utils` from Convex (React/Zustand peers). See `docs/monorepo-structure.md`.
+- Prefer narrow `@repo/utils/*` subpath imports (`/env`, `/theme`, `/i18n`, `/storage`, `/use-translation`) over growing the root barrel
 - Use Convex `useQuery` / `useMutation` for server state — never `useEffect` + `fetch`
 - After changes, verify: `bun run lint && bun run typecheck && bun run test`
+- Root `package.json` `overrides`: keep `docs/dependency-overrides.md` in sync when pins change
 
 ## Error Handling
 

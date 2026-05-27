@@ -1,11 +1,11 @@
-import path from "node:path";
 import { defineConfig } from "vitest/config";
+import { createRepoAliases, dedupeReact, webAliasKeys } from "../../packages/config/aliases";
 
 export default defineConfig({
-  env: {
-    VITE_CONVEX_URL: "https://test-project.convex.cloud",
-  },
   test: {
+    env: {
+      VITE_CONVEX_URL: "https://test-project.convex.cloud",
+    },
     environment: "happy-dom",
     globals: true,
     setupFiles: ["./setupTests.ts"],
@@ -19,11 +19,7 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@repo/utils": path.resolve(__dirname, "../../packages/utils/src/index.ts"),
-      "@repo/ui-web": path.resolve(__dirname, "../../packages/ui-web/src/index.ts"),
-      "@repo/test-utils": path.resolve(__dirname, "../../packages/test-utils/src/index.ts"),
-    },
-    dedupe: ["react", "react-dom"],
+    alias: createRepoAliases(webAliasKeys),
+    dedupe: [...dedupeReact],
   },
 });

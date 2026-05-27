@@ -10,6 +10,8 @@ This package is internal to the monorepo. Import via the path alias:
 import { Button } from "@repo/ui-web";
 ```
 
+Reusable React UI only — not app routes, marketing Astro components, or Convex logic. See [ADR-002](../../docs/adr/002-package-boundary-authoring.md).
+
 ## Components
 
 ### Button

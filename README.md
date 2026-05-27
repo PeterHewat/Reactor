@@ -121,6 +121,7 @@ apps/
   marketing/              # Astro marketing site
 
 packages/
+  config/                 # Shared Vite/Vitest path aliases (not a workspace package)
   ui-web/                 # Web UI components (shadcn/Tailwind)
   utils/                  # Platform-agnostic utilities
   test-utils/             # Testing utilities
@@ -138,6 +139,9 @@ prompts/                  # AI prompt templates
 - **[Security headers / CSP](docs/security-headers.md)** - Examples for Vite, Vercel, Netlify, Cloudflare
 - **[Architecture](docs/architecture.md)** - System design and technical decisions
 - **[Platform architecture](docs/platforms.md)** - Apps, packages, and CI expectations
+- **[Monorepo structure](docs/monorepo-structure.md)** - Env layers, aliases, typecheck vs build, growth thresholds
+- **[Agent guidance index](docs/agent-guidance.md)** - AGENTS.md, Copilot, prompts, ADRs
+- **[Dependency overrides](docs/dependency-overrides.md)** - Root `package.json` `overrides` rationale (sync on pin changes)
 - **[Product Requirements](docs/product.md)** - Business requirements and user stories
 - **[Architecture Decisions](docs/adr/)** - Record of architectural decision records
 - **[AI Prompt Templates](prompts/)** - Standardized prompts for development workflows
@@ -153,7 +157,8 @@ bun run typecheck      # Type check all packages
 bun run typecheck:refs # Type check with project references
 
 # Build & clean
-bun run build          # Build all TypeScript projects
+bun run build          # TS project references / .d.ts (packages only)
+bun run build:all      # build + all workspace build scripts (web, marketing, convex, packages)
 bun run clean          # Clean TypeScript build artifacts
 
 # Testing
@@ -207,6 +212,7 @@ Reference: [How to Write a Git Commit Message](https://chris.beams.io/posts/git-
 
 ### Dependencies & Semver
 
+- Root `overrides` (security pins): see [docs/dependency-overrides.md](docs/dependency-overrides.md); update the doc when changing `package.json` overrides
 - Check updates: `bun run outdated`
 - Update within declared semver ranges: `bun run update`
 - Semver reminder:

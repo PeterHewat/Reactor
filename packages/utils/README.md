@@ -4,11 +4,20 @@ Shared utilities for the Reactor monorepo.
 
 ## Installation
 
-This package is internal to the monorepo. Import via the path alias:
+This package is internal to the monorepo. Import via path alias or subpath:
 
 ```ts
-import { cn, loadEnv, asString, asInt, asBoolean } from "@repo/utils";
+import { cn } from "@repo/utils";
+import { loadEnv, asString, asInt, asBoolean } from "@repo/utils/env";
+import { useThemeStore } from "@repo/utils/theme";
+import { useTranslation } from "@repo/utils/use-translation";
 ```
+
+Subpaths: `./env`, `./theme`, `./i18n`, `./storage`, `./use-translation`. Prefer narrow imports in new code.
+
+## Package boundaries
+
+What belongs here vs `@repo/ui-web` vs Convex is defined in [docs/adr/002-package-boundary-authoring.md](../../docs/adr/002-package-boundary-authoring.md).
 
 ## Utilities
 
@@ -40,7 +49,7 @@ cn("foo", "foo", "bar"); // "foo bar"
 Type-safe environment variable loader. Prevents logging secrets and validates required variables.
 
 ```ts
-import { loadEnv, asString, asInt, asBoolean } from "@repo/utils";
+import { loadEnv, asString, asInt, asBoolean } from "@repo/utils/env";
 
 const env = loadEnv({
   // Required variable

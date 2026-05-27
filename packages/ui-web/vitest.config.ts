@@ -1,5 +1,5 @@
-import path from "node:path";
 import { defineConfig } from "vitest/config";
+import { createRepoAliases, uiWebAliasKeys } from "../config/aliases";
 
 export default defineConfig({
   test: {
@@ -16,9 +16,6 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@repo/utils": path.resolve(__dirname, "../utils/src/index.ts"),
-      "@repo/test-utils": path.resolve(__dirname, "../test-utils/src/index.ts"),
-    },
+    alias: createRepoAliases(uiWebAliasKeys),
   },
 });

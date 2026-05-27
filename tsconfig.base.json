@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.paths.json",
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
@@ -15,11 +16,6 @@
     "verbatimModuleSyntax": true,
     "jsx": "react-jsx",
     "allowJs": true,
-    "noUncheckedIndexedAccess": true,
-    "paths": {
-      "@repo/utils": ["./packages/utils/src/index.ts"],
-      "@repo/ui-web": ["./packages/ui-web/src/index.ts"],
-      "@repo/test-utils": ["./packages/test-utils/src/index.ts"]
-    }
+    "noUncheckedIndexedAccess": true
   }
 }

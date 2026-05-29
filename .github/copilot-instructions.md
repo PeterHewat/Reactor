@@ -10,7 +10,8 @@
 - Prefer `@repo/utils/*` subpath imports over growing the root barrel
 - Root `overrides`: keep `docs/dependency-overrides.md` in sync when pins change
 - Use Convex `useQuery` / `useMutation` for server data — never `useEffect` + `fetch`
-- After changes, verify with: `bun run lint && bun run typecheck && bun run test`
+- Prettier (`.prettierrc.json`) formats all supported repo file types — run `bunx prettier --write <paths>` or `bun run format:fix` after edits; see AGENTS.md § Formatting
+- After changes, verify: `bun run format:fix && bun run lint && bun run typecheck && bun run test`
 
 ## Safety
 

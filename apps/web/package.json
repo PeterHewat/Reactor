@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@clerk/react": "^6.7.1",
+    "@clerk/react": "^6.7.2",
     "@repo/ui-web": "workspace:*",
     "@repo/utils": "workspace:*",
     "@vercel/analytics": "^2.0.1",
@@ -24,7 +24,7 @@
     "convex": "^1.39.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

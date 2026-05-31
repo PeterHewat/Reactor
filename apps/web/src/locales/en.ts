@@ -2,10 +2,6 @@ import type { TranslationDictionary } from "@repo/utils";
 
 /**
  * English translations — the canonical source of truth for all translation keys.
- *
- * Other locale files must match this structure exactly.
- * The `as const satisfies` pattern preserves literal types for key extraction
- * while ensuring the shape conforms to `TranslationDictionary`.
  */
 const en = {
   common: {
@@ -31,22 +27,53 @@ const en = {
     select: "Select language",
     current: "Current language: {{language}}",
   },
+  nav: {
+    main: "Main navigation",
+    tasks: "Tasks",
+  },
+  auth: {
+    login: "Log in",
+    logout: "Log out",
+  },
   home: {
     title: "Reactor",
     subtitle: "React 19 + Convex + Clerk + Tailwind CSS",
-    viewOnGitHub: "View on GitHub",
+    viewRepository: "View repository on GitHub",
     features: {
       title: "Features",
-      react: "React 19 with latest features",
-      convex: "Convex for real-time backend",
-      clerk: "Clerk for authentication",
-      tailwind: "Tailwind CSS for styling",
-      i18n: "Internationalization support",
+      react: "React 19 with TanStack Router file routes",
+      convex: "Convex sample tasks API (enable with env)",
+      clerk: "Clerk authentication when configured",
+      tailwind: "Tailwind CSS v4 with shared tokens",
+      i18n: "Internationalization (en, es, fr, de)",
       themes: "Light and dark themes",
     },
   },
+  backend: {
+    setupTitle: "Finish cloud setup",
+    setupBody:
+      "Wire Convex and Clerk to run the tasks demo. Follow the steps below, then use bun run dev:full.",
+    stepConvex: "Run bun run dev:convex and set VITE_CONVEX_URL in apps/web/.env.local",
+    stepClerk: "Create a Clerk app and set VITE_CLERK_PUBLISHABLE_KEY",
+    stepEnv:
+      "Copy convex/auth.config.ts.example to auth.config.ts and set CLERK_JWT_ISSUER_DOMAIN in Convex",
+    setupGuide: "Open setup guide on GitHub (README)",
+    setupGuideLocal: "See README in your repository for cloud setup",
+    backHome: "Back to home",
+  },
+  tasks: {
+    title: "Tasks",
+    subtitle: "Sample vertical slice: Convex mutations and Clerk auth",
+    newPlaceholder: "What needs to be done?",
+    add: "Add task",
+    empty: "No tasks yet. Add one above.",
+    listLabel: "Your tasks",
+    toggleComplete: "Mark “{{title}}” complete",
+    delete: "Delete “{{title}}”",
+  },
   errors: {
     notFound: "Page not found",
+    notFoundHint: "The page you requested does not exist.",
     unauthorized: "You are not authorized to view this page",
     serverError: "Server error. Please try again later.",
     networkError: "Network error. Please check your connection.",

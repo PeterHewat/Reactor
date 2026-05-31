@@ -1,6 +1,6 @@
 # CI/CD and deployments
 
-Ongoing reference for GitHub Actions, secrets, and deploy workflows. For first-time local setup (Convex dev, env files), see [setup.md](./setup.md).
+Ongoing reference for GitHub Actions, secrets, and deploy workflows. **Onboarding:** [README](../README.md) → [getting-started.md](./getting-started.md) (§2–6). **Commands:** [package.json](../package.json) or [getting-started.md#commands](./getting-started.md#commands). **Day-2 patterns:** [development.md](./development.md).
 
 ## Workflows
 
@@ -35,6 +35,13 @@ Ongoing reference for GitHub Actions, secrets, and deploy workflows. For first-t
 | `preview` | [preview.yml](../.github/workflows/preview.yml) | Convex preview + Vercel preview deploys (see below)  |
 
 Root lint, format, and typecheck run when any app package changes.
+
+### E2E tests (Playwright)
+
+- **Local:** `bun run e2e:install` once, then `bun run --filter @repo/web e2e` (or `@repo/marketing`)
+- **CI:** Add the **`e2e`** label on a PR; runs when web or marketing paths change (after the matching build job)
+- **Naming:** `*.e2e.ts` files
+- **Convex in E2E:** Prefer a real dev deployment (`VITE_CONVEX_URL`); see [development.md](./development.md#e2e-tests-playwright)
 
 ## GitHub Actions secrets
 

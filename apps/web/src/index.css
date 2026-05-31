@@ -1,3 +1,4 @@
+@import "@repo/tokens/theme.css";
 @import "tailwindcss";
 @source "../../../packages/ui-web/src/**/*.{ts,tsx}";
 
@@ -47,75 +48,8 @@ html {
   color-scheme: light;
 }
 
-:root {
-  /* Background colors */
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-
-  /* Card/surface colors */
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-
-  /* Primary brand color */
-  --primary: 221 83% 53%;
-  --primary-foreground: 210 40% 98%;
-
-  /* Secondary/muted colors */
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-
-  /* Muted/subtle colors */
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-
-  /* Accent colors */
-  --accent: 210 40% 96%;
-  --accent-foreground: 222 47% 11%;
-
-  /* Destructive/error colors */
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-
-  /* Border and input colors */
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 221 83% 53%;
-}
-
 .dark {
   color-scheme: dark;
-  /* Background colors */
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
-
-  /* Card/surface colors */
-  --card: 222 47% 11%;
-  --card-foreground: 210 40% 98%;
-
-  /* Primary brand color */
-  --primary: 217 91% 60%;
-  --primary-foreground: 222 47% 11%;
-
-  /* Secondary/muted colors */
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 98%;
-
-  /* Muted/subtle colors */
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-
-  /* Accent colors */
-  --accent: 217 33% 17%;
-  --accent-foreground: 210 40% 98%;
-
-  /* Destructive/error colors */
-  --destructive: 0 62% 50%;
-  --destructive-foreground: 210 40% 98%;
-
-  /* Border and input colors */
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
-  --ring: 224 76% 48%;
 }
 
 /* Base styles */

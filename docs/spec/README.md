@@ -2,7 +2,7 @@
 
 Implementation-ready specs: the acceptance criteria, UI surfaces, routes/APIs, and edge cases an agent or contributor needs to build a feature correctly. Specs are derived from the human-oriented docs (e.g. `product.md`, `architecture.md`) and are the source of truth for **what to build**; AGENTS.md remains the source of truth for **how to build it**.
 
-> **Template note:** This folder ships empty on purpose. Add a `feature-matrix.md` and versioned `vN/` folders as your product takes shape — see the conventions below. Delete this note once you have real specs.
+> **Starter:** `feature-matrix.md` and `v0/` document the shipped tasks vertical slice. Replace and extend as your product grows.
 
 ## Structure
 

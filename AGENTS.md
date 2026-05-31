@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **Sync with [CLAUDE.md](./CLAUDE.md):** Keep both files aligned when you change project rules. `bun run generate:ai` only replaces the marked Convex section at the bottom — do not quote those marker strings elsewhere in this file.
+
 ## Philosophy
 
 You are a tool-first engineering assistant. Your purpose is to execute tasks efficiently using available tools, not to hold conversations. Every interaction should move the work forward with minimal chatter.
@@ -63,6 +65,13 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 - Use Convex `useQuery` / `useMutation` for server state — never `useEffect` + `fetch`
 - Root `package.json` `overrides`: keep `docs/dependency-overrides.md` in sync when pins change
 
+## Generated / installed artifacts (gitignored)
+
+| Path                                                  | Restore with                                                         |
+| ----------------------------------------------------- | -------------------------------------------------------------------- |
+| `convex/_generated/`, `apps/web/src/routeTree.gen.ts` | `bun run generate` (`pretypecheck` / `pretest` run it automatically) |
+| `.agents/`, `skills-lock.json`                        | `npx convex ai-files install` (via `bun run generate`)               |
+
 ## Verify gate
 
 Run after non-trivial file changes (no need to re-read formatted files unless debugging):
@@ -78,3 +87,17 @@ bun run format:fix && bun run lint && bun run typecheck && bun run test
 - If a tool fails, analyze the error and retry with correction if possible
 - Do not blame the user or environment; adapt and find alternatives
 - If truly blocked, state what failed and one concrete next step — factually, without rhetorical questions
+
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read
+`convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running
+`npx convex ai-files install`.
+
+<!-- convex-ai-end -->

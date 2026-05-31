@@ -7,6 +7,7 @@ const webEnvSchema = {
     parse: asString,
     optional: true,
   },
+  repoUrl: { key: "VITE_REPO_URL", parse: asString, optional: true },
 } as const;
 
 /**
@@ -18,6 +19,7 @@ function viteEnvSource(): Record<string, string | undefined> {
   return {
     VITE_CONVEX_URL: import.meta.env.VITE_CONVEX_URL,
     VITE_CLERK_PUBLISHABLE_KEY: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+    VITE_REPO_URL: import.meta.env.VITE_REPO_URL,
   };
 }
 
@@ -36,6 +38,7 @@ export function loadWebEnv() {
     {
       convexUrl: { ...webEnvSchema.convexUrl, optional: true },
       clerkPublishableKey: webEnvSchema.clerkPublishableKey,
+      repoUrl: webEnvSchema.repoUrl,
     },
     viteEnvSource(),
   );
@@ -43,7 +46,7 @@ export function loadWebEnv() {
 
 /**
  * Validates required web env and fails fast. Call when enabling Convex in `main.tsx`
- * (after `bunx convex dev` and copying `VITE_CONVEX_URL` into `apps/web/.env.local`).
+ * (after `bun run dev:convex` and copying `VITE_CONVEX_URL` into `apps/web/.env.local`).
  *
  * @returns Parsed Convex URL and optional Clerk publishable key
  * @throws Error when `VITE_CONVEX_URL` is missing or empty

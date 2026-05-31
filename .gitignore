@@ -67,6 +67,17 @@ public/themes/
 # Astro generated types
 .astro/
 
+# Codegen (run `bun run generate`)
+convex/_generated/
+apps/web/src/routeTree.gen.ts
+
+# Convex local backend (from `convex dev --once` without cloud login)
+.convex/
+
+# Convex agent skills (run `npx convex ai-files install`)
+.agents/
+skills-lock.json
+
 # Test results
 test-results/
 coverage/

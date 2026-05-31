@@ -8,6 +8,8 @@ const aliasTargets = {
   "@repo/utils": "packages/utils/src/index.ts",
   "@repo/ui-web": "packages/ui-web/src/index.ts",
   "@repo/test-utils": "packages/test-utils/src/index.ts",
+  "@convex/api": "convex/_generated/api.js",
+  "@convex/dataModel": "convex/_generated/dataModel.d.ts",
 } as const;
 
 const utilsSubpathTargets = {
@@ -52,6 +54,8 @@ export const webAliasKeys = [
   "@repo/utils",
   "@repo/ui-web",
   "@repo/test-utils",
+  "@convex/api",
+  "@convex/dataModel",
 ] as const satisfies readonly RepoAliasKey[];
 
 /** Aliases used by `packages/ui-web` Vitest. */

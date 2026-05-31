@@ -9,6 +9,10 @@ node_modules/
 
 # Generated files
 convex/_generated/
+apps/web/src/routeTree.gen.ts
+.convex/
+.agents/
+skills-lock.json
 *.min.js
 *.min.css
 

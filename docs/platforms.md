@@ -1,27 +1,42 @@
 # Platform architecture
 
-How the application surfaces and shared packages fit together in this monorepo.
+How the application surfaces and shared packages fit together in this monorepo. **Onboarding:** [README](../README.md) → [getting-started.md](./getting-started.md). **Commands:** [package.json](../package.json) or [getting-started.md#commands](./getting-started.md#commands).
 
-## Applications
+## Surfaces
 
-| Platform  | App directory     | Role                                     |
-| --------- | ----------------- | ---------------------------------------- |
-| Web       | `apps/web/`       | Primary product UI (React 19 + Vite 8)   |
-| Marketing | `apps/marketing/` | Static marketing site (Astro 6 + Vite 7) |
+| Surface   | Location          | Hosted with                          |
+| --------- | ----------------- | ------------------------------------ |
+| Web       | `apps/web/`       | Vercel (`web-v*` releases)           |
+| Marketing | `apps/marketing/` | Vercel (`marketing-v*` releases)     |
+| Backend   | `convex/`         | Convex (`convex-v*` releases)        |
+| Auth      | Clerk dashboard   | Wired into web + Convex JWT settings |
 
-Backend lives in `convex/` at the repo root (sample schema/functions committed; adopters run `bunx convex dev` in their project).
+## Tech stack
+
+| Layer            | Choice                                                   |
+| ---------------- | -------------------------------------------------------- |
+| Web app          | React 19, Vite 8, Tailwind CSS v4, Zustand (theme, i18n) |
+| Marketing        | Astro 6, Vite 7, Tailwind CSS v4                         |
+| Backend          | Convex (`convex/`), Clerk auth                           |
+| Server state     | Convex `useQuery` / `useMutation` (web)                  |
+| Shared UI        | `packages/ui-web` (shadcn-style)                         |
+| Shared utilities | `packages/utils` (`cn`, env, theme, i18n)                |
+| Design tokens    | `packages/tokens` (CSS variables; web + marketing)       |
+| Tests            | Vitest (unit), Playwright (E2E)                          |
 
 ## Shared packages
 
-| Package               | Used by           | Responsibility                   |
-| --------------------- | ----------------- | -------------------------------- |
-| `packages/ui-web`     | Web               | shadcn-style React components    |
-| `packages/utils`      | Web (`@repo/web`) | `cn()`, env helpers, theme, i18n |
-| `packages/test-utils` | Tests             | Shared test helpers and mocks    |
+| Package               | Used by                               | Responsibility                   |
+| --------------------- | ------------------------------------- | -------------------------------- |
+| `packages/tokens`     | Web, marketing                        | Shared CSS design tokens         |
+| `packages/ui-web`     | Web                                   | shadcn-style React components    |
+| `packages/utils`      | Web (`@repo/web`)                     | `cn()`, env helpers, theme, i18n |
+| `packages/test-utils` | Tests                                 | Shared test helpers and mocks    |
+| `packages/config`     | Vite/Vitest (not a workspace package) | Path aliases                     |
 
 Marketing `.astro` components live in `apps/marketing/src/components/`. Styling uses each app’s Tailwind config and CSS variables (`apps/marketing/src/styles/`).
 
-Import shared code via workspace aliases — see [setup.md](./setup.md#path-aliases).
+Import shared code via workspace aliases — see [monorepo-structure.md](./monorepo-structure.md#path-aliases).
 
 ## Data and auth flow
 
@@ -32,7 +47,7 @@ Browser
     → convex/ functions + schema
 ```
 
-- **Web**: `ConvexProviderWithClerk` in `apps/web` (see setup guide).
+- **Web**: `ConvexProviderWithClerk` in `apps/web/src/providers/app-providers.tsx` when env vars are set (see [README](../README.md#resources)).
 - **Marketing**: Static site; no Convex client unless you add interactive islands later.
 
 ## Platform-specific conventions
@@ -44,21 +59,10 @@ Browser
 | Env vars      | Web: `apps/web/src/env.ts` + `VITE_*`; Convex: `convex/lib/env.ts` |
 | Server state  | Convex hooks (web only)                                            |
 
-## CI expectations
+## CI
 
-| Area      | CI job                 | Behavior                                                                                     |
-| --------- | ---------------------- | -------------------------------------------------------------------------------------------- |
-| Web       | `tests-web`, `web-e2e` | Vitest + Playwright (E2E opt-in via `e2e` label on PRs)                                      |
-| Web       | `preview` workflow     | Convex + Vercel previews via `preview` label ([ci-cd.md](./ci-cd.md#pr-preview-deployments)) |
-| Marketing | `tests-marketing`      | Vitest                                                                                       |
-| Convex    | `tests-convex`         | Vitest + `convex-test` when `convex/**` changes                                              |
-
-See [ci-cd.md](./ci-cd.md#ci-and-test-jobs) for details. Root lint/format/typecheck run when any app package changes.
+Lint, test, build, and deploy workflows: [ci-cd.md](./ci-cd.md). Opt-in PR labels: `e2e`, `preview`.
 
 ## Further reading
 
-- [Monorepo structure](./monorepo-structure.md) — env layers, aliases, typecheck vs build, growth thresholds
-- [Setup Guide](./setup.md) — first-time scaffolding and local dev
-- [CI/CD](./ci-cd.md) — workflows, secrets, deploys
-- [Architecture](./architecture.md) — business/system design (template)
-- [README](../README.md) — commands and platform status matrix
+Doc map: [README](../README.md#resources). Also [development.md](./development.md), [monorepo-structure.md](./monorepo-structure.md), [ci-cd.md](./ci-cd.md), [architecture.md](./architecture.md), [CONTRIBUTING.md](../CONTRIBUTING.md).

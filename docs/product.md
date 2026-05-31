@@ -1,6 +1,6 @@
 # Product Documentation
 
-> **Template — replace me.** This file is a placeholder in the Reactor starter. Add your vision, users, and requirements when you fork the repo.
+> **Template — replace me.** Replace with your vision, users, and requirements. Initial cloud setup: [README](../README.md).
 
 ## Product Vision
 

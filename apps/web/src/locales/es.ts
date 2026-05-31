@@ -1,8 +1,5 @@
 import type { TranslationDictionary } from "@repo/utils";
 
-/**
- * Spanish translations.
- */
 const es: TranslationDictionary = {
   common: {
     welcome: "Bienvenido",
@@ -27,22 +24,53 @@ const es: TranslationDictionary = {
     select: "Seleccionar idioma",
     current: "Idioma actual: {{language}}",
   },
+  nav: {
+    main: "Navegación principal",
+    tasks: "Tareas",
+  },
+  auth: {
+    login: "Iniciar sesión",
+    logout: "Cerrar sesión",
+  },
   home: {
     title: "Reactor",
     subtitle: "React 19 + Convex + Clerk + Tailwind CSS",
-    viewOnGitHub: "Ver en GitHub",
+    viewRepository: "Ver repositorio en GitHub",
     features: {
       title: "Características",
-      react: "React 19 con las últimas funciones",
-      convex: "Convex para backend en tiempo real",
-      clerk: "Clerk para autenticación",
-      tailwind: "Tailwind CSS para estilos",
-      i18n: "Soporte de internacionalización",
+      react: "React 19 con rutas de archivos TanStack Router",
+      convex: "API de tareas de ejemplo con Convex (activar con env)",
+      clerk: "Autenticación Clerk cuando está configurada",
+      tailwind: "Tailwind CSS v4 con tokens compartidos",
+      i18n: "Internacionalización (en, es, fr, de)",
       themes: "Temas claro y oscuro",
     },
   },
+  backend: {
+    setupTitle: "Completar configuración en la nube",
+    setupBody:
+      "Configura Convex y Clerk para la demo de tareas. Sigue los pasos y luego bun run dev:full.",
+    stepConvex: "Ejecuta bun run dev:convex y configura VITE_CONVEX_URL en apps/web/.env.local",
+    stepClerk: "Crea una app en Clerk y configura VITE_CLERK_PUBLISHABLE_KEY",
+    stepEnv:
+      "Copia convex/auth.config.ts.example a auth.config.ts y configura CLERK_JWT_ISSUER_DOMAIN en Convex",
+    setupGuide: "Abrir la guía de configuración en GitHub (README)",
+    setupGuideLocal: "Consulta el README de tu repositorio para la configuración en la nube",
+    backHome: "Volver al inicio",
+  },
+  tasks: {
+    title: "Tareas",
+    subtitle: "Ejemplo vertical: mutaciones Convex y auth Clerk",
+    newPlaceholder: "¿Qué hay que hacer?",
+    add: "Añadir tarea",
+    empty: "Aún no hay tareas. Añade una arriba.",
+    listLabel: "Tus tareas",
+    toggleComplete: "Marcar «{{title}}» como completada",
+    delete: "Eliminar «{{title}}»",
+  },
   errors: {
     notFound: "Página no encontrada",
+    notFoundHint: "La página que solicitaste no existe.",
     unauthorized: "No tienes autorización para ver esta página",
     serverError: "Error del servidor. Por favor, inténtalo más tarde.",
     networkError: "Error de red. Por favor, verifica tu conexión.",

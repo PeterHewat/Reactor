@@ -1,6 +1,6 @@
 # Architecture
 
-> **Template — replace me.** This file is a placeholder in the Reactor starter. Document your product’s domains, boundaries, and key decisions when you fork the repo.
+> **Template — replace me.** Replace with your domains, boundaries, and key decisions. Initial cloud setup: [README](../README.md).
 
 ## Purpose
 
@@ -49,7 +49,7 @@ Notification Engine → Real-time alerts, email campaigns
 
 - Technology choices (React, Convex, etc.) - these are implementation details
 - Code patterns or API documentation - the code itself should be clear
-- Configuration examples - these belong in setup documentation
+- Configuration examples - these belong in [development.md](./development.md)
 - Deployment architecture - infrastructure concerns are separate
 
 ## Keep it Business-Focused

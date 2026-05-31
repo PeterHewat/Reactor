@@ -1,15 +1,13 @@
-import { ErrorBoundary } from "@repo/ui-web";
 import { initializeI18n, initializeTheme } from "@repo/utils";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
 import "./index.css";
 import { initializeTranslations } from "./locales";
-import { reportError } from "./report-error";
-
-// Convex + Clerk: see convex/README.md and docs/setup.md#scaffold-backend-convex-cli
+import { AppProviders } from "./providers/app-providers";
+import { router } from "./router";
 
 const cleanupTheme = initializeTheme();
 
@@ -25,11 +23,11 @@ if (!root) throw new Error("Root element not found");
 
 createRoot(root).render(
   <StrictMode>
-    <ErrorBoundary onError={reportError}>
-      <App />
+    <AppProviders>
+      <RouterProvider router={router} />
       <Analytics />
       <SpeedInsights />
-    </ErrorBoundary>
+    </AppProviders>
   </StrictMode>,
 );
 

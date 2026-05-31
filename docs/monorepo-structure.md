@@ -1,6 +1,6 @@
 # Monorepo structure
 
-Technical map of layout, configuration, and growth conventions. For business/system design, use [architecture.md](./architecture.md). For first-time setup, see [setup.md](./setup.md).
+Technical map of layout, configuration, and growth conventions. **Onboarding:** [README](../README.md) → [getting-started.md](./getting-started.md). **Commands:** [package.json](../package.json) or [getting-started.md#commands](./getting-started.md#commands). **Business design:** [architecture.md](./architecture.md). **Day-2 patterns:** [development.md](./development.md).
 
 ## Layout
 
@@ -8,6 +8,7 @@ Technical map of layout, configuration, and growth conventions. For business/sys
 apps/web/           # Product UI — workspace deps on @repo/*
 apps/marketing/     # Astro site — no workspace package deps
 packages/utils/     # Shared client utilities (@repo/utils)
+packages/tokens/    # Shared CSS variables (@repo/tokens)
 packages/ui-web/    # Shared React components (@repo/ui-web)
 packages/test-utils/# Test fixtures (dev/test only)
 packages/config/    # Shared path aliases for Vite/Vitest (not a workspace package)
@@ -77,9 +78,19 @@ App production builds: `bun run --filter @repo/web build`, `bun run --filter @re
 
 Deploy workflows use tags: `web-v*`, `marketing-v*`, `convex-v*`. See [ci-cd.md](./ci-cd.md).
 
-## `convex/_generated/`
+## Generated code (not committed)
 
-Generated files are **committed** so `bun run typecheck` works without `convex dev`. ESLint and Prettier ignore them; they are not gitignored.
+| Output                                | Generator                 | Command                                                     |
+| ------------------------------------- | ------------------------- | ----------------------------------------------------------- |
+| `convex/_generated/`                  | Convex                    | `bun run generate:convex` (or `bun run dev:convex`)         |
+| `apps/web/src/routeTree.gen.ts`       | TanStack Router           | `bun run generate:routes` (or `tsr generate` in `apps/web`) |
+| `.agents/skills/`, `skills-lock.json` | Convex `ai-files install` | `bun run generate:ai` (part of `bun run generate`)          |
+
+Run **`bun run generate`** before typecheck when cloning fresh (also runs automatically via `pretypecheck` / `pretest`). Keep **[CLAUDE.md](../CLAUDE.md)** in sync with **[AGENTS.md](../AGENTS.md)** when editing rules (`generate:ai` only patches the marked Convex section at the bottom).
+
+- Gitignored in `.gitignore`
+- ESLint ignores `convex/_generated/`; Prettier ignores both paths (see `.prettierignore`)
+- CI: `bun run typecheck` triggers `pretypecheck` → `generate`. Convex uses `convex codegen` when `.env.local` / `CONVEX_DEPLOY_KEY` exists; otherwise `convex dev --once` (local deployment for fresh template copies)
 
 ## Starter growth thresholds
 
@@ -99,7 +110,7 @@ Use [apps/marketing/src/](../apps/marketing/src/) as the reference layout once w
 components/   layouts/   lib/   pages/   styles/   content/   (as needed)
 ```
 
-Marketing already nests by concern; web is mostly flat today (`locales/` is the only grouped folder).
+The starter ships one feature module as a reference: `apps/web/src/features/tasks/` (UI + `useTasks` hook), paired with `convex/model/tasks.ts`.
 
 ## Package authoring
 
@@ -111,6 +122,4 @@ Root `package.json` `overrides` pin transitive versions for security. Rationale 
 
 ## Further reading
 
-- [platforms.md](./platforms.md) — apps, packages, CI expectations
-- [agent-guidance.md](./agent-guidance.md) — AGENTS.md, Copilot, prompts, ADRs
-- [setup.md](./setup.md) — local dev and env setup
+Doc map: [README](../README.md#resources). Also [platforms.md](./platforms.md), [agent-guidance.md](./agent-guidance.md).

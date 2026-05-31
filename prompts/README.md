@@ -55,9 +55,9 @@ Use these prompts to establish consistent development standards across your team
 
 ## Customization
 
-These templates are designed for our specific tech stack but can be adapted:
+These templates are designed for this monorepo’s stack but can be adapted:
 
-1. **Fork for your stack** - Modify technology-specific sections
+1. **Customize for your stack** - Modify technology-specific sections
 2. **Add project-specific rules** - Include your team's coding standards
 3. **Extend with examples** - Add code examples relevant to your domain
 4. **Create new templates** - Follow the same comprehensive format for other workflows

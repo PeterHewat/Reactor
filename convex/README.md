@@ -2,109 +2,27 @@
 
 This folder contains the Convex backend for the application.
 
-> **Template note:** This starter repo is not linked to any Convex deployment. Sample schema and functions are committed so adopters can copy the pattern; run `bunx convex dev` in **your** fork to create and connect a real project.
-
+> **Template note:** This repo is not linked to any Convex deployment. Sample schema and functions are committed so you can copy the pattern; run `bun run dev:convex` from the **repository root** to create and connect a real project.
+>
 > **Security:** All task queries and mutations require authentication. Tasks are scoped to the signed-in user (`userId`). There are no unauthenticated read/write endpoints — safe to deploy once Clerk auth is configured.
 
-## Initial Setup
+## Setup
 
-### Prerequisites
+**Onboarding (Convex + Clerk + web env):** [README](../README.md#resources) · runbook [getting-started.md](../docs/getting-started.md) §2–4.
 
-- A [Convex account](https://dashboard.convex.dev) (free tier available)
-- [Bun](https://bun.sh/) installed
-
-### Step 1: Initialize Convex
-
-Run the Convex CLI from the **repository root** (not this folder):
+From the **repository root**, link your deployment:
 
 ```bash
-bunx convex dev
+bun run dev:convex
 ```
 
-This interactive command will:
+Committed sample: `schema.ts`, `tasks.ts`, `model/tasks.ts`, `lib/`, `auth.config.ts.example`. Extend or replace for your domain. Codegen: `bun run generate:convex` or keep `dev:convex` running.
 
-1. Open a browser to log in to Convex (or create an account)
-2. Prompt you to create a new project or connect to an existing one
-3. Generate the `convex/_generated/` directory with TypeScript types
-4. Create `.env.local` in the repository root with your deployment URL
+## Clerk authentication
 
-### Step 2: Schema and sample functions (already in repo)
+Clerk dashboard, `auth.config.ts`, and web env: [docs/getting-started.md](../docs/getting-started.md) §3. Providers live in `apps/web/src/providers/app-providers.tsx`; sign-in route `/login` (i18n `auth.login`). If you removed `@clerk/react` from the web app: `bun install --filter @repo/web @clerk/react`.
 
-This starter commits:
-
-- `convex/schema.ts` — `tasks` table with indexes
-- `convex/tasks.ts` — authenticated `list`, `create`, `update`, `remove`
-- `convex/lib/` — shared auth and validation helpers
-- `convex/auth.config.ts.example` — copy to `auth.config.ts` when enabling Clerk
-- `convex/_generated/` — run `bunx convex dev` to refresh after you change functions
-
-Extend or replace these files for your domain.
-
-### Step 3: Connect the frontend
-
-Wire Convex (and optional Clerk) in `apps/web/src/main.tsx` using `requireWebEnv()` from `apps/web/src/env.ts`. See commented patterns in [docs/setup.md](../docs/setup.md#auth-integration-clerk--convex).
-
-Copy env templates and set your deployment URL:
-
-```bash
-cp apps/web/.env.example apps/web/.env.local
-```
-
-Add the Convex URL to `apps/web/.env.local`:
-
-```text
-VITE_CONVEX_URL=https://your-project.convex.cloud
-```
-
-You can find this URL in the Convex dashboard or in the root `.env.local` file.
-
-## Clerk Authentication
-
-To integrate Clerk authentication with Convex:
-
-### 1. Install Clerk in the web app
-
-Clerk is already listed in `apps/web/package.json`. If you removed it:
-
-```bash
-bun install --filter @repo/web @clerk/react
-```
-
-### 2. Configure auth for Convex
-
-Copy the example auth config and set the issuer in the Convex dashboard:
-
-```bash
-cp convex/auth.config.ts.example convex/auth.config.ts
-```
-
-In the [Convex dashboard](https://dashboard.convex.dev) → Settings → Environment Variables, set:
-
-```text
-CLERK_JWT_ISSUER_DOMAIN=https://your-clerk-domain.clerk.accounts.dev
-```
-
-### 3. Configure Clerk Provider
-
-In `apps/web/src/main.tsx`:
-
-```tsx
-import { ClerkProvider, useAuth } from "@clerk/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
-import { ConvexReactClient } from "convex/react";
-
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
-
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
-    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-      <App />
-    </ConvexProviderWithClerk>
-  </ClerkProvider>,
-);
-```
-
-### 4. Use Authentication in Functions
+### Use authentication in functions
 
 Task functions use `requireIdentity()` from `convex/lib/auth.ts`. Pattern for new functions:
 

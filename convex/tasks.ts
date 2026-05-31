@@ -1,32 +1,12 @@
-import { ConvexError, v } from "convex/values";
-import type { Doc, Id } from "./_generated/dataModel";
+import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireIdentity } from "./lib/auth";
-import { parseOptionalDescription, parseTitle } from "./lib/validation";
-
-/**
- * Loads a task and verifies the caller owns it.
- *
- * @param ctx - Mutation context
- * @param taskId - Task document id
- * @param userId - Authenticated user's subject
- * @returns The task document
- * @throws ConvexError when the task is missing or not owned by the user
- */
-async function getOwnedTask(
-  ctx: { db: { get: (id: Id<"tasks">) => Promise<Doc<"tasks"> | null> } },
-  taskId: Id<"tasks">,
-  userId: string,
-): Promise<Doc<"tasks">> {
-  const task = await ctx.db.get(taskId);
-  if (!task) {
-    throw new ConvexError("Task not found");
-  }
-  if (task.userId !== userId) {
-    throw new ConvexError("Not authorized");
-  }
-  return task;
-}
+import {
+  buildTaskInsert,
+  buildTaskPatch,
+  filterTasksByCompleted,
+  getOwnedTask,
+} from "./model/tasks";
 
 /**
  * List tasks for the signed-in user, optionally filtered by completion status.
@@ -47,11 +27,7 @@ export const list = query({
       .order("desc")
       .collect();
 
-    if (args.completed === undefined) {
-      return tasks;
-    }
-
-    return tasks.filter((task) => task.completed === args.completed);
+    return filterTasksByCompleted(tasks, args.completed);
   },
 });
 
@@ -69,18 +45,9 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireIdentity(ctx);
-    const title = parseTitle(args.title);
-    const description = parseOptionalDescription(args.description);
     const now = Date.now();
 
-    return await ctx.db.insert("tasks", {
-      title,
-      description,
-      completed: false,
-      userId: identity.subject,
-      createdAt: now,
-      updatedAt: now,
-    });
+    return await ctx.db.insert("tasks", buildTaskInsert(args, identity.subject, now));
   },
 });
 
@@ -100,20 +67,10 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireIdentity(ctx);
-    const task = await getOwnedTask(ctx, args.id, identity.subject);
+    const task = await getOwnedTask(ctx.db, args.id, identity.subject);
+    const now = Date.now();
 
-    const title = args.title !== undefined ? parseTitle(args.title) : task.title;
-    const description =
-      args.description !== undefined
-        ? parseOptionalDescription(args.description)
-        : task.description;
-
-    await ctx.db.patch(args.id, {
-      title,
-      description,
-      completed: args.completed ?? task.completed,
-      updatedAt: Date.now(),
-    });
+    await ctx.db.patch(args.id, buildTaskPatch(task, args, now));
 
     return args.id;
   },
@@ -132,7 +89,7 @@ export const remove = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await requireIdentity(ctx);
-    await getOwnedTask(ctx, args.id, identity.subject);
+    await getOwnedTask(ctx.db, args.id, identity.subject);
     await ctx.db.delete(args.id);
     return args.id;
   },

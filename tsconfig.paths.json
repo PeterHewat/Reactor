@@ -9,7 +9,9 @@
       "@repo/utils/storage": ["./packages/utils/src/storage.ts"],
       "@repo/utils/use-translation": ["./packages/utils/src/use-translation.ts"],
       "@repo/ui-web": ["./packages/ui-web/src/index.ts"],
-      "@repo/test-utils": ["./packages/test-utils/src/index.ts"]
+      "@repo/test-utils": ["./packages/test-utils/src/index.ts"],
+      "@convex/api": ["./convex/_generated/api.js"],
+      "@convex/dataModel": ["./convex/_generated/dataModel.d.ts"]
     }
   }
 }

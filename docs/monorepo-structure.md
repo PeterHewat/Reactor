@@ -90,7 +90,7 @@ Run **`bun run generate`** before typecheck when cloning fresh (also runs automa
 
 - Gitignored in `.gitignore`
 - ESLint ignores `convex/_generated/`; Prettier ignores both paths (see `.prettierignore`)
-- CI: `bun run typecheck` triggers `pretypecheck` → `generate`. Convex uses `convex codegen` when `.env.local` / `CONVEX_DEPLOY_KEY` exists; otherwise `convex dev --once` (local deployment for fresh template copies)
+- CI: `typecheck` runs `pretypecheck` → `generate`; **build / test / e2e jobs** also run `bun run generate` (or `generate:convex` for Convex-only tests) because `bun run --filter …` does not run root lifecycle hooks. Convex uses `convex codegen` when `.env.local` / `CONVEX_DEPLOY_KEY` exists; otherwise `convex dev --once` (local deployment for fresh template copies)
 
 ## Starter growth thresholds
 

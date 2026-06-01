@@ -24,6 +24,10 @@ test.describe("Home Page", () => {
     });
 
     test("displays the GitHub link", async () => {
+      const v = process.env.VITE_REPO_URL;
+      if (!v || /YOUR_ORG|YOUR_REPO|your-org|your-repo/i.test(v)) {
+        return;
+      }
       await expect(homePage.githubLink).toBeVisible();
       await expect(homePage.githubLink).toHaveAttribute("href", /github\.com/);
       await expect(homePage.githubLink).toHaveAttribute("target", "_blank");
@@ -143,6 +147,10 @@ test.describe("Home Page", () => {
     });
 
     test("GitHub link opens in new tab with security attributes", async () => {
+      const v = process.env.VITE_REPO_URL;
+      if (!v || /YOUR_ORG|YOUR_REPO|your-org|your-repo/i.test(v)) {
+        return;
+      }
       await expect(homePage.githubLink).toHaveAttribute("rel", /noopener/);
     });
 

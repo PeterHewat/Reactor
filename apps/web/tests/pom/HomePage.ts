@@ -33,7 +33,7 @@ export class HomePage {
     this.githubLink = page.getByRole("link", { name: /github/i });
 
     // Features section
-    this.featuresTitle = page.getByRole("heading", { level: 2 });
+    this.featuresTitle = page.locator("main h2.text-2xl");
     this.featuresList = page.locator("main ul");
   }
 

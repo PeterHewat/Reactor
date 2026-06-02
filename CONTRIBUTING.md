@@ -8,9 +8,9 @@ After `bun install`, Husky runs **lint-staged** on commit: ESLint with `--fix` a
 
 ## Branching and pull requests
 
-- `main` holds the latest stable code and should be protected
+- `main` must be **protected**: changes only via pull request ([branch protection](docs/ci-cd.md#branch-protection))
 - Create feature branches from `main` (e.g. `feature/short-description`)
-- Open a pull request; CI must pass and a reviewer should approve
+- Open a pull request; CI runs on the PR and must pass before merge (CI is **not** re-run on merge to `main`)
 - Use squash merge; keep the squash commit message clear
 
 ## Commit messages
@@ -40,7 +40,7 @@ To update outside ranges, edit versions in `package.json`, then run `bun update`
 
 ## E2E and previews on pull requests
 
-Playwright and preview deploys are **opt-in** via PR labels. See [docs/ci-cd.md](docs/ci-cd.md#ci-behavior) (`e2e`, `preview`) and [docs/development.md](docs/development.md#e2e-tests-playwright) for local runs.
+Full Playwright on PRs is **opt-in** via the `e2e` label and **blocks merge** when present; preview deploys use the `preview` label. See [docs/ci-cd.md](docs/ci-cd.md#ci-behavior) and [docs/development.md](docs/development.md#e2e-tests-playwright).
 
 ## Agent rules
 

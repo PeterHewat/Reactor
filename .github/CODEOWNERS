@@ -3,7 +3,7 @@
 # /convex/ @your-org/backend
 # /apps/web/ @your-org/frontend
 
-# Suggested required status checks (branch protection):
-# - CI required (ci.yml — aggregates path-based jobs)
-# - Security audit, Secrets scan
-# See docs/ci-cd.md#branch-protection
+# Suggested branch protection on main:
+# - Require pull request before merging (no direct pushes)
+# - CI required, Security audit, Secrets scan
+# CI runs on PRs only — not on merge. See docs/ci-cd.md#branch-protection

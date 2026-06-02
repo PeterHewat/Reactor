@@ -53,7 +53,7 @@ Run `bun scripts/doctor.ts` when env is complete. Commands: [development.md](./d
 
 When `/tasks` works locally:
 
-1. **GitHub Actions** — [secrets](./ci-cd.md#github-actions-secrets) (`CONVEX_DEPLOY_KEY`, Clerk/Convex URLs for CI), then `CI_STRICT=1` and [branch protection](./ci-cd.md#branch-protection). Run [Sync GitHub labels](../.github/workflows/sync-labels.yml) once.
+1. **GitHub Actions** — [secrets](./ci-cd.md#github-actions-secrets) (`CONVEX_DEPLOY_KEY`, Clerk/Convex URLs for CI), then `CI_STRICT=1`. Enable [branch protection](./ci-cd.md#branch-protection) on `main` (PR-only merges; required checks). Run [Sync GitHub labels](../.github/workflows/sync-labels.yml) once.
 2. **Convex + Vercel** — production `CLERK_JWT_ISSUER_DOMAIN`; Vercel projects for `apps/web` and `apps/marketing` ([ci-cd.md](./ci-cd.md)). Tune [apps/web/vercel.json](../apps/web/vercel.json) CSP if your Clerk host differs ([security-review](../prompts/security-review.md)).
 3. **Your product** — remove the sample tasks code and [docs/spec/v0/](./spec/v0/); add [product.md](./product.md), [architecture.md](./architecture.md), and specs under [docs/spec/](./spec/README.md). `setup` already updates README and `PRODUCT_NAME` when `git remote` is set. Optionally rename `@repo/*`.
 

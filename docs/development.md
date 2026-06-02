@@ -138,11 +138,11 @@ CI: [ci-cd.md](./ci-cd.md#e2e-tests-playwright).
 
 ### E2E smoke (tasks)
 
-Authenticated smoke for `/tasks` uses [`@clerk/testing`](https://clerk.com/docs/guides/development/testing/playwright/overview) and a real Convex dev deployment.
+Authenticated smoke for `/tasks` uses [`@clerk/testing`](https://clerk.com/docs/guides/development/testing/playwright/overview) and a real Convex deployment (your **dev** deployment from `bun run dev:convex` — never production).
 
 1. `cp apps/web/.env.local.e2e.local.example apps/web/.env.local.e2e.local` and fill in secrets (or export before running tests).
 2. In Clerk: enable **Email** and **Password**; create a dev user for `E2E_CLERK_USER_EMAIL` (or use a `+clerk_test` address per Clerk testing docs).
-3. Set `CLERK_SECRET_KEY` (secret key, not publishable), `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` (same as `apps/web/.env.local`).
+3. Set `CLERK_SECRET_KEY` (secret key, not publishable), `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` (same dev values as `apps/web/.env.local`). In GitHub Actions, `VITE_CONVEX_URL` must also be the **dev** URL — see [ci-cd.md](./ci-cd.md#e2e-tests-playwright).
 4. Run:
 
 ```bash
@@ -164,7 +164,7 @@ Home, routing, theme, and i18n tests do not require Clerk secrets:
 bun run --filter @repo/web e2e
 ```
 
-On PRs, add the **`e2e`** label for the full Playwright suite on `main` or labeled PRs.
+On PRs, add the **`e2e`** label to run the full Playwright suite and require it for merge (**CI required**). CI does not run again after merge — see [ci-cd.md](./ci-cd.md#branch-protection).
 
 CSP on deploys: `apps/web/vercel.json` — [prompts/security-review.md](../prompts/security-review.md).
 

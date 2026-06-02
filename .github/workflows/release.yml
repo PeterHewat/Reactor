@@ -92,13 +92,30 @@ jobs:
         run: |
           set -euo pipefail
           SHA="${{ github.sha }}"
-          if ! gh run list --commit "$SHA" --workflow ci.yml --json conclusion --jq -e 'any(.[]; .conclusion == "success")'; then
-            echo "❌ No successful ci.yml run for commit ${SHA}."
-            echo "   Wait for CI on this commit to finish green before releasing."
+          REPO="${{ github.repository }}"
+
+          if gh run list --commit "$SHA" --workflow ci.yml --json conclusion --jq -e 'any(.[]; .conclusion == "success")'; then
+            echo "✅ CI succeeded for commit ${SHA}"
+            exit 0
+          fi
+
+          PR_NUMBER=$(gh api "repos/${REPO}/commits/${SHA}/pulls" --jq '.[0].number // empty')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "❌ No successful ci.yml for ${SHA} and no merged PR to verify."
+            echo "   CI runs on pull requests only — merge via PR with green checks, or push to main is blocked."
             gh run list --commit "$SHA" --workflow ci.yml --limit 5 || true
             exit 1
           fi
-          echo "✅ CI succeeded for commit ${SHA}"
+
+          if gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state --jq -e \
+            'any(.[]; .name == "CI required" and .state == "SUCCESS")'; then
+            echo "✅ CI required passed on merged PR #${PR_NUMBER} for commit ${SHA}"
+            exit 0
+          fi
+
+          echo "❌ CI required did not pass on merged PR #${PR_NUMBER}."
+          gh pr checks "$PR_NUMBER" --repo "$REPO" || true
+          exit 1
 
       - name: Setup bash utilities
         run: |

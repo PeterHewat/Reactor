@@ -4,7 +4,7 @@
 
 | Workflow                                                | Purpose                                                                                                |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| [ci.yml](../.github/workflows/ci.yml)                   | Lint, test, and build on every PR/push to `main`                                                       |
+| [ci.yml](../.github/workflows/ci.yml)                   | Lint, test, and build on pull requests to `main` (not re-run on merge)                                 |
 | [release.yml](../.github/workflows/release.yml)         | Create GitHub release + deploy **new** tags                                                            |
 | [deploy.yml](../.github/workflows/deploy.yml)           | Deploy or **rollback** to an existing tag (e.g. `web-v1.0.0`)                                          |
 | [preview.yml](../.github/workflows/preview.yml)         | PR previews when the `preview` label is added (opt-in)                                                 |
@@ -14,11 +14,11 @@
 
 **Rollback / redeploy:** Actions → **Deploy** → Run workflow → tag `web-v1.0.0` (checks out that git tag, rebuilds, deploys to production).
 
-**CI vs deploy:** [ci.yml](../.github/workflows/ci.yml) runs lint, format, typecheck, and tests on PRs and `main`. [deploy.yml](../.github/workflows/deploy.yml) only builds and ships. The [Release](../.github/workflows/release.yml) workflow requires a successful `ci.yml` run for the **release commit** (`github.sha`) before creating tags; still run Release only when you intend to ship.
+**CI vs deploy:** [ci.yml](../.github/workflows/ci.yml) runs on **pull requests to `main` only** — merging does not start another run. [deploy.yml](../.github/workflows/deploy.yml) only builds and ships. [Release](../.github/workflows/release.yml) verifies green CI on the release commit or required checks on the merged PR before tagging.
 
 **Web deploy codegen:** Production and preview web deploys run `bun scripts/generate-routes.ts` and `bun scripts/generate-convex.ts` before `vercel build` (`convex/_generated/` is not committed). Requires `CONVEX_DEPLOY_KEY` (production) or `CONVEX_PREVIEW_DEPLOY_KEY` (previews).
 
-**Full E2E on `main`:** When `apps/web/**` or `apps/marketing/**` changes, [ci.yml](../.github/workflows/ci.yml) runs the full Playwright suite on pushes to `main`; failures fail **CI required** (web smoke runs on every web PR; full suite is label-opt-in on PRs via `e2e`).
+**Full E2E:** On PRs with the **`e2e`** label (when web or marketing paths change); failures fail **CI required**. Web smoke runs on every web PR when secrets are set.
 
 **No Turborepo/Nx:** Path-based jobs and [setup-bun](../.github/actions/setup-bun/action.yml). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
@@ -26,10 +26,10 @@
 
 Job definitions live in [ci.yml](../.github/workflows/ci.yml). Use **CI required** as the merge gate; other jobs may show **Success (skipped)** when paths or secrets do not apply.
 
-| Label     | Effect                                                             |
-| --------- | ------------------------------------------------------------------ |
-| `e2e`     | Full Playwright on web/marketing when those paths change           |
-| `preview` | Convex + Vercel preview deploys ([below](#pr-preview-deployments)) |
+| Label     | Effect                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| `e2e`     | Full Playwright on web/marketing when those paths change; **blocks merge** via **CI required** |
+| `preview` | Convex + Vercel preview deploys ([below](#pr-preview-deployments))                             |
 
 **Docs-only PRs:** only **quality** runs Prettier; lint/typecheck/build are skipped.
 
@@ -48,7 +48,19 @@ Set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` exists ([getting-started.md](./gettin
 
 ## Branch protection
 
-After configuring secrets, protect `main` in **Settings → Branches**. Suggested required checks:
+CI runs on **pull requests only**, not on merge to `main`. Configure `main` so every change goes through a PR with green checks — do not rely on post-merge CI.
+
+In **Settings → Branches** → add a rule for `main`:
+
+| Setting                               | Recommendation                                    |
+| ------------------------------------- | ------------------------------------------------- |
+| Require a pull request before merging | On — no direct pushes to `main`                   |
+| Require approvals                     | Per team policy (optional)                        |
+| Require status checks to pass         | On — see table below                              |
+| Require branches to be up to date     | On (optional; reduces drift)                      |
+| Do not allow bypassing                | On for admins unless you accept unverified merges |
+
+Suggested **required status checks** (from [ci.yml](../.github/workflows/ci.yml)):
 
 | Check          | Job                                        |
 | -------------- | ------------------------------------------ |
@@ -56,12 +68,16 @@ After configuring secrets, protect `main` in **Settings → Branches**. Suggeste
 | Security audit | `security-audit`                           |
 | Secrets scan   | `secrets-scan`                             |
 
+Direct pushes to `main` (if allowed) will **not** run [ci.yml](../.github/workflows/ci.yml) and will block [Release](../.github/workflows/release.yml) until a PR-based check exists.
+
 ## E2E tests (Playwright)
 
 - **Smoke (tasks + Clerk + Convex):** `bun run --filter @repo/web e2e:smoke` — runs on every PR when `apps/web/**` changes (`web-e2e-smoke`). Configure `CONVEX_DEPLOY_KEY` (codegen), `CLERK_SECRET_KEY`, `E2E_CLERK_USER_EMAIL`, `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` in GitHub Actions; see [development.md](./development.md#e2e-smoke-tasks).
 - **Full suite:** `bunx playwright install chromium` once, then `bun run --filter @repo/web e2e` (or `@repo/marketing`)
-- **CI (full):** Add the **`e2e`** label on a PR; runs when web or marketing paths change (after the matching build job)
+- **CI (full):** Add the **`e2e`** label on a PR; runs when web or marketing paths change and **must pass** for **CI required**
 - **Naming:** `*.e2e.ts` (full), `*.smoke.e2e.ts` (smoke)
+
+**Smoke deployment:** `web-e2e-smoke` creates and deletes tasks against whatever deployment `VITE_CONVEX_URL` points to. In GitHub Actions, set that secret to your **dev** deployment URL (the same one you use locally after `bun run dev:convex`) — **not** production after you ship. Use a dedicated Clerk test user (`E2E_CLERK_USER_EMAIL`). Vercel production/preview use their own `VITE_CONVEX_URL` in the Vercel dashboard; do not reuse the production URL for CI smoke.
 
 ## GitHub Actions secrets
 
@@ -69,14 +85,14 @@ Configure these in the repository: **Settings → Secrets and variables → Acti
 
 ### Required secrets (adopter projects)
 
-| Secret                       | Description                                        | Where to find it                                                                                                    |
-| ---------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `CONVEX_DEPLOY_KEY`          | Convex **production** deploy key (releases)        | Convex Dashboard → Settings → Deploy Key                                                                            |
-| `CONVEX_PREVIEW_DEPLOY_KEY`  | Convex **preview** deploy key (PR `preview` label) | Convex Dashboard → Settings → [Preview deploy keys](https://docs.convex.dev/production/hosting/preview-deployments) |
-| `VITE_CONVEX_URL`            | Convex deployment URL                              | Convex Dashboard → Settings → URL                                                                                   |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key                              | Clerk Dashboard → API Keys                                                                                          |
-| `CLERK_SECRET_KEY`           | Clerk secret key (E2E smoke only)                  | Clerk Dashboard → API Keys — never expose in the client                                                             |
-| `E2E_CLERK_USER_EMAIL`       | Dev test user for Playwright `clerk.signIn`        | Create in Clerk (Email + Password enabled); see [development.md](./development.md#e2e-smoke-tasks)                  |
+| Secret                       | Description                                                       | Where to find it                                                                                                    |
+| ---------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `CONVEX_DEPLOY_KEY`          | Convex **production** deploy key (releases)                       | Convex Dashboard → Settings → Deploy Key                                                                            |
+| `CONVEX_PREVIEW_DEPLOY_KEY`  | Convex **preview** deploy key (PR `preview` label)                | Convex Dashboard → Settings → [Preview deploy keys](https://docs.convex.dev/production/hosting/preview-deployments) |
+| `VITE_CONVEX_URL`            | Convex URL for **CI smoke only** (dev deployment; not production) | Convex Dashboard → dev deployment → Settings → URL                                                                  |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key                                             | Clerk Dashboard → API Keys                                                                                          |
+| `CLERK_SECRET_KEY`           | Clerk secret key (E2E smoke only)                                 | Clerk Dashboard → API Keys — never expose in the client                                                             |
+| `E2E_CLERK_USER_EMAIL`       | Dev test user for Playwright `clerk.signIn`                       | Create in Clerk (Email + Password enabled); see [development.md](./development.md#e2e-smoke-tasks)                  |
 
 ### Vercel (web + marketing)
 

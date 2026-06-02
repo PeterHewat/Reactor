@@ -93,21 +93,8 @@ jobs:
             gitleaks detect --source . --redact --verbose
           fi
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    needs: detect-changes
-    if: needs.detect-changes.outputs.any == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Lint
-        run: bun run lint
-
-  format:
-    name: Format
+  quality:
+    name: Lint, format & typecheck
     runs-on: ubuntu-latest
     needs: detect-changes
     if: |
@@ -118,24 +105,17 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Format check
-        run: bun run format
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    needs: detect-changes
-    if: needs.detect-changes.outputs.any == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Codegen and typecheck
+      - name: Format, lint, and typecheck
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          ANY_CHANGED: ${{ needs.detect-changes.outputs.any }}
         run: |
           set -euo pipefail
+          bun run format
+          if [ "${ANY_CHANGED}" != "true" ]; then
+            exit 0
+          fi
+          bun run lint
           bun scripts/generate-routes.ts
           if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
             bun scripts/generate-convex.ts
@@ -151,7 +131,7 @@ jobs:
   build-web:
     name: Build Web
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format, typecheck]
+    needs: [detect-changes, quality]
     if: needs.detect-changes.outputs.web == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -179,7 +159,7 @@ jobs:
   build-marketing:
     name: Build Marketing
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format, typecheck]
+    needs: [detect-changes, quality]
     if: needs.detect-changes.outputs.marketing == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -192,7 +172,7 @@ jobs:
   tests-web:
     name: Web Tests
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format, typecheck, build-web]
+    needs: [detect-changes, quality, build-web]
     if: needs.detect-changes.outputs.web == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -221,7 +201,7 @@ jobs:
   tests-packages:
     name: Package Tests
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format]
+    needs: [detect-changes, quality]
     if: |
       needs.detect-changes.outputs.shared == 'true' ||
       needs.detect-changes.outputs.config == 'true'
@@ -236,7 +216,7 @@ jobs:
   tests-marketing:
     name: Marketing Tests
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format, typecheck, build-marketing]
+    needs: [detect-changes, quality, build-marketing]
     if: needs.detect-changes.outputs.marketing == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -249,7 +229,7 @@ jobs:
   storybook-ui-web:
     name: Storybook (ui-web)
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format]
+    needs: [detect-changes, quality]
     if: needs.detect-changes.outputs.web == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -275,7 +255,7 @@ jobs:
   tests-convex:
     name: Convex Tests
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, format, typecheck]
+    needs: [detect-changes, quality]
     if: needs.detect-changes.outputs.convex == 'true' && needs.detect-changes.outputs.convex_ci_tests == 'true'
     steps:
       - uses: actions/checkout@v6
@@ -426,9 +406,7 @@ jobs:
       - detect-changes
       - security-audit
       - secrets-scan
-      - lint
-      - format
-      - typecheck
+      - quality
       - build-web
       - build-marketing
       - tests-web
@@ -455,9 +433,7 @@ jobs:
           CONVEX_CI_TESTS: ${{ needs.detect-changes.outputs.convex_ci_tests }}
           SECURITY_AUDIT_RESULT: ${{ needs.security-audit.result }}
           SECRETS_SCAN_RESULT: ${{ needs.secrets-scan.result }}
-          LINT_RESULT: ${{ needs.lint.result }}
-          FORMAT_RESULT: ${{ needs.format.result }}
-          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
           BUILD_WEB_RESULT: ${{ needs.build-web.result }}
           BUILD_MARKETING_RESULT: ${{ needs.build-marketing.result }}
           TESTS_WEB_RESULT: ${{ needs.tests-web.result }}

@@ -22,18 +22,18 @@
 
 **No Turborepo/Nx:** CI uses path-based jobs and the [setup-bun](../.github/actions/setup-bun/action.yml) composite action (cached install). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
-**Docs-only PRs:** When only `docs/**` or repo meta files change (`README.md`, `AGENTS.md`, etc.), the **Format** job still runs; lint/typecheck/build are skipped.
+**Docs-only PRs:** When only `docs/**` or repo meta files change (`README.md`, `AGENTS.md`, etc.), the **quality** job still runs Prettier; lint/typecheck/build are skipped.
 
-**Convex codegen in CI:** Jobs that need `convex/_generated/` (`typecheck`, `build-web`, `@repo/web` tests, `web-e2e`, `web-e2e-smoke`, `tests-convex`) run `bun scripts/generate-convex.ts` when `CONVEX_DEPLOY_KEY` is configured. Otherwise they emit a `::notice::` and skip (exit 0) — no committed generated files. Once the deploy key is present, those jobs run on every matching PR; you do **not** need extra variables for that. **E2E smoke** fails with an error if smoke secrets are set but `CONVEX_DEPLOY_KEY` is missing (Vite must resolve `@convex/api`).
+**Convex codegen in CI:** Jobs that need `convex/_generated/` (`quality` typecheck step, `build-web`, `@repo/web` tests, `web-e2e`, `web-e2e-smoke`, `tests-convex`) run `bun scripts/generate-convex.ts` when `CONVEX_DEPLOY_KEY` is configured. Otherwise they emit a `::notice::` and skip (exit 0) — no committed generated files. Once the deploy key is present, those jobs run on every matching PR; you do **not** need extra variables for that. **E2E smoke** fails with an error if smoke secrets are set but `CONVEX_DEPLOY_KEY` is missing (Vite must resolve `@convex/api`).
 
 ### Optional CI guardrails
 
 Repository variables (**Settings → Secrets and variables → Actions → Variables**) change behavior only when secrets are **missing** or removed:
 
-| Variable                    | When set to `1`                                                                                                                                         |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CI_STRICT`                 | Fail typecheck, build-web, `@repo/web` tests, `web-e2e`, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
-| `E2E_SMOKE_REQUIRE_SECRETS` | Fail `web-e2e-smoke` if smoke secrets are missing (default: skip Playwright, job still passes).                                                         |
+| Variable                    | When set to `1`                                                                                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CI_STRICT`                 | Fail quality typecheck, build-web, `@repo/web` tests, `web-e2e`, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
+| `E2E_SMOKE_REQUIRE_SECRETS` | Fail `web-e2e-smoke` if smoke secrets are missing (default: skip Playwright, job still passes).                                                                 |
 
 **Recommended after adoption:** set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` is configured ([getting-started.md §10](./getting-started.md#10-github-actions)). Without it, deleting or misconfiguring the deploy key can leave **CI required** green while Convex jobs skip.
 
@@ -41,11 +41,11 @@ Use `CI_STRICT` before secrets exist if you want fail-closed CI during onboardin
 
 ### Fork PRs and CI
 
-Pull requests from **forks** do not receive your repository’s Actions secrets. For those PRs, jobs that depend on `CONVEX_DEPLOY_KEY` or smoke secrets will **skip** (with a notice) while `ci-required` can still pass if lint/format and other non-secret jobs succeed.
+Pull requests from **forks** do not receive your repository’s Actions secrets. For those PRs, jobs that depend on `CONVEX_DEPLOY_KEY` or smoke secrets will **skip** (with a notice) while `ci-required` can still pass if **quality** and other non-secret jobs succeed.
 
 Implications for public/open-source repos:
 
-- External contributors may see a green **CI required** without Convex typecheck, web build, or authenticated smoke running on their branch.
+- External contributors may see a green **CI required** without Convex typecheck (in **quality**), web build, or authenticated smoke running on their branch.
 - **Mitigations:** require maintainer review; run CI on internal branches only; use a bot that tests trusted forks (evaluate `pull_request_target` security tradeoffs carefully); or treat fork PRs as draft until a maintainer pushes to a branch in your org.
 
 Private team repos that only accept PRs from the same org are unaffected (secrets are available).
@@ -60,7 +60,7 @@ After configuring secrets, protect `main` in **Settings → Branches**. Suggeste
 | Security audit | `security-audit`                           |
 | Secrets scan   | `secrets-scan`                             |
 
-> **Note:** Individual jobs (`Typecheck`, `Build Web`, …) can show **Success (skipped)** when paths or secrets do not apply. Rely on **CI required** as the merge gate — it fails when an expected job for changed paths did not succeed.
+> **Note:** Individual jobs (`Lint, format & typecheck`, `Build Web`, …) can show **Success (skipped)** when paths or secrets do not apply. Rely on **CI required** as the merge gate — it fails when an expected job for changed paths did not succeed.
 
 ## CI and test jobs
 
@@ -84,7 +84,7 @@ After configuring secrets, protect `main` in **Settings → Branches**. Suggeste
 | `e2e`     | [ci.yml](../.github/workflows/ci.yml)           | Playwright for web/marketing when those paths change |
 | `preview` | [preview.yml](../.github/workflows/preview.yml) | Convex preview + Vercel preview deploys (see below)  |
 
-Root lint, format, and typecheck run when any app package changes.
+Root lint, format, and typecheck run together in **quality** when any app package changes (format-only on docs-only PRs).
 
 ### E2E tests (Playwright)
 

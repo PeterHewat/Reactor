@@ -27,14 +27,8 @@ config="${CONFIG:-false}"
 docs_only="${DOCS_ONLY:-false}"
 convex_ci_tests="${CONVEX_CI_TESTS:-false}"
 
-if [ "$any" = "true" ]; then
-  check_job "lint" "true" "${LINT_RESULT:-}"
-  check_job "format" "true" "${FORMAT_RESULT:-}"
-  check_job "typecheck" "true" "${TYPECHECK_RESULT:-}"
-fi
-
-if [ "$docs_only" = "true" ] && [ "$any" = "false" ]; then
-  check_job "format" "true" "${FORMAT_RESULT:-}"
+if [ "$any" = "true" ] || { [ "$docs_only" = "true" ] && [ "$any" = "false" ]; }; then
+  check_job "quality" "true" "${QUALITY_RESULT:-}"
 fi
 
 if [ "$web" = "true" ]; then

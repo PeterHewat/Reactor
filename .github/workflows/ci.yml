@@ -308,8 +308,6 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Generate routes
-        run: bun run generate:routes
       - name: Report E2E smoke configuration
         id: e2e-smoke-config
         run: |
@@ -330,18 +328,25 @@ jobs:
               exit 1
             fi
           fi
-      - name: Install Playwright browsers
-        if: steps.e2e-smoke-config.outputs.configured == 'true'
-        run: bun run e2e:install
-      - name: Run Playwright smoke tests (tasks)
+      - name: Codegen, install browsers, and run Playwright smoke (tasks)
         if: steps.e2e-smoke-config.outputs.configured == 'true'
         env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
           E2E_SMOKE_REQUIRE_SECRETS: ${{ vars.E2E_SMOKE_REQUIRE_SECRETS }}
-        run: bun run --filter @repo/web e2e:smoke
+        run: |
+          set -euo pipefail
+          bun run generate:routes
+          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+            echo "::error::E2E smoke requires CONVEX_DEPLOY_KEY for convex/_generated (Vite imports @convex/api)."
+            exit 1
+          fi
+          bun run generate:convex
+          bun run e2e:install
+          bun run --filter @repo/web e2e:smoke
       - name: Upload Playwright smoke report
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
@@ -364,12 +369,22 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Generate routes
-        run: bun run generate:routes
-      - name: Install Playwright browsers
-        run: bun run e2e:install
-      - name: Run Playwright tests (web)
-        run: bun run --filter @repo/web e2e
+      - name: Codegen, install browsers, and run Playwright (web)
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          bun run generate:routes
+          if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
+            bun run generate:convex
+            bun run e2e:install
+            bun run --filter @repo/web e2e
+          elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
+            echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
+            exit 1
+          else
+            echo "::notice::Skipping web E2E — CONVEX_DEPLOY_KEY not configured (required for @convex/api)."
+          fi
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}

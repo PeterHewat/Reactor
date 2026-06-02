@@ -26,16 +26,16 @@ Ongoing reference for GitHub Actions, secrets, and deploy workflows. **Onboardin
 
 **Docs-only PRs:** When only `docs/**` or repo meta files change (`README.md`, `AGENTS.md`, etc.), the **Format** job still runs; lint/typecheck/build are skipped.
 
-**Convex codegen in CI:** Jobs that need `convex/_generated/` (`typecheck`, `build-web`, `@repo/web` tests, `tests-convex`) run `bun run generate:convex` when `CONVEX_DEPLOY_KEY` is configured. Otherwise they emit a `::notice::` and skip (exit 0) — no committed generated files. Once the deploy key is present, those jobs run on every matching PR; you do **not** need extra variables for that.
+**Convex codegen in CI:** Jobs that need `convex/_generated/` (`typecheck`, `build-web`, `@repo/web` tests, `web-e2e`, `web-e2e-smoke`, `tests-convex`) run `bun run generate:convex` when `CONVEX_DEPLOY_KEY` is configured. Otherwise they emit a `::notice::` and skip (exit 0) — no committed generated files. Once the deploy key is present, those jobs run on every matching PR; you do **not** need extra variables for that. **E2E smoke** fails with an error if smoke secrets are set but `CONVEX_DEPLOY_KEY` is missing (Vite must resolve `@convex/api`).
 
 ### Optional CI guardrails
 
 Repository variables (**Settings → Secrets and variables → Actions → Variables**) change behavior only when secrets are **missing** or removed:
 
-| Variable                    | When set to `1`                                                                                                                              |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CI_STRICT`                 | Fail typecheck, build-web, `@repo/web` tests, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
-| `E2E_SMOKE_REQUIRE_SECRETS` | Fail `web-e2e-smoke` if smoke secrets are missing (default: skip Playwright, job still passes).                                              |
+| Variable                    | When set to `1`                                                                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CI_STRICT`                 | Fail typecheck, build-web, `@repo/web` tests, `web-e2e`, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
+| `E2E_SMOKE_REQUIRE_SECRETS` | Fail `web-e2e-smoke` if smoke secrets are missing (default: skip Playwright, job still passes).                                                         |
 
 **Recommended after adoption:** set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` is configured ([customize-after-fork.md](./customize-after-fork.md#4-github-actions)). Without it, deleting or misconfiguring the deploy key can leave **CI required** green while Convex jobs skip.
 
@@ -74,7 +74,8 @@ After configuring secrets, protect `main` in **Settings → Branches**. Suggeste
 | `tests-web`       | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` or shared     | `@repo/web` (when Convex linked), `@repo/ui-web`, `@repo/utils` unit + integration |
 | `tests-packages`  | [ci.yml](../.github/workflows/ci.yml) | Shared packages / config    | `@repo/config`, `@repo/env-core` unit tests                                        |
 | `tests-convex`    | [ci.yml](../.github/workflows/ci.yml) | `convex/**` changed         | When `CONVEX_CI_TESTS: true` (Vitest + `convex-test`)                              |
-| `web-e2e-smoke`   | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Playwright `/tasks` smoke when secrets configured                                  |
+| `web-e2e-smoke`   | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Playwright `/tasks` smoke when secrets configured (`generate:convex` + deploy key) |
+| `web-e2e`         | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` on `main`     | Full Playwright suite (`generate:convex` when deploy key configured)               |
 
 **Tests on every PR:** `tests-web`, `tests-marketing`, `tests-packages` (after the matching build/lint jobs). **`web-e2e-smoke`** runs when web paths change; it **skips** Playwright install/run until E2E secrets exist (job still passes unless `E2E_SMOKE_REQUIRE_SECRETS=1` — see [Optional CI guardrails](#optional-ci-guardrails)).
 
@@ -89,7 +90,7 @@ Root lint, format, and typecheck run when any app package changes.
 
 ### E2E tests (Playwright)
 
-- **Smoke (tasks + Clerk + Convex):** `bun run e2e:smoke` — runs on every PR when `apps/web/**` changes (`web-e2e-smoke`). Configure `CLERK_SECRET_KEY`, `E2E_CLERK_USER_EMAIL`, `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` in GitHub Actions; see [development.md](./development.md#e2e-smoke-tasks).
+- **Smoke (tasks + Clerk + Convex):** `bun run e2e:smoke` — runs on every PR when `apps/web/**` changes (`web-e2e-smoke`). Configure `CONVEX_DEPLOY_KEY` (codegen), `CLERK_SECRET_KEY`, `E2E_CLERK_USER_EMAIL`, `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` in GitHub Actions; see [development.md](./development.md#e2e-smoke-tasks).
 - **Full suite:** `bun run e2e:install` once, then `bun run --filter @repo/web e2e` (or `@repo/marketing`)
 - **CI (full):** Add the **`e2e`** label on a PR; runs when web or marketing paths change (after the matching build job)
 - **Naming:** `*.e2e.ts` (full), `*.smoke.e2e.ts` (smoke)

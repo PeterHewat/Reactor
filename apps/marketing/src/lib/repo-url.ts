@@ -1,6 +1,12 @@
-const PLACEHOLDER_PATTERN = /YOUR_ORG|YOUR_REPO|your-org|your-repo/i;
+import {
+  normalizeRepoDefaultBranch,
+  normalizeRepoUrl,
+  REPO_SETUP_DOC_PATH,
+  repoSetupGuideUrl as sharedRepoSetupGuideUrl,
+} from "@repo/config/repo-url";
+import { loadMarketingEnv } from "../env";
 
-export const REPO_SETUP_DOC_PATH = "README.md";
+export { REPO_SETUP_DOC_PATH };
 
 /**
  * Public GitHub repository URL (`PUBLIC_REPO_URL` in `apps/marketing/.env`).
@@ -8,11 +14,7 @@ export const REPO_SETUP_DOC_PATH = "README.md";
  * @returns Normalized repo URL, or undefined when unset or still a placeholder
  */
 export function getPublicRepoUrl(): string | undefined {
-  const raw = import.meta.env.PUBLIC_REPO_URL?.trim().replace(/\/$/, "");
-  if (!raw || PLACEHOLDER_PATTERN.test(raw)) {
-    return undefined;
-  }
-  return raw;
+  return normalizeRepoUrl(loadMarketingEnv().repoUrl);
 }
 
 /**
@@ -25,5 +27,6 @@ export function repoSetupGuideUrl(): string | undefined {
   if (!base) {
     return undefined;
   }
-  return `${base}/blob/main/${REPO_SETUP_DOC_PATH}`;
+  const branch = normalizeRepoDefaultBranch(loadMarketingEnv().repoDefaultBranch);
+  return sharedRepoSetupGuideUrl(base, branch);
 }

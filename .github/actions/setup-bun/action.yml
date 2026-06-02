@@ -1,0 +1,34 @@
+name: Setup Bun
+description: Install Bun and workspace dependencies with lockfile cache.
+
+inputs:
+  node-version:
+    description: Node.js version for GitHub Actions
+    required: false
+    default: "24"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: .bun-version
+
+    - name: Cache Bun dependencies
+      uses: actions/cache@v4
+      id: bun-cache
+      with:
+        path: |
+          node_modules
+          ~/.bun/install/cache
+        key: bun-deps-${{ runner.os }}-${{ hashFiles('bun.lock', '.bun-version') }}
+        restore-keys: |
+          bun-deps-${{ runner.os }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: bun install --frozen-lockfile

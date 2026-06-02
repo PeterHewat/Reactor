@@ -1,12 +1,10 @@
 import { requireEnv } from "./lib/env";
 
 /**
- * Clerk + Convex auth configuration.
+ * Reference copy of {@link ./auth.config.ts}. The committed `auth.config.ts` is the source of truth.
  *
- * Setup:
- * 1. Copy this file to `convex/auth.config.ts`
- * 2. Set `CLERK_JWT_ISSUER_DOMAIN` in the Convex dashboard (Settings → Environment Variables)
- *    to your Clerk JWT issuer, e.g. https://your-app.clerk.accounts.dev
+ * Set `CLERK_JWT_ISSUER_DOMAIN` in the Convex dashboard (Settings → Environment Variables)
+ * to your Clerk JWT issuer, e.g. https://your-app.clerk.accounts.dev
  *
  * @see https://docs.convex.dev/auth/clerk
  */

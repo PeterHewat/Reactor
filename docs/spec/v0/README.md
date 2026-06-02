@@ -4,6 +4,8 @@
 
 Prove Convex + Clerk + React file routes with a minimal tasks demo agents can extend.
 
+Read [cross-cutting.md](./cross-cutting.md) first (auth, env, data model).
+
 ## Definition of done
 
 - [x] `/tasks` CRUD with auth and ownership checks

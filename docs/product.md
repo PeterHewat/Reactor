@@ -20,13 +20,13 @@ Who are you building this for?
 
 List the minimum features needed for initial release:
 
-1. **Feature Name**
+#### 1. **Feature Name**
 
 - Description: What does it do?
 - User story: As a [user type], I want [capability] so that [benefit]
 - Acceptance criteria: How do we know it's done?
 
-2. **Feature Name**
+#### 2. **Feature Name**
 
 - Description:
 - User story:
@@ -36,7 +36,7 @@ List the minimum features needed for initial release:
 
 Features for later releases:
 
-1. **Feature Name**
+#### **Feature Name**
 
 - Description:
 - Priority: High/Medium/Low

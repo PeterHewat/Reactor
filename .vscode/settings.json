@@ -54,7 +54,6 @@
     "**/.astro": true,
     "**/.DS_Store": true,
     "**/build": true,
-    "**/bun.lock": true,
     "**/dist": true,
     "**/node_modules": true
   },
@@ -69,25 +68,19 @@
   "js/ts.updateImportsOnFileMove.enabled": "always",
   "npm.packageManager": "bun",
   "npm.scriptRunner": "bun",
-  "i18n-ally.localesPaths": ["locales"],
+  "i18n-ally.localesPaths": ["apps/web/src/locales"],
   "i18n-ally.sourceLanguage": "en",
   "i18n-ally.keystyle": "nested",
   "i18n-ally.sortKeys": true,
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
-      "text": "Use conventional commit format: type: description"
+      "text": "Follow CONTRIBUTING.md: imperative subject, max 50 characters, no trailing period"
     },
     {
-      "text": "Types must be one of: feat, fix, docs, style, refactor, perf, test, chore, ci"
+      "text": "Separate subject from body with a blank line; wrap body at 72 characters"
     },
     {
-      "text": "Keep the subject line under 72 characters"
-    },
-    {
-      "text": "Use imperative mood"
-    },
-    {
-      "text": "If you can accurately express the change in just the subject line, don't include anything in the message body. Only use the body when it is providing *useful* information that cannot be conveyed in the subject line."
+      "text": "Explain what and why in the body, not how"
     }
   ]
 }

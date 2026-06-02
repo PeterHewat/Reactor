@@ -26,7 +26,7 @@ on:
           - "patch"
           - "minor"
           - "major"
-        default: "minor"
+        default: "patch"
       skip_unchanged:
         description: "Skip components with no changes since last release"
         required: false
@@ -58,10 +58,9 @@ jobs:
 
           echo "🔍 Validating repository state..."
 
-          # Check if we're on main branch
-          CURRENT_BRANCH=$(git branch --show-current)
-          if [ "$CURRENT_BRANCH" != "main" ]; then
-            echo "❌ Releases must be created from main branch (currently on: $CURRENT_BRANCH)"
+          # Check if we're on main branch (checkout is detached — use github.ref, not git branch)
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "❌ Releases must be created from main branch (currently on: ${{ github.ref_name }})"
             exit 1
           fi
 
@@ -86,6 +85,20 @@ jobs:
           fi
 
           echo "✅ Repository state is valid"
+
+      - name: Verify CI succeeded for this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          SHA="${{ github.sha }}"
+          if ! gh run list --commit "$SHA" --workflow ci.yml --json conclusion --jq -e 'any(.[]; .conclusion == "success")'; then
+            echo "❌ No successful ci.yml run for commit ${SHA}."
+            echo "   Wait for CI on this commit to finish green before releasing."
+            gh run list --commit "$SHA" --workflow ci.yml --limit 5 || true
+            exit 1
+          fi
+          echo "✅ CI succeeded for commit ${SHA}"
 
       - name: Setup bash utilities
         run: |

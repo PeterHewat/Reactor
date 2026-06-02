@@ -2,11 +2,13 @@
   "extends": "./tsconfig.base.json",
   "files": [],
   "references": [
-    { "path": "apps/marketing" },
+    { "path": "packages/config" },
+    { "path": "packages/env-core" },
+    { "path": "packages/utils" },
+    { "path": "packages/ui-web" },
+    { "path": "packages/test-utils" },
     { "path": "apps/web" },
     { "path": "convex" },
-    { "path": "packages/test-utils" },
-    { "path": "packages/ui-web" },
-    { "path": "packages/utils" }
+    { "path": "apps/marketing" }
   ]
 }

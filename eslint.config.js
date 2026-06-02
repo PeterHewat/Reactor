@@ -35,6 +35,23 @@ export default defineConfig(
       "no-console": "warn",
     },
   },
+  {
+    files: ["convex/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@repo/*"],
+              message:
+                "Convex must not import workspace packages (ADR-002). Use convex/lib/ and keep server code in convex/.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   globalIgnores([
     "**/node_modules/**",
     "**/dist/**",

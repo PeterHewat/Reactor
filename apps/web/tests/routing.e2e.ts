@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { PRODUCT_NAME } from "./helpers/product-name";
 import { HomePage } from "./pom/HomePage";
 
 test.describe("Routing", () => {
@@ -6,7 +7,7 @@ test.describe("Routing", () => {
     const home = new HomePage(page);
     await home.goto();
     await home.waitForLoad();
-    await expect(home.title).toHaveText("Reactor");
+    await expect(home.title).toHaveText(PRODUCT_NAME);
   });
 
   test("unknown path shows 404 copy", async ({ page }) => {

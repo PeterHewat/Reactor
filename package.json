@@ -8,7 +8,7 @@
   "packageManager": "bun@1.3.13",
   "engines": {
     "bun": ">=1.3.13",
-    "node": ">=22.12.0"
+    "node": ">=24.0.0"
   },
   "type": "module",
   "workspaces": [
@@ -18,7 +18,9 @@
     "packages/test-utils",
     "packages/ui-web",
     "packages/utils",
-    "packages/tokens"
+    "packages/tokens",
+    "packages/config",
+    "packages/env-core"
   ],
   "scripts": {
     "dev": "concurrently -n web,mkt -c blue,magenta \"bun run dev:web\" \"bun run dev:marketing\"",
@@ -26,13 +28,17 @@
     "dev:web": "bun run --filter @repo/web dev",
     "dev:marketing": "bun run --filter @repo/marketing dev",
     "dev:convex": "bun run --filter @repo/convex dev",
+    "setup": "bun scripts/setup.ts",
     "doctor": "bun scripts/doctor.ts",
-    "generate": "bun run generate:routes && bun run generate:convex && bun run generate:ai",
-    "generate:routes": "bun run --filter @repo/web generate:routes",
+    "sync:vercel-headers": "bun scripts/sync-vercel-headers.ts",
+    "generate": "bun scripts/generate.ts",
+    "generate:routes": "bun scripts/generate-routes.ts",
+    "generate:force": "bun scripts/generate.ts --force",
     "generate:convex": "bun scripts/generate-convex.ts",
     "generate:ai": "bunx convex ai-files install",
-    "pretypecheck": "bun run generate",
-    "pretest": "bun run generate",
+    "sync:agent-docs": "bun scripts/sync-agent-docs.ts",
+    "pretypecheck": "bun scripts/generate.ts && bun scripts/assert-convex-generated.ts",
+    "pretest": "bun scripts/generate.ts && bun scripts/assert-convex-generated.ts",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
@@ -42,7 +48,11 @@
     "build:all": "bun run build && bun run --filter '*' build",
     "clean": "tsc -b --clean",
     "test": "bun run --filter '*' test",
+    "test:web": "bun run --filter @repo/web test && bun run --filter @repo/ui-web test && bun run --filter @repo/utils test",
+    "test:packages": "bun run --filter @repo/config test && bun run --filter @repo/env-core test && bun run --filter @repo/ui-web test && bun run --filter @repo/utils test",
+    "test:integration": "bun run --filter @repo/utils test:integration",
     "e2e:install": "bunx playwright install chromium",
+    "e2e:smoke": "bun run --filter @repo/web e2e:smoke",
     "install:all": "bun install",
     "clean-install": "rm -rf node_modules && bun install",
     "outdated": "bun outdated",
@@ -68,7 +78,7 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^5.8.8",
+    "@eslint-react/eslint-plugin": "^5.8.9",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -77,9 +87,9 @@
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.8",
     "bun-types": "^1.3.14",
-    "concurrently": "^10.0.0",
+    "concurrently": "^10.0.1",
     "convex": "^1.39.1",
     "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
@@ -95,7 +105,7 @@
     "react-dom": "^19.2.6",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.60.0",
-    "vite": "^8.0.14",
-    "vitest": "^4.1.7"
+    "vite": "^8.0.16",
+    "vitest": "^4.1.8"
   }
 }

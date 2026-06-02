@@ -11,6 +11,9 @@ dist-ssr/
 # Node.js dependencies
 node_modules/
 
+# Codegen hash cache (scripts/generate.ts)
+.cache/
+
 # Rust/Cargo build artifacts
 target/
 pkg/
@@ -48,6 +51,7 @@ Thumbs.db
 # Environment variables (keep .env.example for documentation)
 .env
 .env.local
+.env.e2e.local
 .env.development
 .env.test
 .env.production

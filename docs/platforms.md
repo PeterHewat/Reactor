@@ -26,13 +26,14 @@ How the application surfaces and shared packages fit together in this monorepo. 
 
 ## Shared packages
 
-| Package               | Used by                               | Responsibility                   |
-| --------------------- | ------------------------------------- | -------------------------------- |
-| `packages/tokens`     | Web, marketing                        | Shared CSS design tokens         |
-| `packages/ui-web`     | Web                                   | shadcn-style React components    |
-| `packages/utils`      | Web (`@repo/web`)                     | `cn()`, env helpers, theme, i18n |
-| `packages/test-utils` | Tests                                 | Shared test helpers and mocks    |
-| `packages/config`     | Vite/Vitest (not a workspace package) | Path aliases                     |
+| Package               | Used by                             | Responsibility                                        |
+| --------------------- | ----------------------------------- | ----------------------------------------------------- |
+| `packages/tokens`     | Web, marketing                      | Shared CSS design tokens                              |
+| `packages/ui-web`     | Web                                 | shadcn-style React components                         |
+| `packages/utils`      | Web (`@repo/web`)                   | `cn()`, env helpers, theme, i18n                      |
+| `packages/env-core`   | Web, marketing                      | Framework-agnostic `loadEnv` (no React/Zustand peers) |
+| `packages/config`     | Web, marketing (Vite/Astro configs) | Path aliases, repo URL helpers, Vercel header JSON    |
+| `packages/test-utils` | Tests                               | Shared test helpers and mocks                         |
 
 Marketing `.astro` components live in `apps/marketing/src/components/`. Styling uses each app’s Tailwind config and CSS variables (`apps/marketing/src/styles/`).
 
@@ -52,12 +53,12 @@ Browser
 
 ## Platform-specific conventions
 
-| Concern       | Web / Marketing                                                    |
-| ------------- | ------------------------------------------------------------------ |
-| Styling       | Tailwind v4                                                        |
-| Class merging | `cn()` from `@repo/utils`                                          |
-| Env vars      | Web: `apps/web/src/env.ts` + `VITE_*`; Convex: `convex/lib/env.ts` |
-| Server state  | Convex hooks (web only)                                            |
+| Concern       | Web / Marketing                                                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Styling       | Tailwind v4 + `@repo/tokens`                                                                                            |
+| Class merging | `cn()` from `@repo/utils` (web only)                                                                                    |
+| Env vars      | Web: `apps/web/src/env.ts` + `VITE_*`; marketing: `apps/marketing/src/env.ts` + `PUBLIC_*`; Convex: `convex/lib/env.ts` |
+| Server state  | Convex hooks (web only)                                                                                                 |
 
 ## CI
 

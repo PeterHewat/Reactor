@@ -13,12 +13,13 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts",
       "default": "./src/index.ts"
-    }
+    },
+    "./convex-react-setup": "./src/mocks/convex-react-setup.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "vitest": ">=4.1.7"
+    "vitest": ">=4.1.8"
   }
 }

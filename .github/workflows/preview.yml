@@ -38,38 +38,12 @@ jobs:
       - name: Detect changed projects
         id: detect
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} 2>/dev/null || echo "")
+          export CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} 2>/dev/null || echo "")
 
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          web=false
-          marketing=false
-          convex=false
-          shared=false
-          config=false
-
-          for file in $CHANGED_FILES; do
-            if [[ $file == apps/web/* ]]; then web=true; fi
-            if [[ $file == apps/marketing/* ]]; then marketing=true; fi
-            if [[ $file == convex/* ]]; then convex=true; fi
-            if [[ $file == packages/ui-web/* ]]; then shared=true; fi
-            if [[ $file == packages/utils/* ]]; then shared=true; fi
-            if [[ $file == packages/test-utils/* ]]; then shared=true; fi
-            if [[ $file == package.json ]] || [[ $file == bun.lock ]] || [[ $file == eslint.config.js ]] || [[ $file == tsconfig.json ]] || [[ $file == tsconfig.* ]] || [[ $file == .github/workflows/* ]]; then
-              config=true
-            fi
-          done
-
-          if [ "$shared" = "true" ] || [ "$config" = "true" ]; then
-            web=true
-            marketing=true
-            convex=true
-          fi
-
-          echo "web=$web" >> $GITHUB_OUTPUT
-          echo "marketing=$marketing" >> $GITHUB_OUTPUT
-          echo "convex=$convex" >> $GITHUB_OUTPUT
+          bash scripts/ci-detect-changes.sh
 
   preview-convex:
     name: Convex preview
@@ -95,8 +69,20 @@ jobs:
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_DEPLOY_KEY }}
         run: |
+          set -euo pipefail
+          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+            echo "::error::CONVEX_PREVIEW_DEPLOY_KEY is required for Convex previews."
+            exit 1
+          fi
           bunx convex deploy --preview-create "${{ env.PREVIEW_NAME }}"
-          URL=$(grep -E '^CONVEX_URL=' .env.local 2>/dev/null | cut -d= -f2- || true)
+          URL="${CONVEX_URL:-}"
+          if [ -z "$URL" ] && [ -f .env.local ]; then
+            URL=$(grep -E '^CONVEX_URL=' .env.local | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'")
+          fi
+          if [ -z "$URL" ]; then
+            echo "::error::Convex preview deploy did not produce CONVEX_URL (check CLI output and .env.local)."
+            exit 1
+          fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
   preview-web:
@@ -118,16 +104,24 @@ jobs:
           bun-version-file: .bun-version
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Deploy to Vercel (web preview)
+      - name: Generate and deploy to Vercel (web preview)
         id: vercel
-        working-directory: apps/web
         env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_DEPLOY_KEY }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
           VITE_CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
         run: |
+          set -euo pipefail
+          if [ -z "${VITE_CONVEX_URL:-}" ]; then
+            echo "::error::Convex preview URL missing — preview-convex job must succeed first."
+            exit 1
+          fi
+          bun run generate:routes
+          bun run generate:convex
+          cd apps/web
           bunx vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
           bunx vercel build --token="$VERCEL_TOKEN"
           URL=$(bunx vercel deploy --prebuilt --token="$VERCEL_TOKEN")

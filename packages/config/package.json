@@ -1,0 +1,21 @@
+{
+  "name": "@repo/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Vite/Vitest aliases and deployment config fragments",
+  "exports": {
+    "./aliases": "./aliases.ts",
+    "./product": "./product.ts",
+    "./env-placeholders": "./env-placeholders.ts",
+    "./repo-url": "./repo-url.ts",
+    "./vercel-base-headers.json": "./vercel-base-headers.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.8"
+  }
+}

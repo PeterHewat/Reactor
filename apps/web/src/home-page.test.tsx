@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from "@repo/config/product";
 import { render, screen } from "@testing-library/react";
 import { RouterProvider } from "@tanstack/react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,7 +26,7 @@ describe("HomePage", () => {
     mockUseTranslation.mockReturnValue({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "home.title": "Reactor",
+          "home.title": PRODUCT_NAME,
           "home.subtitle": "React 19 + Convex + Clerk + Tailwind CSS",
           "home.viewRepository": "View repository on GitHub",
           "home.features.title": "Features",

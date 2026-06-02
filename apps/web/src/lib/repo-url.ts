@@ -1,9 +1,13 @@
+import {
+  normalizeRepoDefaultBranch,
+  normalizeRepoUrl,
+  REPO_SETUP_DOC_PATH,
+  repoBlobUrl,
+  repoSetupGuideUrl as sharedRepoSetupGuideUrl,
+} from "@repo/config/repo-url";
 import { loadWebEnv } from "../env";
 
-const PLACEHOLDER_PATTERN = /YOUR_ORG|YOUR_REPO|your-org|your-repo/i;
-
-/** Default blob path for setup links (durable after adopters remove the onboarding runbook). */
-export const REPO_SETUP_DOC_PATH = "README.md";
+export { REPO_SETUP_DOC_PATH };
 
 /**
  * GitHub repository URL for this project (`VITE_REPO_URL` in `apps/web/.env.local`).
@@ -11,11 +15,11 @@ export const REPO_SETUP_DOC_PATH = "README.md";
  * @returns Normalized repo URL, or undefined when unset or still a placeholder
  */
 export function getRepoUrl(): string | undefined {
-  const raw = loadWebEnv().repoUrl?.trim().replace(/\/$/, "");
-  if (!raw || PLACEHOLDER_PATTERN.test(raw)) {
-    return undefined;
-  }
-  return raw;
+  return normalizeRepoUrl(loadWebEnv().repoUrl);
+}
+
+function defaultBranch(): string {
+  return normalizeRepoDefaultBranch(import.meta.env.VITE_REPO_DEFAULT_BRANCH);
 }
 
 /**
@@ -24,13 +28,12 @@ export function getRepoUrl(): string | undefined {
  * @param repoRelativePath - Path from repo root (e.g. `README.md`)
  * @returns GitHub blob URL, or undefined when {@link getRepoUrl} is unset
  */
-export function repoBlobUrl(repoRelativePath: string): string | undefined {
+export function repoBlobUrlForProject(repoRelativePath: string): string | undefined {
   const base = getRepoUrl();
   if (!base) {
     return undefined;
   }
-  const path = repoRelativePath.replace(/^\//, "");
-  return `${base}/blob/main/${path}`;
+  return repoBlobUrl(base, repoRelativePath, defaultBranch());
 }
 
 /**
@@ -39,5 +42,9 @@ export function repoBlobUrl(repoRelativePath: string): string | undefined {
  * @returns GitHub blob URL for {@link REPO_SETUP_DOC_PATH}, or undefined when repo URL is unset
  */
 export function repoSetupGuideUrl(): string | undefined {
-  return repoBlobUrl(REPO_SETUP_DOC_PATH);
+  const base = getRepoUrl();
+  if (!base) {
+    return undefined;
+  }
+  return sharedRepoSetupGuideUrl(base, defaultBranch());
 }

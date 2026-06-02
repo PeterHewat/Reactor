@@ -1,0 +1,19 @@
+# Sync GitHub labels from scripts/sync-github-labels.sh (manual).
+name: Sync GitHub labels
+
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    name: Sync labels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Sync labels via gh CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/sync-github-labels.sh

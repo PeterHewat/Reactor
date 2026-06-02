@@ -16,7 +16,7 @@ From the **repository root**, link your deployment:
 bun run dev:convex
 ```
 
-Committed sample: `schema.ts`, `tasks.ts`, `model/tasks.ts`, `lib/`, `auth.config.ts.example`. Extend or replace for your domain. Codegen: `bun run generate:convex` or keep `dev:convex` running.
+Committed sample: `schema.ts`, `tasks.ts`, `model/tasks.ts`, `lib/`, `auth.config.ts` (see `auth.config.ts.example` for reference). Extend or replace for your domain. Codegen: `bun run generate:convex` or keep `dev:convex` running.
 
 ## Clerk authentication
 
@@ -75,8 +75,8 @@ After scaffolding, your convex folder will look like:
 convex/
   _generated/              # Auto-generated types (don't edit)
   schema.ts                # Database schema
-  auth.config.ts           # Auth configuration (copy from auth.config.ts.example)
-  auth.config.ts.example   # Clerk auth template
+  auth.config.ts           # Auth configuration (committed; customize via Convex dashboard env)
+  auth.config.ts.example   # Reference copy of auth.config.ts
   lib/                     # Shared helpers (auth, validation)
   tasks.ts                 # Sample authenticated CRUD
   *.ts                     # Your queries, mutations, actions

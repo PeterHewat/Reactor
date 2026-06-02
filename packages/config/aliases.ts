@@ -12,6 +12,10 @@ const aliasTargets = {
   "@convex/dataModel": "convex/_generated/dataModel.d.ts",
 } as const;
 
+const testUtilsSubpathTargets = {
+  "@repo/test-utils/convex-react-setup": "packages/test-utils/src/mocks/convex-react-setup.ts",
+} as const;
+
 const utilsSubpathTargets = {
   "@repo/utils/env": "packages/utils/src/env.ts",
   "@repo/utils/theme": "packages/utils/src/theme.ts",
@@ -43,10 +47,14 @@ export function createRepoAliases(keys: readonly RepoAliasKey[]): Record<string,
     string
   >;
   const aliases = resolveRepoPaths(selected);
+  let merged = aliases;
   if (keys.includes("@repo/utils")) {
-    return { ...resolveRepoPaths(utilsSubpathTargets), ...aliases };
+    merged = { ...resolveRepoPaths(utilsSubpathTargets), ...merged };
   }
-  return aliases;
+  if (keys.includes("@repo/test-utils")) {
+    merged = { ...resolveRepoPaths(testUtilsSubpathTargets), ...merged };
+  }
+  return merged;
 }
 
 /** Aliases used by `apps/web` (Vite + Vitest). */

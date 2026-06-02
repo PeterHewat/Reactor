@@ -1,16 +1,19 @@
 import { expect, test } from "@playwright/test";
+import { SITE_NAME, SITE_TAGLINE } from "../src/lib/site";
 
 test.describe("Marketing Home Page", () => {
   test("should load the home page with correct title", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page).toHaveTitle("Reactor - Modern Monorepo Starter");
+    await expect(page).toHaveTitle(`${SITE_NAME} - ${SITE_TAGLINE}`);
   });
 
   test("should display the hero section", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: /build faster with reactor/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: new RegExp(`build faster with ${SITE_NAME}`, "i") }),
+    ).toBeVisible();
     await expect(page.getByText(/production-ready monorepo/i)).toBeVisible();
   });
 

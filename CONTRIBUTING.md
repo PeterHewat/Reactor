@@ -13,6 +13,8 @@ After `bun install`, Husky runs **lint-staged** on commit: ESLint with `--fix` a
 - Open a pull request; CI must pass and a reviewer should approve
 - Use squash merge; keep the squash commit message clear
 
+**Fork PRs:** Pull requests from forks do not get repository Actions secrets, so Convex builds and authenticated smoke may be skipped while **CI required** still passes. If this repo accepts public contributions, read [docs/ci-cd.md § Fork PRs and CI](docs/ci-cd.md#fork-prs-and-ci) before relying on green CI from external forks.
+
 ## Commit messages
 
 - Separate subject from body with a blank line

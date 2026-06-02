@@ -4,8 +4,10 @@
 
 If you discover a security issue in this template, please report it privately:
 
-- Open a [GitHub Security Advisory](https://github.com/PeterHewat/Reactor/security/advisories/new) (preferred for this repo), or
+- Open a **private** GitHub Security Advisory on **your** repository (Settings → Security → Advisories), or
 - Email the maintainer via the contact in [package.json](package.json) (`author` field)
+
+After [**Use this template**](https://github.com/PeterHewat/Reactor/generate), update this section so reports go to your org — see [docs/customize-after-fork.md](docs/customize-after-fork.md#1-repository-identity).
 
 Do not open a public issue for undisclosed vulnerabilities.
 

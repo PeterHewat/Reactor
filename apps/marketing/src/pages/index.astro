@@ -3,11 +3,12 @@ import Features from "../components/Features.astro";
 import Hero from "../components/Hero.astro";
 import Layout from "../layouts/Layout.astro";
 import { repoSetupGuideUrl } from "../lib/repo-url";
+import { SITE_NAME, SITE_TAGLINE } from "../lib/site";
 
 const ctaHref = repoSetupGuideUrl();
 
 // SEO props for the page
-const title = "Reactor - Modern Monorepo Starter";
+const title = `${SITE_NAME} - ${SITE_TAGLINE}`;
 const description =
   "A production-ready monorepo template for web and marketing with React 19, Convex, Clerk, and Tailwind CSS.";
 const author = "Peter Hewat";
@@ -35,9 +36,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="apple-touch-icon" href="/favicon.ico" />
   </head>
   <body>
-    <Layout title="Reactor - Modern Monorepo Starter">
+    <Layout title={title} description={description}>
       <Hero
-        title="Build faster with Reactor"
+        title={`Build faster with ${SITE_NAME}`}
         subtitle="A production-ready monorepo template for web and marketing."
         ctaText="Get Started"
         ctaHref={ctaHref}

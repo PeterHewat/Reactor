@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-> **Sync with [AGENTS.md](./AGENTS.md):** Keep both files aligned when you change project rules. `bun run generate:ai` only replaces the marked Convex section at the bottom — do not quote those marker strings elsewhere in this file.
+> **Sync with [CLAUDE.md](./CLAUDE.md):** After editing shared rules here, run `bun run sync:agent-docs`. `bun run generate:ai` updates the marked Convex section in CLAUDE.md only — do not quote those marker strings elsewhere in this file.
 
 ## Philosophy
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { PRODUCT_NAME } from "./helpers/product-name";
 import { HomePage } from "./pom/HomePage";
 
 test.describe("Home Page", () => {
@@ -14,7 +15,7 @@ test.describe("Home Page", () => {
     test("displays the main title", async () => {
       await expect(homePage.title).toBeVisible();
       const titleText = await homePage.getTitleText();
-      expect(titleText).toBe("Reactor");
+      expect(titleText).toBe(PRODUCT_NAME);
     });
 
     test("displays the subtitle", async () => {

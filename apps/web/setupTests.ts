@@ -1,3 +1,4 @@
+import "@repo/test-utils/convex-react-setup";
 import { setupMatchMedia } from "@repo/test-utils";
 import "@testing-library/jest-dom/vitest";
 

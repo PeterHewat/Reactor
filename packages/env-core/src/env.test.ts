@@ -31,7 +31,6 @@ describe("asInt", () => {
   });
 
   it("parses leading digits from mixed strings (parseInt behavior)", () => {
-    // Note: parseInt("12abc") returns 12, this is expected JavaScript behavior
     expect(asInt("12abc")).toBe(12);
   });
 });

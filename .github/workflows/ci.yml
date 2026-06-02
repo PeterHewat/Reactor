@@ -10,6 +10,9 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   NODE_VERSION: "24"
@@ -25,7 +28,9 @@ jobs:
       marketing: ${{ steps.detect.outputs.marketing }}
       convex: ${{ steps.detect.outputs.convex }}
       shared: ${{ steps.detect.outputs.shared }}
+      config: ${{ steps.detect.outputs.config }}
       any: ${{ steps.detect.outputs.any }}
+      docs_only: ${{ steps.detect.outputs.docs_only }}
       convex_ci_tests: ${{ steps.ci-flags.outputs.convex_ci_tests }}
     steps:
       - id: ci-flags
@@ -38,63 +43,24 @@ jobs:
         id: detect
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} 2>/dev/null || echo "")
+            export CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} 2>/dev/null || echo "")
           elif [ "${{ github.event_name }}" = "push" ]; then
-            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} 2>/dev/null || echo "")
+            export CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} 2>/dev/null || echo "")
           fi
 
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          web=false
-          marketing=false
-          convex=false
-          shared=false
-          config=false
-
-          for file in $CHANGED_FILES; do
-            if [[ $file == apps/web/* ]]; then web=true; fi
-            if [[ $file == apps/marketing/* ]]; then marketing=true; fi
-            if [[ $file == convex/* ]]; then convex=true; fi
-            if [[ $file == packages/ui-web/* ]]; then shared=true; fi
-            if [[ $file == packages/utils/* ]]; then shared=true; fi
-            if [[ $file == packages/test-utils/* ]]; then shared=true; fi
-            if [[ $file == package.json ]] || [[ $file == bun.lock ]] || [[ $file == eslint.config.js ]] || [[ $file == tsconfig.json ]] || [[ $file == tsconfig.* ]] || [[ $file == .github/workflows/* ]]; then
-              config=true
-            fi
-          done
-
-          if [ "$shared" = "true" ] || [ "$config" = "true" ]; then
-            web=true
-            marketing=true
-            convex=true
-          fi
-
-          any=false
-          if [ "$web" = "true" ] || [ "$marketing" = "true" ] || [ "$convex" = "true" ]; then
-            any=true
-          fi
-
-          echo "Detected changes: web=$web, marketing=$marketing, convex=$convex, shared=$shared, config=$config, any=$any"
-          echo "web=$web" >> $GITHUB_OUTPUT
-          echo "marketing=$marketing" >> $GITHUB_OUTPUT
-          echo "convex=$convex" >> $GITHUB_OUTPUT
-          echo "shared=$shared" >> $GITHUB_OUTPUT
-          echo "any=$any" >> $GITHUB_OUTPUT
+          bash scripts/ci-detect-changes.sh
 
   security-audit:
     name: Security audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
       - name: Run security audit
         run: bun audit --audit-level=high
 
@@ -134,14 +100,9 @@ jobs:
     if: needs.detect-changes.outputs.any == 'true'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
       - name: Lint
         run: bun run lint
 
@@ -149,17 +110,14 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.any == 'true'
+    if: |
+      needs.detect-changes.outputs.any == 'true' ||
+      needs.detect-changes.outputs.docs_only == 'true'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
       - name: Format check
         run: bun run format
 
@@ -170,16 +128,25 @@ jobs:
     if: needs.detect-changes.outputs.any == 'true'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Typecheck
-        run: bun run typecheck
+      - name: Codegen and typecheck
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          bun run generate:routes
+          if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
+            bun run generate:convex
+            bun run typecheck
+          elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
+            echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
+            exit 1
+          else
+            echo "::notice::Skipping monorepo typecheck — CONVEX_DEPLOY_KEY not configured."
+            echo "After fork: bun run dev:convex && bun run generate:convex"
+          fi
 
   build-web:
     name: Build Web
@@ -188,21 +155,26 @@ jobs:
     if: needs.detect-changes.outputs.web == 'true'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Generate artifacts
-        run: bun run generate
-      - name: Build web app
+      - name: Generate and build web app
         env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
           VITE_CONVEX_URL: https://ci-placeholder.convex.cloud
           VITE_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
-        run: bun run --filter @repo/web build
+        run: |
+          set -euo pipefail
+          bun run generate:routes
+          if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
+            bun run generate:convex
+            bun run --filter @repo/web build
+          elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
+            echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
+            exit 1
+          else
+            echo "::notice::Skipping web build — CONVEX_DEPLOY_KEY not configured."
+          fi
 
   build-marketing:
     name: Build Marketing
@@ -211,14 +183,9 @@ jobs:
     if: needs.detect-changes.outputs.marketing == 'true'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
       - name: Build marketing site
         run: bun run --filter @repo/marketing build
 
@@ -229,21 +196,42 @@ jobs:
     if: needs.detect-changes.outputs.web == 'true'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Generate artifacts
-        run: bun run generate
       - name: Run web tests
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: |
-          bun run --filter @repo/web test
+          set -euo pipefail
+          bun run generate:routes
+          if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
+            bun run generate:convex
+            bun run --filter @repo/web test
+          elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
+            echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
+            exit 1
+          else
+            echo "::notice::Skipping @repo/web unit tests — CONVEX_DEPLOY_KEY not configured."
+          fi
           bun run --filter @repo/ui-web test
           bun run --filter @repo/utils test
+          bun run --filter @repo/utils test:integration
+
+  tests-packages:
+    name: Package Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint, format]
+    if: |
+      needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.config == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Run shared package tests
+        run: bun run --filter @repo/config test && bun run --filter @repo/env-core test
 
   tests-marketing:
     name: Marketing Tests
@@ -252,16 +240,37 @@ jobs:
     if: needs.detect-changes.outputs.marketing == 'true'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
       - name: Run marketing tests
         run: bun run --filter @repo/marketing test
+
+  storybook-ui-web:
+    name: Storybook (ui-web)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint, format]
+    if: needs.detect-changes.outputs.web == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Build Storybook
+        run: bun run --filter @repo/ui-web build-storybook
+
+  coverage-ui-web:
+    name: Coverage (ui-web)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, tests-web]
+    if: needs.detect-changes.outputs.web == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Run ui-web coverage
+        run: bun run --filter @repo/ui-web test:coverage
 
   tests-convex:
     name: Convex Tests
@@ -270,18 +279,76 @@ jobs:
     if: needs.detect-changes.outputs.convex == 'true' && needs.detect-changes.outputs.convex_ci_tests == 'true'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
+      - name: Convex tests
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+            if [ "${{ vars.CI_STRICT }}" = "1" ]; then
+              echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
+              exit 1
+            fi
+            echo "::notice::Skipping Convex tests — CONVEX_DEPLOY_KEY not configured."
+            exit 0
+          fi
+          bun run generate:convex
+          bun run --filter @repo/convex test
+
+  web-e2e-smoke:
+    name: Web E2E smoke
+    runs-on: ubuntu-latest
+    needs: [detect-changes, tests-web]
+    if: needs.detect-changes.outputs.web == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
         with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Generate Convex bindings
-        run: bun run generate:convex
-      - name: Run Convex tests
-        run: bun run --filter @repo/convex test
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Generate routes
+        run: bun run generate:routes
+      - name: Report E2E smoke configuration
+        id: e2e-smoke-config
+        run: |
+          missing=()
+          [ -z "${{ secrets.CLERK_SECRET_KEY }}" ] && missing+=("CLERK_SECRET_KEY")
+          [ -z "${{ secrets.E2E_CLERK_USER_EMAIL }}" ] && missing+=("E2E_CLERK_USER_EMAIL")
+          [ -z "${{ secrets.VITE_CONVEX_URL }}" ] && missing+=("VITE_CONVEX_URL")
+          [ -z "${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" ] && missing+=("VITE_CLERK_PUBLISHABLE_KEY")
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "E2E smoke: secrets configured — running authenticated tests"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::E2E smoke skipped — missing GitHub Actions secrets: ${missing[*]}"
+            echo "See docs/ci-cd.md#github-actions-secrets"
+            if [ "${{ vars.E2E_SMOKE_REQUIRE_SECRETS }}" = "1" ]; then
+              echo "::error::E2E_SMOKE_REQUIRE_SECRETS=1 but smoke secrets are missing."
+              exit 1
+            fi
+          fi
+      - name: Install Playwright browsers
+        if: steps.e2e-smoke-config.outputs.configured == 'true'
+        run: bun run e2e:install
+      - name: Run Playwright smoke tests (tasks)
+        if: steps.e2e-smoke-config.outputs.configured == 'true'
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          E2E_SMOKE_REQUIRE_SECRETS: ${{ vars.E2E_SMOKE_REQUIRE_SECRETS }}
+        run: bun run --filter @repo/web e2e:smoke
+      - name: Upload Playwright smoke report
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-web-smoke
+          path: apps/web/playwright-report-smoke/
+          retention-days: 7
 
   web-e2e:
     name: Web E2E
@@ -294,16 +361,11 @@ jobs:
       )
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Generate artifacts
-        run: bun run generate
+      - name: Generate routes
+        run: bun run generate:routes
       - name: Install Playwright browsers
         run: bun run e2e:install
       - name: Run Playwright tests (web)
@@ -327,14 +389,9 @@ jobs:
       )
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
       - name: Install Playwright browsers
         run: bun run e2e:install
       - name: Run Playwright tests (marketing)
@@ -346,3 +403,54 @@ jobs:
           name: playwright-report-marketing
           path: apps/marketing/playwright-report/
           retention-days: 7
+
+  ci-required:
+    name: CI required
+    runs-on: ubuntu-latest
+    needs:
+      - detect-changes
+      - security-audit
+      - secrets-scan
+      - lint
+      - format
+      - typecheck
+      - build-web
+      - build-marketing
+      - tests-web
+      - tests-marketing
+      - tests-packages
+      - tests-convex
+      - storybook-ui-web
+      - coverage-ui-web
+      - web-e2e-smoke
+      - web-e2e
+    if: always() && !cancelled() && needs.detect-changes.result == 'success'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify required jobs
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          ANY: ${{ needs.detect-changes.outputs.any }}
+          WEB: ${{ needs.detect-changes.outputs.web }}
+          MARKETING: ${{ needs.detect-changes.outputs.marketing }}
+          CONVEX: ${{ needs.detect-changes.outputs.convex }}
+          SHARED: ${{ needs.detect-changes.outputs.shared }}
+          CONFIG: ${{ needs.detect-changes.outputs.config }}
+          DOCS_ONLY: ${{ needs.detect-changes.outputs.docs_only }}
+          CONVEX_CI_TESTS: ${{ needs.detect-changes.outputs.convex_ci_tests }}
+          SECURITY_AUDIT_RESULT: ${{ needs.security-audit.result }}
+          SECRETS_SCAN_RESULT: ${{ needs.secrets-scan.result }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          FORMAT_RESULT: ${{ needs.format.result }}
+          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
+          BUILD_WEB_RESULT: ${{ needs.build-web.result }}
+          BUILD_MARKETING_RESULT: ${{ needs.build-marketing.result }}
+          TESTS_WEB_RESULT: ${{ needs.tests-web.result }}
+          TESTS_MARKETING_RESULT: ${{ needs.tests-marketing.result }}
+          TESTS_PACKAGES_RESULT: ${{ needs.tests-packages.result }}
+          TESTS_CONVEX_RESULT: ${{ needs.tests-convex.result }}
+          STORYBOOK_RESULT: ${{ needs.storybook-ui-web.result }}
+          COVERAGE_RESULT: ${{ needs.coverage-ui-web.result }}
+          WEB_E2E_SMOKE_RESULT: ${{ needs.web-e2e-smoke.result }}
+          WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
+        run: bash scripts/ci-verify-required.sh

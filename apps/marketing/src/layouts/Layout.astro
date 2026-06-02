@@ -2,6 +2,7 @@
 // src/layouts/Layout.astro
 import Analytics from "@vercel/analytics/astro";
 import SpeedInsights from "@vercel/speed-insights/astro";
+import { SITE_NAME, SITE_TAGLINE } from "../lib/site";
 import "../styles/global.css";
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = "Reactor - Modern Monorepo Starter" } = Astro.props;
+const { title, description = `${SITE_NAME} - ${SITE_TAGLINE}` } = Astro.props;
 ---
 
 <!doctype html>

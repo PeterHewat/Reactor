@@ -1,5 +1,10 @@
+import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@repo/config/product";
+
 /** Public site name used in titles and metadata. */
-export const SITE_NAME = "Reactor";
+export const SITE_NAME = PRODUCT_NAME;
+
+/** Short tagline for the marketing home page title. */
+export const SITE_TAGLINE = PRODUCT_TAGLINE;
 
 /**
  * Build a page `<title>` from a page-specific heading.

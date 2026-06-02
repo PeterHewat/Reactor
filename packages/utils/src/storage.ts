@@ -46,7 +46,8 @@ let memoryStorageSingleton: StorageLike | null = null;
  *
  * The memory fallback is cached so that repeated calls in SSR or test
  * environments share the same store instance, preventing data loss
- * between calls.
+ * between calls. **Theme and i18n preferences do not persist across full
+ * page reloads** when `localStorage` is unavailable (strict CSP, private mode, SSR).
  *
  * Safe to call in SSR environments (e.g., during Vite SSR or Node tests).
  *

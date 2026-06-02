@@ -1,33 +1,31 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console -- CLI output */
 /**
- * Regenerates `convex/_generated/`. Uses linked deployment when available;
- * otherwise provisions a one-shot local deployment (CI-friendly).
+ * Regenerates `convex/_generated/` for a linked Convex deployment.
+ * Fails with remediation when not linked or codegen fails (no committed stubs).
  */
-import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { CONVEX_CODEGEN_FAILED_HELP, CONVEX_LINK_HELP, isConvexLinked } from "./lib/convex-link";
 
 const root = resolve(import.meta.dir, "..");
-const envLocal = resolve(root, ".env.local");
-const hasDeployment =
-  Boolean(process.env.CONVEX_DEPLOY_KEY) ||
-  Boolean(process.env.CONVEX_DEPLOYMENT) ||
-  existsSync(envLocal);
 
-const args = ["convex", hasDeployment ? "codegen" : "dev", "--typecheck", "disable"];
-if (!hasDeployment) {
-  args.push("--once");
+if (!isConvexLinked(root)) {
+  console.error(`\n${CONVEX_LINK_HELP}\n`);
+  process.exit(1);
 }
 
+const args = ["convex", "codegen", "--typecheck", "disable"];
 console.log(`generate:convex → bunx ${args.join(" ")}`);
 
 const proc = Bun.spawn(["bunx", ...args], {
   cwd: root,
   stdout: "inherit",
   stderr: "inherit",
+  env: { ...process.env },
 });
 
-const code = await proc.exited;
+const code = (await proc.exited) ?? 1;
 if (code !== 0) {
-  process.exit(code ?? 1);
+  console.error(`\n${CONVEX_CODEGEN_FAILED_HELP}\n`);
+  process.exit(code);
 }

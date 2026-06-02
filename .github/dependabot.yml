@@ -1,9 +1,7 @@
 version: 2
 updates:
-  # Enable version updates for monorepo root
-  # Dependabot has no "bun" ecosystem; "npm" is required for package.json-based projects.
-  # It will still detect and update dependencies in package.json correctly.
-  - package-ecosystem: "npm"
+  # Bun workspaces: updates package.json and bun.lock (see ADR-003).
+  - package-ecosystem: "bun"
     directory: "/"
     schedule:
       interval: "weekly"

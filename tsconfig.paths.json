@@ -2,6 +2,7 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "paths": {
+      "@repo/env-core/env": ["./packages/env-core/src/env.ts"],
       "@repo/utils": ["./packages/utils/src/index.ts"],
       "@repo/utils/env": ["./packages/utils/src/env.ts"],
       "@repo/utils/theme": ["./packages/utils/src/theme.ts"],
@@ -10,6 +11,13 @@
       "@repo/utils/use-translation": ["./packages/utils/src/use-translation.ts"],
       "@repo/ui-web": ["./packages/ui-web/src/index.ts"],
       "@repo/test-utils": ["./packages/test-utils/src/index.ts"],
+      "@repo/test-utils/convex-react-setup": [
+        "./packages/test-utils/src/mocks/convex-react-setup.ts"
+      ],
+      "@repo/config/aliases": ["./packages/config/aliases.ts"],
+      "@repo/config/product": ["./packages/config/product.ts"],
+      "@repo/config/env-placeholders": ["./packages/config/env-placeholders.ts"],
+      "@repo/config/repo-url": ["./packages/config/repo-url.ts"],
       "@convex/api": ["./convex/_generated/api.js"],
       "@convex/dataModel": ["./convex/_generated/dataModel.d.ts"]
     }

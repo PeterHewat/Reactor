@@ -9,6 +9,7 @@
     "types": ["bun-types", "node", "react"],
     "strict": true,
     "esModuleInterop": true,
+    // Faster solution checks; revisit when bumping Bun/Node major versions.
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,

@@ -15,7 +15,11 @@ Create a new `vN/` folder only when that phase is scheduled — keep earlier pha
 
 ## Conventions
 
-- **Feature matrix** is the index. Each row gets a stable ID (`F-01`, `F-02`, …), an actor, a route or API surface, a link to its detailed spec, and a **Status** (`Planned` → `In progress` → `Shipped`). Update the Status column when code ships.
+- **Feature matrix** is the index. Each row gets a stable ID (`F-01`, `F-02`, …), an actor, a route or API surface, a link to its detailed spec, and a **Status**:
+  - `Planned` → not started
+  - `In progress` → partial implementation
+  - `Demo` → starter scaffolding shipped as a reference (replace or extend in your fork)
+  - `Shipped` → capability complete for the phase
 - **Phase folder** (`vN/`) starts with a `README.md` (goal, epic index, definition of done, open decisions) and one file per epic. Keep epics small and implementable in order.
 - **Cross-cutting** concerns shared by every epic in a phase (data model, permissions, lifecycles) go in `vN/cross-cutting.md` so individual epic files stay focused.
 - Specs describe **intended** behaviour. When code disagrees with a spec, fix one of them — never let them silently diverge.

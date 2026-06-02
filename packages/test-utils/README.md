@@ -1,5 +1,7 @@
 # @repo/test-utils
 
+Import-only Vitest fixtures (e.g. `mockMatchMedia`). No `test` script — consumers cover behaviour in their own packages.
+
 Shared test utilities for the Reactor monorepo.
 
 ## Installation

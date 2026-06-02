@@ -8,9 +8,9 @@ Install on your PATH:
 
 - [Git](https://git-scm.com/download/)
 - [Bun](https://bun.sh/) — match `.bun-version` (>= 1.3.13)
-- [Node.js](https://nodejs.org/) — 24 recommended (`.node-version`); >= 22.12 for marketing (Astro 6)
+- [Node.js](https://nodejs.org/) — **24** (`.node-version`; `engines.node` is `>=24.0.0`)
 
-CI uses Node 24. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
+CI and `bun run doctor` use the same major version. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
 
 ## Tailwind and UI
 
@@ -81,17 +81,51 @@ test("create inserts a task for the signed-in user", async () => {
 
 ## E2E tests (Playwright)
 
-Commands: [getting-started.md#test](./getting-started.md#test). CI labels: [ci-cd.md](./ci-cd.md#e2e-tests-playwright).
+Commands: [getting-started.md#test](./getting-started.md#test). CI: [ci-cd.md](./ci-cd.md#e2e-tests-playwright).
 
-**With Convex:** WebSocket traffic is not `**/api/**`. Prefer a real dev deployment (`VITE_CONVEX_URL` in `apps/web/.env.local`) and assert UI state; or keep UI-only tests (theme, i18n) as in the template today.
+### E2E smoke (tasks)
 
-```ts
-await page.route("https://your-project.convex.cloud/**", (route) => {
-  route.fulfill({ status: 200, body: "{}" });
-});
+Authenticated smoke for `/tasks` uses [`@clerk/testing`](https://clerk.com/docs/guides/development/testing/playwright/overview) and a real Convex dev deployment.
+
+1. Copy [apps/web/.env.e2e.example](../apps/web/.env.e2e.example) values into your environment (or export before running tests).
+2. In Clerk: enable **Email** and **Password**; create a dev user for `E2E_CLERK_USER_EMAIL` (or use a `+clerk_test` address per Clerk testing docs).
+3. Set `CLERK_SECRET_KEY` (secret key, not publishable), `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` (same as `apps/web/.env.local`).
+4. Run:
+
+```bash
+bun run e2e:install
+bun run e2e:smoke
 ```
 
+CI job **`web-e2e-smoke`** runs on every PR that touches `apps/web/**`. Until GitHub Actions secrets are set, tests **skip** and the job logs a notice. Add `CLERK_SECRET_KEY` and `E2E_CLERK_USER_EMAIL` per [ci-cd.md](./ci-cd.md#github-actions-secrets). Optional: set `E2E_SMOKE_REQUIRE_SECRETS=1` so CI **fails** when smoke secrets are missing ([ci-cd.md](./ci-cd.md#optional-ci-guardrails)).
+
+`bun run setup` runs `doctor --bootstrap` (toolchain + routes only). `bun run doctor -- --strict` adds backend env and E2E checks.
+
+Implementation: `apps/web/tests/tasks.smoke.e2e.ts`, `playwright.smoke.config.ts` (single worker for Clerk).
+
+### Full E2E (UI-only)
+
+Home, routing, theme, and i18n tests do not require Clerk secrets:
+
+```bash
+bun run --filter @repo/web e2e
+```
+
+On PRs, add the **`e2e`** label for the full Playwright suite on `main` or labeled PRs.
+
 CSP for production-like E2E: [security-headers.md](./security-headers.md).
+
+### Visual regression
+
+Not included in this template. Playwright visual snapshots are not wired in CI. Add your own `*.visual.e2e.ts` files and tag tests with `@visual` if you need them.
+
+### Unit vs integration tests
+
+- Default: `bun run test` (unit tests; `*.integration.test.ts` excluded in `@repo/utils`)
+- Integration: `bun run test:integration` (also runs in CI when `apps/web/**` or shared packages change — see `tests-web` in [ci-cd.md](./ci-cd.md#ci-and-test-jobs))
+- Web stack: `bun run test:web`
+
+`apps/web` Vitest sets `VITE_CONVEX_URL` to a placeholder and imports `@repo/test-utils/convex-react-setup` in `setupTests.ts` so `convex/react` hooks do not call a live deployment. Override mocks per test when you need specific query data.
 
 ### Optional: Chrome DevTools MCP
 

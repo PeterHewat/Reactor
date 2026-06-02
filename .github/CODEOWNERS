@@ -1,0 +1,9 @@
+# Uncomment and set paths when your team grows:
+# * @your-org/core-maintainers
+# /convex/ @your-org/backend
+# /apps/web/ @your-org/frontend
+
+# Suggested required status checks (branch protection):
+# - CI required (ci.yml — aggregates path-based jobs)
+# - Security audit, Secrets scan
+# See docs/ci-cd.md#branch-protection

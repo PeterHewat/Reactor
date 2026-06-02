@@ -30,7 +30,7 @@ apps/marketing/
 
 ## Requirements
 
-- Node.js **>= 22.12.0** (Astro 6)
+- Node.js **>= 24.0.0** (match repo `.node-version`; CI uses 24)
 
 ## Deployment (Vercel)
 

@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from "@repo/config/product";
 import type { TranslationDictionary } from "@repo/utils";
 
 const fr: TranslationDictionary = {
@@ -33,7 +34,7 @@ const fr: TranslationDictionary = {
     logout: "Se déconnecter",
   },
   home: {
-    title: "Reactor",
+    title: PRODUCT_NAME,
     subtitle: "React 19 + Convex + Clerk + Tailwind CSS",
     viewRepository: "Voir le dépôt sur GitHub",
     features: {
@@ -53,7 +54,7 @@ const fr: TranslationDictionary = {
     stepConvex: "Lancez bun run dev:convex et définissez VITE_CONVEX_URL dans apps/web/.env.local",
     stepClerk: "Créez une app Clerk et définissez VITE_CLERK_PUBLISHABLE_KEY",
     stepEnv:
-      "Copiez convex/auth.config.ts.example vers auth.config.ts et CLERK_JWT_ISSUER_DOMAIN dans Convex",
+      "Définissez CLERK_JWT_ISSUER_DOMAIN dans le tableau de bord Convex (auth.config.ts est déjà versionné)",
     setupGuide: "Ouvrir le guide de configuration sur GitHub (README)",
     setupGuideLocal: "Voir le README de votre dépôt pour la configuration cloud",
     backHome: "Retour à l'accueil",

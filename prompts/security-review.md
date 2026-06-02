@@ -9,7 +9,7 @@ Analyze this code for security vulnerabilities:
 - **SQL Injection**: Review database queries for injection vulnerabilities
 - **Secrets Management**: Ensure no secrets are exposed in client-side code
 - **HTTPS**: Verify all communications use secure protocols
-- **Content Security Policy**: Review CSP headers and implementation
+- **Content Security Policy**: Review CSP headers and implementation (see below)
 - **Dependency Vulnerabilities**: Check for known vulnerabilities in dependencies
 - **Error Handling**: Ensure errors don't leak sensitive information
 
@@ -29,9 +29,26 @@ Backend/Convex security:
 - Secure environment variable handling
 - Audit logging for sensitive operations
 
+## CSP and response headers (this template)
+
+Production headers are committed in Vercel config — not set by Vite in dev.
+
+| Surface   | File                                                                              |
+| --------- | --------------------------------------------------------------------------------- |
+| Web       | `apps/web/vercel.json` → `headers` (CSP includes Clerk + Convex)                  |
+| Marketing | `apps/marketing/vercel.json`                                                      |
+| Shared    | `packages/config/vercel-base-headers.json` → `bun scripts/sync-vercel-headers.ts` |
+
+When reviewing or changing CSP:
+
+- Add your Clerk instance domains to `script-src`, `connect-src`, and `frame-src` ([Clerk CSP docs](https://clerk.com/docs/security/clerk-csp))
+- Ensure `connect-src` / `wss:` include your Convex deployment URL
+- Confirm no secrets in client bundles (`loadEnv` / `requireWebEnv` only)
+- Verify on a deployed preview: DevTools → Network → document response headers
+- Do not mirror production CSP in local Vite dev without a separate dev policy (HMR needs relaxed `script-src`)
+
 Provide specific recommendations:
 
 - Code changes needed to address vulnerabilities
 - Security testing strategies
 - Monitoring and detection mechanisms
-- Documentation updates for security practices

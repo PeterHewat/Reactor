@@ -35,5 +35,5 @@ Create a new `vN/` folder only when that phase is scheduled — keep earlier pha
 
 - `../product.md` — vision, phases, metrics (overview)
 - `../architecture.md` — domains and design decisions
-- `../platforms.md` — monorepo routes and packages
+- `../monorepo-structure.md` — layout, packages, env layers
 - `../adr/` — recorded architectural decisions

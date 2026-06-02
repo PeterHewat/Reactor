@@ -1,12 +1,10 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console -- CLI output */
 /**
- * Checks local toolchain and env files for the Reactor starter.
+ * Checks local toolchain, env files, and generated code.
  *
  * @example
  * bun scripts/doctor.ts
- * bun scripts/doctor.ts -- --strict
- * bun scripts/doctor.ts -- --bootstrap
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -20,20 +18,10 @@ type Check = {
   ok: boolean;
   detail: string;
   remediation?: string;
-  bootstrapOnly?: boolean;
-  strictOnly?: boolean;
+  /** Only fails once Convex is linked (after Clerk + dashboard env). */
+  deferUntilConvex?: boolean;
+  optional?: boolean;
 };
-
-type Mode = "default" | "bootstrap" | "strict";
-
-/**
- * Parses `doctor` CLI flags.
- */
-function parseMode(argv: string[]): Mode {
-  if (argv.includes("--strict")) return "strict";
-  if (argv.includes("--bootstrap")) return "bootstrap";
-  return "default";
-}
 
 function fileExists(rel: string): boolean {
   return existsSync(resolve(root, rel));
@@ -59,7 +47,6 @@ function parseNodeMajor(version: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-const mode = parseMode(process.argv.slice(2));
 const checks: Check[] = [];
 
 checks.push({
@@ -91,9 +78,8 @@ checks.push({
 checks.push({
   name: "apps/web/.env.local",
   ok: fileExists("apps/web/.env.local"),
-  detail: fileExists("apps/web/.env.local") ? "present (VITE_* for Convex/Clerk)" : "missing",
+  detail: fileExists("apps/web/.env.local") ? "present" : "missing",
   remediation: "bun scripts/setup.ts  # or: cp apps/web/.env.example apps/web/.env.local",
-  bootstrapOnly: true,
 });
 
 let convexDeployment: string | undefined;
@@ -109,21 +95,20 @@ checks.push({
   name: "Root .env.local (Convex)",
   ok: convexLinked,
   detail: convexLinked
-    ? "linked (real CONVEX_DEPLOYMENT or deploy key)"
+    ? "linked"
     : fileExists(".env.local")
-      ? "present but placeholder — run dev:convex to link"
+      ? "present but not linked — run dev:convex"
       : "missing",
-  remediation: "getting-started §3b: bun run dev:convex (after §2 Clerk + §3a dashboard env)",
-  bootstrapOnly: true,
+  remediation: "bun run dev:convex — docs/getting-started.md",
+  deferUntilConvex: true,
 });
 
 const hasAuthConfig = fileExists("convex/auth.config.ts");
 checks.push({
   name: "convex/auth.config.ts",
   ok: hasAuthConfig,
-  detail: hasAuthConfig ? "present (CLERK_JWT_ISSUER_DOMAIN in Convex dashboard — §3a)" : "missing",
-  remediation: hasAuthConfig ? undefined : "cp convex/auth.config.ts.example convex/auth.config.ts",
-  bootstrapOnly: true,
+  detail: hasAuthConfig ? "present" : "missing",
+  remediation: "cp convex/auth.config.ts.example convex/auth.config.ts",
 });
 
 const hasConvexGenerated = fileExists("convex/_generated/api.d.ts");
@@ -139,11 +124,9 @@ checks.push({
 checks.push({
   name: "Generated code (Convex)",
   ok: hasConvexGenerated,
-  detail: hasConvexGenerated
-    ? "convex/_generated present"
-    : "missing — typecheck and tests will fail",
-  remediation: "§3b: bun run dev:convex  # or: bun scripts/generate-convex.ts (after §2–3a)",
-  bootstrapOnly: true,
+  detail: hasConvexGenerated ? "convex/_generated present" : "missing",
+  remediation: "bun run dev:convex  # or: bun scripts/generate-convex.ts",
+  deferUntilConvex: true,
 });
 
 checks.push({
@@ -151,7 +134,7 @@ checks.push({
   ok: fileExists(".agents/skills/convex/SKILL.md"),
   detail: fileExists(".agents/skills/convex/SKILL.md") ? ".agents/ present" : "missing",
   remediation: "bunx convex ai-files install",
-  bootstrapOnly: true,
+  optional: true,
 });
 
 const webEnv: Record<string, string> = {};
@@ -168,23 +151,22 @@ const clerkKey = webEnv.VITE_CLERK_PUBLISHABLE_KEY;
 const backendConfigured = !isPlaceholderEnvValue(convexUrl) && !isPlaceholderEnvValue(clerkKey);
 
 checks.push({
-  name: "Backend slice (Convex + Clerk)",
+  name: "Backend (Convex + Clerk env)",
   ok: backendConfigured,
   detail: backendConfigured
-    ? "VITE_CONVEX_URL and VITE_CLERK_PUBLISHABLE_KEY configured"
+    ? "VITE_CONVEX_URL and VITE_CLERK_PUBLISHABLE_KEY set"
     : "placeholders or missing in apps/web/.env.local",
-  remediation:
-    "§2b VITE_CLERK_PUBLISHABLE_KEY + §3c VITE_CONVEX_URL in apps/web/.env.local (getting-started)",
-  strictOnly: true,
+  remediation: "docs/getting-started.md steps 2–3",
+  deferUntilConvex: true,
 });
 
-if (mode === "strict" && convexDeployment && !isRealConvexDeployment(convexDeployment)) {
+if (convexDeployment && !isRealConvexDeployment(convexDeployment)) {
   checks.push({
     name: "CONVEX_DEPLOYMENT",
     ok: false,
     detail: "root .env.local still has a template value",
     remediation: "bun run dev:convex",
-    strictOnly: true,
+    deferUntilConvex: true,
   });
 }
 
@@ -194,34 +176,26 @@ checks.push({
   name: "E2E smoke (optional)",
   ok: Boolean(e2eSecret && e2eEmail),
   detail: e2eSecret && e2eEmail ? "CLERK_SECRET_KEY + E2E_CLERK_USER_EMAIL set" : "not configured",
-  remediation: "see apps/web/.env.local.e2e.example and docs/development.md#e2e-smoke-tasks",
-  strictOnly: true,
+  remediation: "apps/web/.env.local.e2e.example and docs/development.md#e2e-smoke-tasks",
+  optional: true,
 });
 
+const expectConvex = convexLinked;
+
 /**
- * Whether a failed check should exit non-zero for the current mode.
- *
- * Bootstrap (setup): toolchain + route codegen only — Convex link and env values come next.
+ * Whether a failed check should exit non-zero.
  */
 function isBlocking(check: Check): boolean {
-  if (check.ok) {
+  if (check.ok || check.optional) {
     return false;
   }
-  if (check.strictOnly && mode !== "strict") {
+  if (check.deferUntilConvex && !expectConvex) {
     return false;
-  }
-  if (mode === "bootstrap") {
-    if (check.bootstrapOnly) {
-      return false;
-    }
-    return (
-      check.name === "Bun" || check.name === "Node" || check.name === "Generated code (routes)"
-    );
   }
   return true;
 }
 
-console.log(`Reactor doctor (${mode})\n`);
+console.log("Reactor doctor\n");
 
 for (const check of checks) {
   const icon = check.ok ? "✓" : "○";
@@ -235,12 +209,4 @@ const blocking = checks.filter(isBlocking);
 if (blocking.length > 0) {
   console.log("\nDocs: docs/getting-started.md");
   process.exit(1);
-}
-
-if (mode === "bootstrap") {
-  console.log("\nSetup OK — next: docs/getting-started.md §2 (Clerk), then §3 (Convex)");
-} else if (mode === "strict") {
-  console.log("\nStrict checks passed — bun run dev:full → http://localhost:5173/tasks");
-} else {
-  console.log("\nReady: bun run dev:full → http://localhost:5173/tasks");
 }

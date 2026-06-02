@@ -6,23 +6,16 @@ import { isRealConvexDeployment } from "../../packages/config/env-placeholders";
 export const CONVEX_LINK_HELP = `
 Convex is not linked — \`convex/_generated/\` is missing.
 
-  1. docs/getting-started.md §2 — Clerk (JWT Convex preset + publishable key)
-  2. docs/getting-started.md §3a — CLERK_JWT_ISSUER_DOMAIN in Convex dashboard
-  3. bun run dev:convex              # link project, write root .env.local
-  4. bun scripts/generate-convex.ts  # if dev is not running
+  bun run dev:convex
 
-Docs: docs/getting-started.md §3
+See docs/getting-started.md
 `.trim();
 
 /** Shown when codegen fails against a linked deployment. */
 export const CONVEX_CODEGEN_FAILED_HELP = `
-Convex codegen failed. Common fixes:
+Convex codegen failed. See docs/getting-started.md, then:
 
-  • Set CLERK_JWT_ISSUER_DOMAIN in the Convex dashboard (getting-started §3a)
-  • Ensure convex/auth.config.ts matches your Clerk issuer
-  • Re-run: bun scripts/generate-convex.ts
-
-Docs: docs/getting-started.md §3
+  bun scripts/generate-convex.ts
 `.trim();
 
 /**

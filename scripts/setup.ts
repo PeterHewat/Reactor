@@ -54,30 +54,13 @@ async function runGenerate(): Promise<number> {
  * @returns Process exit code (0 = success)
  */
 async function runDoctor(): Promise<number> {
-  console.log("\n→ bun scripts/doctor.ts -- --bootstrap");
-  const proc = Bun.spawn(["bun", "scripts/doctor.ts", "--", "--bootstrap"], {
+  console.log("\n→ bun scripts/doctor.ts");
+  const proc = Bun.spawn(["bun", "scripts/doctor.ts"], {
     cwd: root,
     stdout: "inherit",
     stderr: "inherit",
   });
   return (await proc.exited) ?? 1;
-}
-
-function printNextSteps(): void {
-  console.log(`
-Next steps (docs/getting-started.md):
-
-  1. Clerk (§2)  JWT templates → Convex preset → copy Issuer
-                 API keys → React → VITE_CLERK_PUBLISHABLE_KEY in apps/web/.env.local
-
-  2. Convex (§3)  Convex dashboard → CLERK_JWT_ISSUER_DOMAIN = Issuer from step 1
-                 bun run dev:convex → root .env.local + Convex API codegen
-                 VITE_CONVEX_URL in apps/web/.env.local
-
-  3. Run (§4)    bun run dev:full  →  http://localhost:5173/tasks
-
-  Later (optional): docs/getting-started.md Part 2 — CI, Vercel, remove demo tasks
-`);
 }
 
 async function main(): Promise<void> {
@@ -89,9 +72,7 @@ async function main(): Promise<void> {
   if (!existsSync(resolve(root, "convex/auth.config.ts"))) {
     copyTemplateIfMissing("convex/auth.config.ts.example", "convex/auth.config.ts");
   } else {
-    console.log(
-      "✓ convex/auth.config.ts present (needs CLERK_JWT_ISSUER_DOMAIN in Convex — getting-started §3a after §2)",
-    );
+    console.log("✓ convex/auth.config.ts present");
   }
 
   const github = resolveGitHubRepo(root);
@@ -124,8 +105,6 @@ async function main(): Promise<void> {
     );
     process.exit(doctorCode);
   }
-
-  printNextSteps();
 }
 
 main().catch((err: unknown) => {

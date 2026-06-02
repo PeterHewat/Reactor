@@ -16,42 +16,41 @@ bun run dev:marketing         # Astro :4321
 bun run dev:convex            # Convex (repo root)
 
 # Lint / format
-bun run lint
+bun run lint                  # ESLint (repo root)
 bun run format                # Prettier check
 bun run format:fix            # Prettier write
 
 # Test / typecheck (codegen runs first when Convex is linked)
-bun run typecheck
-bun run test
-bun run test:web
-bun run test:packages
-bun run test:integration
+bun run typecheck             # tsc solution-wide, no emit
+bun run test                  # all workspaces with a test script
+bun run test:web              # @repo/web, ui-web, utils unit tests
+bun run test:packages         # @repo/config, env-core, ui-web, utils
+bun run test:integration      # @repo/utils integration tests only
 
 # E2E
-bun run e2e:install
-bun run e2e:smoke
+bun run e2e:install           # Playwright Chromium (once per machine)
+bun run e2e:smoke             # /tasks smoke (Clerk + Convex env required)
 
 # Dependencies
-bun install                   # same as install:all
-bun run install:all
-bun run outdated
-bun run update
-bun run audit
+bun install                   # install workspaces (same as install:all)
+bun run install:all           # alias for bun install
+bun run outdated              # list available updates
+bun run update                # bump within semver ranges in package.json
+bun run audit                 # security audit (CI uses --audit-level=high)
 
 # Build / clean
-bun run build
+bun run build                 # tsc -b (project references)
 bun run clean                 # rm node_modules — then bun install
 bun run clean:ts              # tsc -b --clean
 
 # Per workspace
-bun run --filter @repo/web build
-bun run --filter @repo/web e2e
-bun run --filter @repo/marketing e2e
+bun run --filter @repo/web build        # Vite production build
+bun run --filter @repo/web e2e          # full Playwright suite (web)
+bun run --filter @repo/marketing e2e    # Playwright (marketing)
 
-# First-time setup — getting-started.md
-bun scripts/setup.ts
-bun scripts/doctor.ts
-bun scripts/doctor.ts -- --strict
+# Setup — getting-started.md
+bun scripts/setup.ts          # env templates, identity, codegen, doctor
+bun scripts/doctor.ts         # toolchain, env, generated code
 ```
 
 ## Prerequisites
@@ -151,7 +150,7 @@ bun run e2e:smoke
 
 CI job **`web-e2e-smoke`** runs on every PR that touches `apps/web/**`. Until GitHub Actions secrets are set, tests **skip** and the job logs a notice. Add `CLERK_SECRET_KEY` and `E2E_CLERK_USER_EMAIL` per [ci-cd.md](./ci-cd.md#github-actions-secrets). Optional: set `E2E_SMOKE_REQUIRE_SECRETS=1` so CI **fails** when smoke secrets are missing ([ci-cd.md](./ci-cd.md#optional-ci-guardrails)).
 
-`bun scripts/setup.ts` runs `doctor --bootstrap` (toolchain + routes only). `bun scripts/doctor.ts -- --strict` adds backend env and E2E checks.
+`bun scripts/setup.ts` runs `doctor` after codegen. Once Convex is linked, `doctor` also checks generated API and `VITE_*` env.
 
 Implementation: `apps/web/tests/tasks.smoke.e2e.ts`, `playwright.smoke.config.ts` (single worker for Clerk).
 
@@ -165,7 +164,7 @@ bun run --filter @repo/web e2e
 
 On PRs, add the **`e2e`** label for the full Playwright suite on `main` or labeled PRs.
 
-CSP for production-like E2E: [security-headers.md](./security-headers.md).
+CSP on deploys: `apps/web/vercel.json` — [prompts/security-review.md](../prompts/security-review.md).
 
 ### Visual regression
 
@@ -174,7 +173,7 @@ Not included in this template. Playwright visual snapshots are not wired in CI. 
 ### Unit vs integration tests
 
 - Default: `bun run test` (unit tests; `*.integration.test.ts` excluded in `@repo/utils`)
-- Integration: `bun run test:integration` (also runs in CI when `apps/web/**` or shared packages change — see `tests-web` in [ci-cd.md](./ci-cd.md#ci-and-test-jobs))
+- Integration: `bun run test:integration` (also in CI when web/shared paths change — [ci-cd.md](./ci-cd.md#ci-behavior))
 - Web stack: `bun run test:web`
 
 `apps/web` Vitest sets `VITE_CONVEX_URL` to a placeholder and imports `@repo/test-utils/convex-react-setup` in `setupTests.ts` so `convex/react` hooks do not call a live deployment. Override mocks per test when you need specific query data.

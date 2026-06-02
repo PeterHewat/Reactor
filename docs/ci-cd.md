@@ -2,13 +2,13 @@
 
 ## Workflows
 
-| Workflow                                                | Required? | Purpose                                                           |
-| ------------------------------------------------------- | --------- | ----------------------------------------------------------------- |
-| [ci.yml](../.github/workflows/ci.yml)                   | Yes       | Lint, test, and build on every PR/push to `main`                  |
-| [release.yml](../.github/workflows/release.yml)         | Yes       | Create GitHub release + deploy **new** tags                       |
-| [deploy.yml](../.github/workflows/deploy.yml)           | Yes       | Deploy or **rollback** to an existing tag (e.g. `web-v1.0.0`)     |
-| [preview.yml](../.github/workflows/preview.yml)         | Optional  | PR previews when the `preview` label is added                     |
-| [sync-labels.yml](../.github/workflows/sync-labels.yml) | Optional  | Manual: sync issue/PR labels from `scripts/sync-github-labels.sh` |
+| Workflow                                                | Purpose                                                                                                |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [ci.yml](../.github/workflows/ci.yml)                   | Lint, test, and build on every PR/push to `main`                                                       |
+| [release.yml](../.github/workflows/release.yml)         | Create GitHub release + deploy **new** tags                                                            |
+| [deploy.yml](../.github/workflows/deploy.yml)           | Deploy or **rollback** to an existing tag (e.g. `web-v1.0.0`)                                          |
+| [preview.yml](../.github/workflows/preview.yml)         | PR previews when the `preview` label is added (opt-in)                                                 |
+| [sync-labels.yml](../.github/workflows/sync-labels.yml) | One-time or occasional: sync issue/PR labels ([source of truth](../.github/workflows/sync-labels.yml)) |
 
 **New release:** Actions → **Release** → Run workflow (scope + version bump). Release notes are auto-generated from merged PRs using [.github/release.yml](../.github/release.yml) (label categories, exclusions).
 
@@ -20,11 +20,20 @@
 
 **Full E2E on `main`:** When `apps/web/**` changes, [ci.yml](../.github/workflows/ci.yml) runs the full Playwright suite on pushes to `main`; failures fail **CI required** (smoke runs on every web PR; full suite is label-opt-in on PRs via `e2e`).
 
-**No Turborepo/Nx:** CI uses path-based jobs and the [setup-bun](../.github/actions/setup-bun/action.yml) composite action (cached install). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
+**No Turborepo/Nx:** Path-based jobs and [setup-bun](../.github/actions/setup-bun/action.yml). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
-**Docs-only PRs:** When only `docs/**` or repo meta files change (`README.md`, `AGENTS.md`, etc.), the **quality** job still runs Prettier; lint/typecheck/build are skipped.
+## CI behavior
 
-**Convex codegen in CI:** Jobs that need `convex/_generated/` (`quality` typecheck step, `build-web`, `@repo/web` tests, `web-e2e`, `web-e2e-smoke`, `tests-convex`) run `bun scripts/generate-convex.ts` when `CONVEX_DEPLOY_KEY` is configured. Otherwise they emit a `::notice::` and skip (exit 0) — no committed generated files. Once the deploy key is present, those jobs run on every matching PR; you do **not** need extra variables for that. **E2E smoke** fails with an error if smoke secrets are set but `CONVEX_DEPLOY_KEY` is missing (Vite must resolve `@convex/api`).
+Job definitions live in [ci.yml](../.github/workflows/ci.yml). Use **CI required** as the merge gate; other jobs may show **Success (skipped)** when paths or secrets do not apply.
+
+| Label     | Effect                                                             |
+| --------- | ------------------------------------------------------------------ |
+| `e2e`     | Full Playwright on web/marketing when those paths change           |
+| `preview` | Convex + Vercel preview deploys ([below](#pr-preview-deployments)) |
+
+**Docs-only PRs:** only **quality** runs Prettier; lint/typecheck/build are skipped.
+
+**Without `CONVEX_DEPLOY_KEY`:** `convex/_generated/` is not committed. Typecheck, web build, `@repo/web` tests, Convex tests, and web E2E run `bun scripts/generate-convex.ts` when the key exists; otherwise they log a `::notice::` and exit 0. Smoke E2E also needs Clerk/Convex URL secrets when it runs.
 
 ### Optional CI guardrails
 
@@ -35,20 +44,7 @@ Repository variables (**Settings → Secrets and variables → Actions → Varia
 | `CI_STRICT`                 | Fail quality typecheck, build-web, `@repo/web` tests, `web-e2e`, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
 | `E2E_SMOKE_REQUIRE_SECRETS` | Fail `web-e2e-smoke` if smoke secrets are missing (default: skip Playwright, job still passes).                                                                 |
 
-**Recommended after adoption:** set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` is configured ([getting-started.md §10](./getting-started.md#10-github-actions)). Without it, deleting or misconfiguring the deploy key can leave **CI required** green while Convex jobs skip.
-
-Use `CI_STRICT` before secrets exist if you want fail-closed CI during onboarding. `E2E_SMOKE_REQUIRE_SECRETS` is optional. Neither changes behavior while all required secrets are present.
-
-### Fork PRs and CI
-
-Pull requests from **forks** do not receive your repository’s Actions secrets. For those PRs, jobs that depend on `CONVEX_DEPLOY_KEY` or smoke secrets will **skip** (with a notice) while `ci-required` can still pass if **quality** and other non-secret jobs succeed.
-
-Implications for public/open-source repos:
-
-- External contributors may see a green **CI required** without Convex typecheck (in **quality**), web build, or authenticated smoke running on their branch.
-- **Mitigations:** require maintainer review; run CI on internal branches only; use a bot that tests trusted forks (evaluate `pull_request_target` security tradeoffs carefully); or treat fork PRs as draft until a maintainer pushes to a branch in your org.
-
-Private team repos that only accept PRs from the same org are unaffected (secrets are available).
+Set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` exists ([getting-started.md](./getting-started.md)) so missing keys fail CI instead of skipping.
 
 ## Branch protection
 
@@ -60,33 +56,7 @@ After configuring secrets, protect `main` in **Settings → Branches**. Suggeste
 | Security audit | `security-audit`                           |
 | Secrets scan   | `secrets-scan`                             |
 
-> **Note:** Individual jobs (`Lint, format & typecheck`, `Build Web`, …) can show **Success (skipped)** when paths or secrets do not apply. Rely on **CI required** as the merge gate — it fails when an expected job for changed paths did not succeed.
-
-## CI and test jobs
-
-| Job               | Workflow                              | When it runs                | Behavior                                                                              |
-| ----------------- | ------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
-| `ci-required`     | [ci.yml](../.github/workflows/ci.yml) | Every PR/push               | Fails when expected jobs for changed paths did not succeed                            |
-| `build-web`       | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Production Vite build (placeholder env vars)                                          |
-| `build-marketing` | [ci.yml](../.github/workflows/ci.yml) | `apps/marketing/**` changed | Astro production build                                                                |
-| `tests-web`       | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` or shared     | `@repo/web` (when Convex linked), `@repo/ui-web`, `@repo/utils` unit + integration    |
-| `tests-packages`  | [ci.yml](../.github/workflows/ci.yml) | Shared packages / config    | `@repo/config`, `@repo/env-core` unit tests                                           |
-| `tests-convex`    | [ci.yml](../.github/workflows/ci.yml) | `convex/**` changed         | When `CONVEX_CI_TESTS: true` (Vitest + `convex-test`)                                 |
-| `web-e2e-smoke`   | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Playwright `/tasks` smoke when secrets configured (`generate-convex.ts` + deploy key) |
-| `web-e2e`         | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` on `main`     | Full Playwright suite (`generate-convex.ts` when deploy key configured)               |
-
-**Tests on every PR:** `tests-web`, `tests-marketing`, `tests-packages` (after the matching build/lint jobs). **`web-e2e-smoke`** runs when web paths change; it **skips** Playwright install/run until E2E secrets exist (job still passes unless `E2E_SMOKE_REQUIRE_SECRETS=1` — see [Optional CI guardrails](#optional-ci-guardrails)).
-
-**Opt-in on PRs (labels):**
-
-| Label     | Workflow                                        | When                                                 |
-| --------- | ----------------------------------------------- | ---------------------------------------------------- |
-| `e2e`     | [ci.yml](../.github/workflows/ci.yml)           | Playwright for web/marketing when those paths change |
-| `preview` | [preview.yml](../.github/workflows/preview.yml) | Convex preview + Vercel preview deploys (see below)  |
-
-Root lint, format, and typecheck run together in **quality** when any app package changes (format-only on docs-only PRs).
-
-### E2E tests (Playwright)
+## E2E tests (Playwright)
 
 - **Smoke (tasks + Clerk + Convex):** `bun run --filter @repo/web e2e:smoke` — runs on every PR when `apps/web/**` changes (`web-e2e-smoke`). Configure `CONVEX_DEPLOY_KEY` (codegen), `CLERK_SECRET_KEY`, `E2E_CLERK_USER_EMAIL`, `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` in GitHub Actions; see [development.md](./development.md#e2e-smoke-tasks).
 - **Full suite:** `bunx playwright install chromium` once, then `bun run --filter @repo/web e2e` (or `@repo/marketing`)
@@ -125,7 +95,7 @@ Create **two** Vercel projects from this monorepo (Import Git Repository → set
 
 **Vercel + GitHub Actions:** Deploy workflows run `vercel build` on the GitHub runner (full monorepo checkout), then `vercel deploy --prebuilt` — Vercel does not rebuild remotely. Disable automatic Vercel Git deployments: `git.deploymentEnabled: false` in each `vercel.json` ([Vercel docs](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments)).
 
-See [security-headers.md](./security-headers.md) to tune CSP in `apps/web/vercel.json` for your Clerk domain.
+Tune CSP in `apps/web/vercel.json` for your Clerk domain ([prompts/security-review.md](../prompts/security-review.md)).
 
 ### Getting the Convex deploy key
 
@@ -154,19 +124,6 @@ Opt-in previews for pull requests. Same pattern as the `e2e` label: add the **`p
 
 The workflow posts (or updates) a single PR comment with Convex and Vercel links. Preview Convex deployments expire automatically ([Convex preview docs](https://docs.convex.dev/production/hosting/preview-deployments)).
 
-## Alternative: Vercel Git deploys only
-
-This template defaults to **GitHub Actions** for production deploys (`release.yml` / `deploy.yml`) with `git.deploymentEnabled: false` in each `vercel.json`.
-
-To use **Vercel’s Git integration** instead:
-
-1. Enable automatic Git deployments in each Vercel project (or remove `git.deploymentEnabled: false` from `apps/web/vercel.json` and `apps/marketing/vercel.json`).
-2. Rely on Vercel preview/production builds; keep [ci.yml](../.github/workflows/ci.yml) for lint, test, and typecheck.
-3. For **web**, set `CONVEX_DEPLOY_KEY` in Vercel project env (Production + Preview) so `apps/web/vercel.json` `buildCommand` can run `bun scripts/generate-convex.ts` before the Vite build. Set `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY` as usual.
-4. Skip or disable [release.yml](../.github/workflows/release.yml) / [deploy.yml](../.github/workflows/deploy.yml) if you do not need tag-based releases from Actions.
-
-Trade-off: tag-based rollbacks and monorepo prebuilt deploys from Actions are documented in this repo; Vercel-only is simpler but uses Vercel’s build pipeline per project.
-
 ## PR labels and release notes
 
 Release notes group **merged PRs** by label ([release.yml](../.github/release.yml)). Squash-merge PRs so each PR becomes one commit on `main`. Use one primary label per PR (`enhancement`, `fix`, `breaking-change`, `security`, `documentation`, `dependencies`). Use `test`, `chore`, or `ignore-for-release` for work that should not appear in release notes.
@@ -183,14 +140,14 @@ Dependabot applies `dependencies`, `github-actions`, `monorepo`, and `typescript
 
 ### Sync labels to GitHub
 
-Install the [GitHub CLI](https://cli.github.com/) and authenticate (`gh auth login`), then from the repo root:
+Run once after creating the repo (and again when label names in [sync-labels.yml](../.github/workflows/sync-labels.yml) change):
+
+**Actions → Sync GitHub labels → Run workflow**
+
+Or from a machine with the [GitHub CLI](https://cli.github.com/) authenticated:
 
 ```bash
-brew install gh   # once, if missing
-gh auth login     # once per machine
-bash scripts/sync-github-labels.sh
+gh workflow run sync-labels.yml -R owner/repo
 ```
 
-Implementation: [scripts/sync-github-labels.sh](../scripts/sync-github-labels.sh). Safe to re-run (`gh label create --force` updates color/description).
-
-Or run the **[Sync GitHub labels](../.github/workflows/sync-labels.yml)** workflow (Actions → Sync GitHub labels → Run workflow).
+Safe to re-run (`gh label create --force` updates color/description). Keep labels aligned with [.github/release.yml](../.github/release.yml) and CI opt-in labels (`e2e`, `preview`).

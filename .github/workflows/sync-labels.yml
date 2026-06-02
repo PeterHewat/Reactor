@@ -1,4 +1,5 @@
-# Sync GitHub labels from scripts/sync-github-labels.sh (manual).
+# Manual sync of issue/PR labels (release notes, Dependabot, CI opt-in labels).
+# Keep in sync with .github/release.yml and workflows that reference label names.
 name: Sync GitHub labels
 
 on:
@@ -12,8 +13,46 @@ jobs:
     name: Sync labels
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
       - name: Sync labels via gh CLI
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/sync-github-labels.sh
+        run: |
+          set -euo pipefail
+          REPO_ARGS=(-R "$GITHUB_REPOSITORY")
+
+          # name|color (6 hex, no #)|description
+          LABELS=(
+            "breaking-change|b60205|Breaking API or behavior change"
+            "security|ff0000|Security fix or hardening"
+            "enhancement|0e8a16|New feature or request"
+            "fix|d73a4a|Bug fix (use on pull requests)"
+            "bug|d73a4a|Something is not working (issues; also accepted on PRs)"
+            "documentation|0075ca|Improvements or additions to documentation"
+            "dependencies|0366d6|Dependency updates"
+            "github-actions|000000|GitHub Actions version updates"
+            "chore|fef2c0|Internal work with no user-facing impact"
+            "test|ededed|Test-only changes (excluded from release notes)"
+            "ignore-for-release|ffffff|Exclude from generated release notes"
+            "e2e|f9d0c4|Run Playwright E2E in CI (opt-in PR label)"
+            "preview|c5def5|Deploy PR previews (opt-in PR label)"
+            "monorepo|ededed|Monorepo-wide dependency update (Dependabot)"
+            "typescript|3178c6|TypeScript-related dependency update (Dependabot)"
+            "duplicate|cfd3d7|This issue or pull request already exists"
+            "invalid|e4e669|This does not seem right"
+            "wontfix|ffffff|This will not be worked on"
+            "question|d876e3|Further information is requested"
+            "good first issue|7057ff|Good for newcomers"
+            "help wanted|008672|Extra attention is needed"
+          )
+
+          echo "Syncing ${#LABELS[@]} labels to $GITHUB_REPOSITORY..."
+          echo ""
+
+          for entry in "${LABELS[@]}"; do
+            IFS='|' read -r name color description <<< "$entry"
+            gh label create "$name" --color "$color" --description "$description" --force "${REPO_ARGS[@]}"
+            echo "  ✓ $name"
+          done
+
+          echo ""
+          echo "Done."

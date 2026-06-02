@@ -1,5 +1,7 @@
 # Monorepo structure
 
+**Surfaces:** `apps/web` (React, Vercel `web-v*`), `apps/marketing` (Astro, `marketing-v*`), `convex/` (Convex `convex-v*`), Clerk for auth. CI/deploy: [ci-cd.md](./ci-cd.md).
+
 ## Layout
 
 ```text
@@ -52,7 +54,7 @@ docs/               # Human + agent documentation
 | `apps/web/.env.example`       | `apps/web/.env.local`       | `VITE_*` for the web app                      |
 | `apps/marketing/.env.example` | `apps/marketing/.env.local` | `PUBLIC_*` (optional)                         |
 
-`CLERK_JWT_ISSUER_DOMAIN` lives in the **Convex dashboard**, not root `.env.local` — see [getting-started.md](./getting-started.md) §2a–3a.
+`CLERK_JWT_ISSUER_DOMAIN` lives in the **Convex dashboard**, not root `.env.local` — see [getting-started.md](./getting-started.md) steps 2–3.
 
 ## Path aliases
 

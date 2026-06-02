@@ -18,21 +18,14 @@
 
 ## Resources
 
-| Resource                                                 | Purpose                                                   |
-| -------------------------------------------------------- | --------------------------------------------------------- |
-| [docs/getting-started.md](docs/getting-started.md)       | **Start here** — local setup through production checklist |
-| [docs/development.md](docs/development.md)               | Day-to-day patterns and commands                          |
-| [docs/development.md](docs/development.md)               | Tailwind, E2E, Convex test patterns                       |
-| [docs/platforms.md](docs/platforms.md)                   | Surfaces, stack, packages, data flow                      |
-| [docs/monorepo-structure.md](docs/monorepo-structure.md) | Layout, env layers, aliases, codegen                      |
-| [docs/ci-cd.md](docs/ci-cd.md)                           | Workflows, secrets, releases, PR labels                   |
-| [docs/architecture.md](docs/architecture.md)             | Business architecture template (replace after clone)      |
-| [docs/agent-guidance.md](docs/agent-guidance.md)         | Doc precedence for agents                                 |
-| [AGENTS.md](AGENTS.md)                                   | Rules for coding agents                                   |
-| [CONTRIBUTING.md](CONTRIBUTING.md)                       | Branches, commits, hooks, dependency policy               |
-| [convex/README.md](convex/README.md)                     | Convex auth, env, file layout                             |
-| [SECURITY.md](SECURITY.md)                               | Vulnerability reporting                                   |
-| [docs/security-headers.md](docs/security-headers.md)     | CSP examples (Vite, Vercel, etc.)                         |
-| [docs/product.md](docs/product.md)                       | Product requirements template                             |
-| [docs/adr/](docs/adr/)                                   | Architecture decision records                             |
-| [prompts/](prompts/)                                     | AI prompt templates                                       |
+| Resource                                                 | Purpose                                         |
+| -------------------------------------------------------- | ----------------------------------------------- |
+| [docs/getting-started.md](docs/getting-started.md)       | **Start here** — local setup through production |
+| [docs/development.md](docs/development.md)               | Day-to-day commands, E2E, Convex tests          |
+| [docs/ci-cd.md](docs/ci-cd.md)                           | Workflows, secrets, releases, PR labels         |
+| [docs/monorepo-structure.md](docs/monorepo-structure.md) | Layout, surfaces, env, aliases, codegen         |
+| [AGENTS.md](AGENTS.md)                                   | Rules for coding agents                         |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                       | Branches, commits, hooks                        |
+| [convex/README.md](convex/README.md)                     | Convex folder map                               |
+| [SECURITY.md](SECURITY.md)                               | Vulnerability reporting                         |
+| [prompts/](prompts/)                                     | AI prompt templates (incl. security review)     |

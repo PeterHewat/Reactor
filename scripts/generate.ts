@@ -100,9 +100,7 @@ const force = process.argv.includes("--force");
 const cache = readCache();
 
 if (!linked) {
-  console.log(
-    "○ generate:convex skipped (Convex not linked — getting-started.md §2–3, then bun run dev:convex)",
-  );
+  console.log("○ generate:convex skipped (Convex not linked — docs/getting-started.md)");
 }
 
 for (const step of steps) {

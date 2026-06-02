@@ -13,8 +13,6 @@ After `bun install`, Husky runs **lint-staged** on commit: ESLint with `--fix` a
 - Open a pull request; CI must pass and a reviewer should approve
 - Use squash merge; keep the squash commit message clear
 
-**Fork PRs:** Pull requests from forks do not get repository Actions secrets, so Convex builds and authenticated smoke may be skipped while **CI required** still passes. If this repo accepts public contributions, read [docs/ci-cd.md § Fork PRs and CI](docs/ci-cd.md#fork-prs-and-ci) before relying on green CI from external forks.
-
 ## Commit messages
 
 - Separate subject from body with a blank line
@@ -42,8 +40,8 @@ To update outside ranges, edit versions in `package.json`, then run `bun update`
 
 ## E2E and previews on pull requests
 
-Playwright and preview deploys are **opt-in** via PR labels. See [docs/ci-cd.md](docs/ci-cd.md#ci-and-test-jobs) (`e2e`, `preview`) and [docs/development.md](docs/development.md#e2e-tests-playwright) for local runs.
+Playwright and preview deploys are **opt-in** via PR labels. See [docs/ci-cd.md](docs/ci-cd.md#ci-behavior) (`e2e`, `preview`) and [docs/development.md](docs/development.md#e2e-tests-playwright) for local runs.
 
 ## Agent rules
 
-Automated agents should follow [AGENTS.md](AGENTS.md) (verify: `bun run format:fix && bun run lint && bun run typecheck && bun run test`). Precedence index: [docs/agent-guidance.md](docs/agent-guidance.md).
+Follow [AGENTS.md](AGENTS.md) and [docs/spec/](docs/spec/) for feature work. Verify: `bun run format:fix && bun run lint && bun run typecheck && bun run test`.

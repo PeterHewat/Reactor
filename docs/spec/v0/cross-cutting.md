@@ -11,12 +11,12 @@ Shared behaviour for every v0 epic. Read this before [tasks.md](./tasks.md), [sh
 
 ## Environment (degraded mode)
 
-| Layer             | File                      | Required for demo                                       |
-| ----------------- | ------------------------- | ------------------------------------------------------- |
-| Convex CLI        | Root `.env.local`         | Tasks + typecheck                                       |
-| Web (Vite)        | `apps/web/.env.local`     | Tasks (`VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY`) |
-| Marketing (Astro) | `apps/marketing/.env`     | Optional (`PUBLIC_REPO_URL` for repo links)             |
-| Convex dashboard  | `CLERK_JWT_ISSUER_DOMAIN` | Tasks auth                                              |
+| Layer             | File                        | Required for demo                                       |
+| ----------------- | --------------------------- | ------------------------------------------------------- |
+| Convex CLI        | Root `.env.local`           | Tasks + typecheck                                       |
+| Web (Vite)        | `apps/web/.env.local`       | Tasks (`VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY`) |
+| Marketing (Astro) | `apps/marketing/.env.local` | Optional (`PUBLIC_REPO_URL` for repo links)             |
+| Convex dashboard  | `CLERK_JWT_ISSUER_DOMAIN`   | Tasks auth                                              |
 
 When Convex/Clerk env is missing, the web app shows setup instructions (`BackendSetup`) instead of crashing. See [monorepo-structure.md](../../monorepo-structure.md) for the three-layer env model.
 

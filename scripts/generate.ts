@@ -7,7 +7,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { CONVEX_LINK_HELP, hasConvexGenerated, isConvexLinked } from "./lib/convex-link";
+import { hasConvexGenerated, isConvexLinked } from "./lib/convex-link";
 
 const root = resolve(import.meta.dir, "..");
 const cacheDir = resolve(root, ".cache");
@@ -25,21 +25,21 @@ const steps: Step[] = [
   {
     name: "routes",
     inputs: ["apps/web/src/routes"],
-    command: ["bun", "run", "generate:routes"],
+    command: ["bun", "scripts/generate-routes.ts"],
   },
   ...(linked
     ? [
         {
           name: "convex",
           inputs: ["convex", "scripts/generate-convex.ts", "scripts/lib/convex-link.ts"],
-          command: ["bun", "run", "generate:convex"],
+          command: ["bun", "scripts/generate-convex.ts"],
         } satisfies Step,
       ]
     : []),
   {
     name: "ai",
     inputs: ["package.json", "convex"],
-    command: ["bun", "run", "generate:ai"],
+    command: ["bunx", "convex", "ai-files", "install"],
     optional: true,
   },
 ];
@@ -100,7 +100,9 @@ const force = process.argv.includes("--force");
 const cache = readCache();
 
 if (!linked) {
-  console.log(`○ generate:convex skipped (Convex not linked)\n${CONVEX_LINK_HELP}\n`);
+  console.log(
+    "○ generate:convex skipped (Convex not linked — getting-started.md §2–3, then bun run dev:convex)",
+  );
 }
 
 for (const step of steps) {

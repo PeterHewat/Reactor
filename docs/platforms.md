@@ -1,7 +1,5 @@
 # Platform architecture
 
-How the application surfaces and shared packages fit together in this monorepo. **Onboarding:** [README](../README.md) → [getting-started.md](./getting-started.md). **Commands:** [package.json](../package.json) or [getting-started.md#commands](./getting-started.md#commands).
-
 ## Surfaces
 
 | Surface   | Location          | Hosted with                          |
@@ -26,14 +24,16 @@ How the application surfaces and shared packages fit together in this monorepo. 
 
 ## Shared packages
 
-| Package               | Used by                             | Responsibility                                        |
-| --------------------- | ----------------------------------- | ----------------------------------------------------- |
-| `packages/tokens`     | Web, marketing                      | Shared CSS design tokens                              |
-| `packages/ui-web`     | Web                                 | shadcn-style React components                         |
-| `packages/utils`      | Web (`@repo/web`)                   | `cn()`, env helpers, theme, i18n                      |
-| `packages/env-core`   | Web, marketing                      | Framework-agnostic `loadEnv` (no React/Zustand peers) |
-| `packages/config`     | Web, marketing (Vite/Astro configs) | Path aliases, repo URL helpers, Vercel header JSON    |
-| `packages/test-utils` | Tests                               | Shared test helpers and mocks                         |
+| Package               | Used by               | Responsibility                                                        |
+| --------------------- | --------------------- | --------------------------------------------------------------------- |
+| `packages/tokens`     | Web, marketing        | Shared CSS design tokens                                              |
+| `packages/ui-web`     | Web                   | shadcn-style React components                                         |
+| `packages/utils`      | Web (`@repo/web`)     | `cn()`, env helpers, theme, i18n                                      |
+| `packages/env-core`   | Web, marketing        | Framework-agnostic `loadEnv` (no React/Zustand peers)                 |
+| `packages/config`     | Web, marketing, tests | Vite/Vitest aliases, `PRODUCT_NAME`, repo URL helpers, Vercel headers |
+| `packages/test-utils` | Tests                 | Shared test helpers and mocks                                         |
+
+First-run rebrand (`git remote` → env + `PRODUCT_NAME`) lives in **`scripts/`** (`setup.ts`, `lib/repo-identity.ts`), not in `@repo/config`.
 
 Marketing `.astro` components live in `apps/marketing/src/components/`. Styling uses each app’s Tailwind config and CSS variables (`apps/marketing/src/styles/`).
 
@@ -63,7 +63,3 @@ Browser
 ## CI
 
 Lint, test, build, and deploy workflows: [ci-cd.md](./ci-cd.md). Opt-in PR labels: `e2e`, `preview`.
-
-## Further reading
-
-Doc map: [README](../README.md#resources). Also [development.md](./development.md), [monorepo-structure.md](./monorepo-structure.md), [ci-cd.md](./ci-cd.md), [architecture.md](./architecture.md), [CONTRIBUTING.md](../CONTRIBUTING.md).

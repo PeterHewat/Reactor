@@ -1,8 +1,8 @@
 import { useTranslation } from "@repo/utils";
 import { SignIn } from "@clerk/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { BackendSetup } from "../components/backend-setup";
-import { isAuthEnabled } from "../lib/backend";
+import { BackendSetup } from "../../components/backend-setup";
+import { isAuthEnabled } from "../../lib/backend";
 
 type LoginSearch = {
   redirect?: string;
@@ -37,7 +37,7 @@ function LoginPage() {
   );
 }
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/login/")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
     redirect: typeof search.redirect === "string" ? search.redirect : undefined,
   }),

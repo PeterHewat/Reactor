@@ -51,10 +51,11 @@ const de: TranslationDictionary = {
     setupTitle: "Cloud-Setup abschließen",
     setupBody:
       "Convex und Clerk einrichten für die Aufgaben-Demo. Schritte unten, dann bun run dev:full.",
-    stepConvex: "bun run dev:convex ausführen und VITE_CONVEX_URL in apps/web/.env.local setzen",
-    stepClerk: "Clerk-App anlegen und VITE_CLERK_PUBLISHABLE_KEY setzen",
-    stepEnv:
-      "CLERK_JWT_ISSUER_DOMAIN im Convex-Dashboard setzen (auth.config.ts ist bereits im Repo)",
+    stepConvex:
+      "Convex: CLERK_JWT_ISSUER_DOMAIN (Issuer aus JWT-Vorlage Convex), dann bun run dev:convex und VITE_CONVEX_URL",
+    stepClerk:
+      "Clerk: JWT templates → Convex-Preset (Issuer kopieren); API keys → React → VITE_CLERK_PUBLISHABLE_KEY",
+    stepEnv: "Siehe docs/getting-started.md §2–3 auf GitHub",
     setupGuide: "Einrichtungsanleitung auf GitHub öffnen (README)",
     setupGuideLocal: "Siehe README im Repository für die Cloud-Einrichtung",
     backHome: "Zur Startseite",

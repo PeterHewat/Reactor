@@ -136,16 +136,16 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: |
           set -euo pipefail
-          bun run generate:routes
+          bun scripts/generate-routes.ts
           if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
-            bun run generate:convex
+            bun scripts/generate-convex.ts
             bun run typecheck
           elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
             echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
             exit 1
           else
             echo "::notice::Skipping monorepo typecheck — CONVEX_DEPLOY_KEY not configured."
-            echo "After fork: bun run dev:convex && bun run generate:convex"
+            echo "After fork: bun run dev:convex"
           fi
 
   build-web:
@@ -165,9 +165,9 @@ jobs:
           VITE_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
         run: |
           set -euo pipefail
-          bun run generate:routes
+          bun scripts/generate-routes.ts
           if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
-            bun run generate:convex
+            bun scripts/generate-convex.ts
             bun run --filter @repo/web build
           elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
             echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
@@ -204,9 +204,9 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: |
           set -euo pipefail
-          bun run generate:routes
+          bun scripts/generate-routes.ts
           if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
-            bun run generate:convex
+            bun scripts/generate-convex.ts
             bun run --filter @repo/web test
           elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
             echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
@@ -295,7 +295,7 @@ jobs:
             echo "::notice::Skipping Convex tests — CONVEX_DEPLOY_KEY not configured."
             exit 0
           fi
-          bun run generate:convex
+          bun scripts/generate-convex.ts
           bun run --filter @repo/convex test
 
   web-e2e-smoke:
@@ -339,13 +339,13 @@ jobs:
           E2E_SMOKE_REQUIRE_SECRETS: ${{ vars.E2E_SMOKE_REQUIRE_SECRETS }}
         run: |
           set -euo pipefail
-          bun run generate:routes
+          bun scripts/generate-routes.ts
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
             echo "::error::E2E smoke requires CONVEX_DEPLOY_KEY for convex/_generated (Vite imports @convex/api)."
             exit 1
           fi
-          bun run generate:convex
-          bun run e2e:install
+          bun scripts/generate-convex.ts
+          bunx playwright install chromium
           bun run --filter @repo/web e2e:smoke
       - name: Upload Playwright smoke report
         uses: actions/upload-artifact@v7
@@ -374,10 +374,10 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: |
           set -euo pipefail
-          bun run generate:routes
+          bun scripts/generate-routes.ts
           if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
-            bun run generate:convex
-            bun run e2e:install
+            bun scripts/generate-convex.ts
+            bunx playwright install chromium
             bun run --filter @repo/web e2e
           elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
             echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
@@ -408,7 +408,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install Playwright browsers
-        run: bun run e2e:install
+        run: bunx playwright install chromium
       - name: Run Playwright tests (marketing)
         run: bun run --filter @repo/marketing e2e
       - name: Upload Playwright report

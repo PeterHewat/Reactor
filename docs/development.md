@@ -1,6 +1,58 @@
 # Development reference
 
-Patterns for day-to-day work after onboarding. **Onboarding:** [README](../README.md) → [getting-started.md](./getting-started.md). **Commands:** [package.json](../package.json) or [getting-started.md#commands](./getting-started.md#commands). **Repo map:** [monorepo-structure.md](./monorepo-structure.md). **CI/releases:** [ci-cd.md](./ci-cd.md).
+## Commands
+
+Repo root ([package.json](../package.json)):
+
+```bash
+# Quality gate
+bun run format:fix && bun run lint && bun run typecheck && bun run test
+
+# Dev
+bun run dev                   # web + marketing
+bun run dev:full              # web + marketing + convex
+bun run dev:web               # Vite :5173
+bun run dev:marketing         # Astro :4321
+bun run dev:convex            # Convex (repo root)
+
+# Lint / format
+bun run lint
+bun run format                # Prettier check
+bun run format:fix            # Prettier write
+
+# Test / typecheck (codegen runs first when Convex is linked)
+bun run typecheck
+bun run test
+bun run test:web
+bun run test:packages
+bun run test:integration
+
+# E2E
+bun run e2e:install
+bun run e2e:smoke
+
+# Dependencies
+bun install                   # same as install:all
+bun run install:all
+bun run outdated
+bun run update
+bun run audit
+
+# Build / clean
+bun run build
+bun run clean                 # rm node_modules — then bun install
+bun run clean:ts              # tsc -b --clean
+
+# Per workspace
+bun run --filter @repo/web build
+bun run --filter @repo/web e2e
+bun run --filter @repo/marketing e2e
+
+# First-time setup — getting-started.md
+bun scripts/setup.ts
+bun scripts/doctor.ts
+bun scripts/doctor.ts -- --strict
+```
 
 ## Prerequisites
 
@@ -10,7 +62,7 @@ Install on your PATH:
 - [Bun](https://bun.sh/) — match `.bun-version` (>= 1.3.13)
 - [Node.js](https://nodejs.org/) — **24** (`.node-version`; `engines.node` is `>=24.0.0`)
 
-CI and `bun run doctor` use the same major version. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
+CI and `bun scripts/doctor.ts` use the same major version. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
 
 ## Tailwind and UI
 
@@ -59,7 +111,7 @@ const env = loadEnv({
 
 ## Convex patterns
 
-Sample schema and handlers: `convex/schema.ts`, `convex/tasks.ts`, `convex/model/tasks.ts`. Auth: `convex/lib/auth.ts`. Link a deployment: [getting-started.md](./getting-started.md#2-convex) · [convex/README.md](../convex/README.md).
+Sample schema and handlers: `convex/schema.ts`, `convex/tasks.ts`, `convex/model/tasks.ts`. Auth: `convex/lib/auth.ts`. Link a deployment: [getting-started.md §3](./getting-started.md#3-convex) · [convex/README.md](../convex/README.md).
 
 **Client:** `useQuery` / `useMutation` for data; `useConvexAuth()` for auth — not `fetch` + `useEffect`.
 
@@ -81,13 +133,13 @@ test("create inserts a task for the signed-in user", async () => {
 
 ## E2E tests (Playwright)
 
-Commands: [getting-started.md#test](./getting-started.md#test). CI: [ci-cd.md](./ci-cd.md#e2e-tests-playwright).
+CI: [ci-cd.md](./ci-cd.md#e2e-tests-playwright).
 
 ### E2E smoke (tasks)
 
 Authenticated smoke for `/tasks` uses [`@clerk/testing`](https://clerk.com/docs/guides/development/testing/playwright/overview) and a real Convex dev deployment.
 
-1. Copy [apps/web/.env.e2e.example](../apps/web/.env.e2e.example) values into your environment (or export before running tests).
+1. `cp apps/web/.env.local.e2e.local.example apps/web/.env.local.e2e.local` and fill in secrets (or export before running tests).
 2. In Clerk: enable **Email** and **Password**; create a dev user for `E2E_CLERK_USER_EMAIL` (or use a `+clerk_test` address per Clerk testing docs).
 3. Set `CLERK_SECRET_KEY` (secret key, not publishable), `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` (same as `apps/web/.env.local`).
 4. Run:
@@ -99,7 +151,7 @@ bun run e2e:smoke
 
 CI job **`web-e2e-smoke`** runs on every PR that touches `apps/web/**`. Until GitHub Actions secrets are set, tests **skip** and the job logs a notice. Add `CLERK_SECRET_KEY` and `E2E_CLERK_USER_EMAIL` per [ci-cd.md](./ci-cd.md#github-actions-secrets). Optional: set `E2E_SMOKE_REQUIRE_SECRETS=1` so CI **fails** when smoke secrets are missing ([ci-cd.md](./ci-cd.md#optional-ci-guardrails)).
 
-`bun run setup` runs `doctor --bootstrap` (toolchain + routes only). `bun run doctor -- --strict` adds backend env and E2E checks.
+`bun scripts/setup.ts` runs `doctor --bootstrap` (toolchain + routes only). `bun scripts/doctor.ts -- --strict` adds backend env and E2E checks.
 
 Implementation: `apps/web/tests/tasks.smoke.e2e.ts`, `playwright.smoke.config.ts` (single worker for Clerk).
 
@@ -132,7 +184,3 @@ Not included in this template. Playwright visual snapshots are not wired in CI. 
 ```bash
 code --add-mcp '{"name":"chrome-devtools-mcp","command":"npx","args":["-y","chrome-devtools-mcp@latest"]}'
 ```
-
-## Related
-
-Doc map: [README](../README.md#resources). Also [dependency-overrides.md](./dependency-overrides.md), [CONTRIBUTING.md](../CONTRIBUTING.md).

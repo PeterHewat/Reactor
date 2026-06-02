@@ -98,8 +98,8 @@ jobs:
             echo "::error::CONVEX_DEPLOY_KEY is required for web deploy (convex/_generated is not committed)."
             exit 1
           fi
-          bun run generate:routes
-          bun run generate:convex
+          bun scripts/generate-routes.ts
+          bun scripts/generate-convex.ts
           cd apps/web
           bunx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
           bunx vercel build --prod --token="$VERCEL_TOKEN"

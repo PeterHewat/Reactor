@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Sync with [CLAUDE.md](./CLAUDE.md):** After editing shared rules here, run `bun run sync:agent-docs`. `bun run generate:ai` updates the marked Convex section in CLAUDE.md only — do not quote those marker strings elsewhere in this file.
+> **Sync with [CLAUDE.md](./CLAUDE.md):** After editing shared rules here, run `bun scripts/sync-agent-docs.ts`. `bunx convex ai-files install` updates the marked Convex section in CLAUDE.md only — do not quote those marker strings elsewhere in this file.
 
 ## Philosophy
 
@@ -67,10 +67,10 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 
 ## Generated / installed artifacts (gitignored)
 
-| Path                                                  | Restore with                                                         |
-| ----------------------------------------------------- | -------------------------------------------------------------------- |
-| `convex/_generated/`, `apps/web/src/routeTree.gen.ts` | `bun run generate` (`pretypecheck` / `pretest` run it automatically) |
-| `.agents/`, `skills-lock.json`                        | `npx convex ai-files install` (via `bun run generate`)               |
+| Path                                                  | Restore with                                                                |
+| ----------------------------------------------------- | --------------------------------------------------------------------------- |
+| `convex/_generated/`, `apps/web/src/routeTree.gen.ts` | `bun scripts/generate.ts` (`pretypecheck` / `pretest` run it automatically) |
+| `.agents/`, `skills-lock.json`                        | `bunx convex ai-files install` (via `bun scripts/generate.ts`)              |
 
 ## Verify gate
 

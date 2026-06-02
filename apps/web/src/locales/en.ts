@@ -54,9 +54,11 @@ const en = {
     setupTitle: "Finish cloud setup",
     setupBody:
       "Wire Convex and Clerk to run the tasks demo. Follow the steps below, then use bun run dev:full.",
-    stepConvex: "Run bun run dev:convex and set VITE_CONVEX_URL in apps/web/.env.local",
-    stepClerk: "Create a Clerk app and set VITE_CLERK_PUBLISHABLE_KEY",
-    stepEnv: "Set CLERK_JWT_ISSUER_DOMAIN in the Convex dashboard (auth.config.ts is committed)",
+    stepConvex:
+      "Set CLERK_JWT_ISSUER_DOMAIN in Convex (Clerk JWT template Issuer), then bun run dev:convex and VITE_CONVEX_URL",
+    stepClerk:
+      "Clerk: JWT templates → Convex preset (copy Issuer); API keys → React → VITE_CLERK_PUBLISHABLE_KEY",
+    stepEnv: "See docs/getting-started.md §2–3 on GitHub",
     setupGuide: "Open setup guide on GitHub (README)",
     setupGuideLocal: "See README in your repository for cloud setup",
     backHome: "Back to home",

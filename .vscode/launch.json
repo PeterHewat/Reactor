@@ -25,7 +25,7 @@
       "type": "node-terminal"
     },
     {
-      "command": "bun run --filter @repo/convex dev",
+      "command": "bun run dev:convex",
       "name": "Convex Dev Server",
       "request": "launch",
       "type": "node-terminal"

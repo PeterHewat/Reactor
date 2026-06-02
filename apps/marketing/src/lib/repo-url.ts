@@ -9,7 +9,7 @@ import { loadMarketingEnv } from "../env";
 export { REPO_SETUP_DOC_PATH };
 
 /**
- * Public GitHub repository URL (`PUBLIC_REPO_URL` in `apps/marketing/.env`).
+ * Public GitHub repository URL (`PUBLIC_REPO_URL` in `apps/marketing/.env.local`).
  *
  * @returns Normalized repo URL, or undefined when unset or still a placeholder
  */

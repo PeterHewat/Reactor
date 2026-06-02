@@ -5,7 +5,7 @@ import { resolve } from "node:path";
  * Merges `KEY=value` lines from a dotenv file into `process.env` (does not override existing).
  *
  * @param cwd - Directory containing the env file
- * @param filename - Env file name (e.g. `.env.local`)
+ * @param filename - Env file name (e.g. `.env`)
  */
 export function loadEnvFile(cwd: string, filename: string): void {
   const path = resolve(cwd, filename);

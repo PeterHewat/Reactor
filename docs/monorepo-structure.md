@@ -1,7 +1,5 @@
 # Monorepo structure
 
-Technical map of layout, configuration, and growth conventions. **Onboarding:** [README](../README.md) → [getting-started.md](./getting-started.md). **Commands:** [package.json](../package.json) or [getting-started.md#commands](./getting-started.md#commands). **Business design:** [architecture.md](./architecture.md). **Day-2 patterns:** [development.md](./development.md).
-
 ## Layout
 
 ```text
@@ -11,9 +9,10 @@ packages/utils/     # Shared client utilities (@repo/utils)
 packages/tokens/    # Shared CSS variables (@repo/tokens)
 packages/ui-web/    # Shared React components (@repo/ui-web)
 packages/test-utils/# Test fixtures (dev/test only)
-packages/config/    # Shared aliases, repo-url helpers, Vercel header fragments (@repo/config)
+packages/config/    # Aliases, product name, repo URLs, env placeholders (@repo/config)
 packages/env-core/  # Framework-agnostic env loaders (@repo/env-core) — no React/Zustand
 convex/             # Backend — no @repo imports; Convex CLI root
+scripts/            # Setup, doctor, generate (`bun scripts/…` — not imported by apps)
 docs/               # Human + agent documentation
 ```
 
@@ -47,10 +46,13 @@ docs/               # Human + agent documentation
 
 ### Env file map
 
-| Template                   | Copy to               | Scope                                                                |
-| -------------------------- | --------------------- | -------------------------------------------------------------------- |
-| `.env.example` (repo root) | `.env.local` (root)   | `CONVEX_DEPLOYMENT`, `CLERK_JWT_ISSUER_DOMAIN` (Convex/Clerk wiring) |
-| `apps/web/.env.example`    | `apps/web/.env.local` | `VITE_*` for the web app                                             |
+| Template                      | Copy to                     | Scope                                         |
+| ----------------------------- | --------------------------- | --------------------------------------------- |
+| _(none — Convex CLI)_         | `.env.local` (repo root)    | `CONVEX_DEPLOYMENT` from `bun run dev:convex` |
+| `apps/web/.env.example`       | `apps/web/.env.local`       | `VITE_*` for the web app                      |
+| `apps/marketing/.env.example` | `apps/marketing/.env.local` | `PUBLIC_*` (optional)                         |
+
+`CLERK_JWT_ISSUER_DOMAIN` lives in the **Convex dashboard**, not root `.env.local` — see [getting-started.md](./getting-started.md) §2a–3a.
 
 ## Path aliases
 
@@ -64,7 +66,7 @@ Subpath imports for `@repo/utils` (prefer narrow imports in new code):
 
 ## Task orchestration
 
-This template does **not** use Turborepo, Nx, or similar orchestrators. Tasks run via Bun workspaces, root scripts (`test:web`, `test:packages`), and `bun run --filter`. CI uses path-based job selection and cached installs via `.github/actions/setup-bun`. Rationale: [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
+This template does **not** use Turborepo, Nx, or similar orchestrators. Tasks run via Bun workspaces, root [package.json](../package.json) scripts, and `bun run --filter` ([development.md#commands](./development.md#commands)). CI uses path-based job selection and cached installs via `.github/actions/setup-bun`. Rationale: [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
 `@repo/config` is a workspace package (`noEmit`); Vite still transpiles `aliases.ts` at config load time.
 
@@ -91,18 +93,18 @@ Deploy workflows use tags: `web-v*`, `marketing-v*`, `convex-v*`. See [ci-cd.md]
 
 ## Generated code (not committed)
 
-| Output                                | Generator                 | Command                                                     |
-| ------------------------------------- | ------------------------- | ----------------------------------------------------------- |
-| `convex/_generated/`                  | Convex                    | `bun run generate:convex` (or `bun run dev:convex`)         |
-| `apps/web/src/routeTree.gen.ts`       | TanStack Router           | `bun run generate:routes` (or `tsr generate` in `apps/web`) |
-| `.agents/skills/`, `skills-lock.json` | Convex `ai-files install` | `bun run generate:ai` (part of `bun run generate`)          |
+| Output                                | Generator                 | Command                                                            |
+| ------------------------------------- | ------------------------- | ------------------------------------------------------------------ |
+| `convex/_generated/`                  | Convex                    | `bun run dev:convex` or `bun scripts/generate-convex.ts`           |
+| `apps/web/src/routeTree.gen.ts`       | TanStack Router           | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`) |
+| `.agents/skills/`, `skills-lock.json` | Convex `ai-files install` | `bunx convex ai-files install` (part of `bun scripts/generate.ts`) |
 
-Run **`bun run dev:convex`** then **`bun run generate:convex`** before the first `typecheck` / `test` (also enforced via `pretypecheck` / `pretest` + `scripts/assert-convex-generated.ts`). There are **no committed** Convex stubs — missing `_generated` fails with remediation text.
+Run **`bun run dev:convex`** before the first `typecheck` / `test` (also enforced via `pretypecheck` / `pretest` + `scripts/assert-convex-generated.ts`). There are **no committed** Convex stubs — missing `_generated` fails with remediation text.
 
-- `bun run generate` — routes always; Convex only when linked (root `.env.local` or `CONVEX_DEPLOY_KEY`)
+- `bun scripts/generate.ts` — routes always; Convex only when linked (root `.env.local` or `CONVEX_DEPLOY_KEY`)
 - Gitignored in `.gitignore`
 - ESLint ignores `convex/_generated/`; Prettier ignores both paths (see `.prettierignore`)
-- **CI:** jobs that need Convex run `generate:convex` only when `CONVEX_DEPLOY_KEY` is set; otherwise they log a `::notice::` and skip (see [ci-cd.md](./ci-cd.md))
+- **CI:** jobs that need Convex run `bun scripts/generate-convex.ts` only when `CONVEX_DEPLOY_KEY` is set; otherwise they log a `::notice::` and skip (see [ci-cd.md](./ci-cd.md))
 
 ## Starter growth thresholds
 
@@ -133,5 +135,3 @@ See [ADR-002: Package boundary authoring](./adr/002-package-boundary-authoring.m
 Root `package.json` `overrides` pin transitive versions for security. Rationale and version table: [dependency-overrides.md](./dependency-overrides.md). Update that doc whenever overrides change.
 
 ## Further reading
-
-Doc map: [README](../README.md#resources). Also [platforms.md](./platforms.md), [agent-guidance.md](./agent-guidance.md).

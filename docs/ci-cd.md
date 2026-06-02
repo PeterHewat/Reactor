@@ -1,7 +1,5 @@
 # CI/CD and deployments
 
-Ongoing reference for GitHub Actions, secrets, and deploy workflows. **Onboarding:** [README](../README.md) → [getting-started.md](./getting-started.md) (§2–6). **Commands:** [package.json](../package.json) or [getting-started.md#commands](./getting-started.md#commands). **Day-2 patterns:** [development.md](./development.md).
-
 ## Workflows
 
 | Workflow                                                | Required? | Purpose                                                           |
@@ -18,7 +16,7 @@ Ongoing reference for GitHub Actions, secrets, and deploy workflows. **Onboardin
 
 **CI vs deploy:** [ci.yml](../.github/workflows/ci.yml) runs lint, format, typecheck, and tests on PRs and `main`. [deploy.yml](../.github/workflows/deploy.yml) only builds and ships. The [Release](../.github/workflows/release.yml) workflow requires a successful `ci.yml` run for the **release commit** (`github.sha`) before creating tags; still run Release only when you intend to ship.
 
-**Web deploy codegen:** Production and preview web deploys run `bun run generate:routes` and `bun run generate:convex` before `vercel build` (`convex/_generated/` is not committed). Requires `CONVEX_DEPLOY_KEY` (production) or `CONVEX_PREVIEW_DEPLOY_KEY` (previews).
+**Web deploy codegen:** Production and preview web deploys run `bun scripts/generate-routes.ts` and `bun scripts/generate-convex.ts` before `vercel build` (`convex/_generated/` is not committed). Requires `CONVEX_DEPLOY_KEY` (production) or `CONVEX_PREVIEW_DEPLOY_KEY` (previews).
 
 **Full E2E on `main`:** When `apps/web/**` changes, [ci.yml](../.github/workflows/ci.yml) runs the full Playwright suite on pushes to `main`; failures fail **CI required** (smoke runs on every web PR; full suite is label-opt-in on PRs via `e2e`).
 
@@ -26,7 +24,7 @@ Ongoing reference for GitHub Actions, secrets, and deploy workflows. **Onboardin
 
 **Docs-only PRs:** When only `docs/**` or repo meta files change (`README.md`, `AGENTS.md`, etc.), the **Format** job still runs; lint/typecheck/build are skipped.
 
-**Convex codegen in CI:** Jobs that need `convex/_generated/` (`typecheck`, `build-web`, `@repo/web` tests, `web-e2e`, `web-e2e-smoke`, `tests-convex`) run `bun run generate:convex` when `CONVEX_DEPLOY_KEY` is configured. Otherwise they emit a `::notice::` and skip (exit 0) — no committed generated files. Once the deploy key is present, those jobs run on every matching PR; you do **not** need extra variables for that. **E2E smoke** fails with an error if smoke secrets are set but `CONVEX_DEPLOY_KEY` is missing (Vite must resolve `@convex/api`).
+**Convex codegen in CI:** Jobs that need `convex/_generated/` (`typecheck`, `build-web`, `@repo/web` tests, `web-e2e`, `web-e2e-smoke`, `tests-convex`) run `bun scripts/generate-convex.ts` when `CONVEX_DEPLOY_KEY` is configured. Otherwise they emit a `::notice::` and skip (exit 0) — no committed generated files. Once the deploy key is present, those jobs run on every matching PR; you do **not** need extra variables for that. **E2E smoke** fails with an error if smoke secrets are set but `CONVEX_DEPLOY_KEY` is missing (Vite must resolve `@convex/api`).
 
 ### Optional CI guardrails
 
@@ -37,7 +35,7 @@ Repository variables (**Settings → Secrets and variables → Actions → Varia
 | `CI_STRICT`                 | Fail typecheck, build-web, `@repo/web` tests, `web-e2e`, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
 | `E2E_SMOKE_REQUIRE_SECRETS` | Fail `web-e2e-smoke` if smoke secrets are missing (default: skip Playwright, job still passes).                                                         |
 
-**Recommended after adoption:** set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` is configured ([customize-after-fork.md](./customize-after-fork.md#4-github-actions)). Without it, deleting or misconfiguring the deploy key can leave **CI required** green while Convex jobs skip.
+**Recommended after adoption:** set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` is configured ([getting-started.md §10](./getting-started.md#10-github-actions)). Without it, deleting or misconfiguring the deploy key can leave **CI required** green while Convex jobs skip.
 
 Use `CI_STRICT` before secrets exist if you want fail-closed CI during onboarding. `E2E_SMOKE_REQUIRE_SECRETS` is optional. Neither changes behavior while all required secrets are present.
 
@@ -66,16 +64,16 @@ After configuring secrets, protect `main` in **Settings → Branches**. Suggeste
 
 ## CI and test jobs
 
-| Job               | Workflow                              | When it runs                | Behavior                                                                           |
-| ----------------- | ------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------- |
-| `ci-required`     | [ci.yml](../.github/workflows/ci.yml) | Every PR/push               | Fails when expected jobs for changed paths did not succeed                         |
-| `build-web`       | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Production Vite build (placeholder env vars)                                       |
-| `build-marketing` | [ci.yml](../.github/workflows/ci.yml) | `apps/marketing/**` changed | Astro production build                                                             |
-| `tests-web`       | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` or shared     | `@repo/web` (when Convex linked), `@repo/ui-web`, `@repo/utils` unit + integration |
-| `tests-packages`  | [ci.yml](../.github/workflows/ci.yml) | Shared packages / config    | `@repo/config`, `@repo/env-core` unit tests                                        |
-| `tests-convex`    | [ci.yml](../.github/workflows/ci.yml) | `convex/**` changed         | When `CONVEX_CI_TESTS: true` (Vitest + `convex-test`)                              |
-| `web-e2e-smoke`   | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Playwright `/tasks` smoke when secrets configured (`generate:convex` + deploy key) |
-| `web-e2e`         | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` on `main`     | Full Playwright suite (`generate:convex` when deploy key configured)               |
+| Job               | Workflow                              | When it runs                | Behavior                                                                              |
+| ----------------- | ------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
+| `ci-required`     | [ci.yml](../.github/workflows/ci.yml) | Every PR/push               | Fails when expected jobs for changed paths did not succeed                            |
+| `build-web`       | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Production Vite build (placeholder env vars)                                          |
+| `build-marketing` | [ci.yml](../.github/workflows/ci.yml) | `apps/marketing/**` changed | Astro production build                                                                |
+| `tests-web`       | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` or shared     | `@repo/web` (when Convex linked), `@repo/ui-web`, `@repo/utils` unit + integration    |
+| `tests-packages`  | [ci.yml](../.github/workflows/ci.yml) | Shared packages / config    | `@repo/config`, `@repo/env-core` unit tests                                           |
+| `tests-convex`    | [ci.yml](../.github/workflows/ci.yml) | `convex/**` changed         | When `CONVEX_CI_TESTS: true` (Vitest + `convex-test`)                                 |
+| `web-e2e-smoke`   | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` changed       | Playwright `/tasks` smoke when secrets configured (`generate-convex.ts` + deploy key) |
+| `web-e2e`         | [ci.yml](../.github/workflows/ci.yml) | `apps/web/**` on `main`     | Full Playwright suite (`generate-convex.ts` when deploy key configured)               |
 
 **Tests on every PR:** `tests-web`, `tests-marketing`, `tests-packages` (after the matching build/lint jobs). **`web-e2e-smoke`** runs when web paths change; it **skips** Playwright install/run until E2E secrets exist (job still passes unless `E2E_SMOKE_REQUIRE_SECRETS=1` — see [Optional CI guardrails](#optional-ci-guardrails)).
 
@@ -90,8 +88,8 @@ Root lint, format, and typecheck run when any app package changes.
 
 ### E2E tests (Playwright)
 
-- **Smoke (tasks + Clerk + Convex):** `bun run e2e:smoke` — runs on every PR when `apps/web/**` changes (`web-e2e-smoke`). Configure `CONVEX_DEPLOY_KEY` (codegen), `CLERK_SECRET_KEY`, `E2E_CLERK_USER_EMAIL`, `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` in GitHub Actions; see [development.md](./development.md#e2e-smoke-tasks).
-- **Full suite:** `bun run e2e:install` once, then `bun run --filter @repo/web e2e` (or `@repo/marketing`)
+- **Smoke (tasks + Clerk + Convex):** `bun run --filter @repo/web e2e:smoke` — runs on every PR when `apps/web/**` changes (`web-e2e-smoke`). Configure `CONVEX_DEPLOY_KEY` (codegen), `CLERK_SECRET_KEY`, `E2E_CLERK_USER_EMAIL`, `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` in GitHub Actions; see [development.md](./development.md#e2e-smoke-tasks).
+- **Full suite:** `bunx playwright install chromium` once, then `bun run --filter @repo/web e2e` (or `@repo/marketing`)
 - **CI (full):** Add the **`e2e`** label on a PR; runs when web or marketing paths change (after the matching build job)
 - **Naming:** `*.e2e.ts` (full), `*.smoke.e2e.ts` (smoke)
 
@@ -164,7 +162,7 @@ To use **Vercel’s Git integration** instead:
 
 1. Enable automatic Git deployments in each Vercel project (or remove `git.deploymentEnabled: false` from `apps/web/vercel.json` and `apps/marketing/vercel.json`).
 2. Rely on Vercel preview/production builds; keep [ci.yml](../.github/workflows/ci.yml) for lint, test, and typecheck.
-3. For **web**, set `CONVEX_DEPLOY_KEY` in Vercel project env (Production + Preview) so `apps/web/vercel.json` `buildCommand` can run `generate:convex` before the Vite build. Set `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY` as usual.
+3. For **web**, set `CONVEX_DEPLOY_KEY` in Vercel project env (Production + Preview) so `apps/web/vercel.json` `buildCommand` can run `bun scripts/generate-convex.ts` before the Vite build. Set `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY` as usual.
 4. Skip or disable [release.yml](../.github/workflows/release.yml) / [deploy.yml](../.github/workflows/deploy.yml) if you do not need tag-based releases from Actions.
 
 Trade-off: tag-based rollbacks and monorepo prebuilt deploys from Actions are documented in this repo; Vercel-only is simpler but uses Vercel’s build pipeline per project.

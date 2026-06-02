@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Shared Vite/Vitest aliases and deployment config fragments",
+  "description": "Vite/Vitest aliases, product name, repo URLs, env placeholders, Vercel headers",
   "exports": {
     "./aliases": "./aliases.ts",
     "./product": "./product.ts",

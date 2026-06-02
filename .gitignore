@@ -48,15 +48,11 @@ pkg/
 .DS_Store
 Thumbs.db
 
-# Environment variables (keep .env.example for documentation)
+# Environment variables (keep *.example templates)
 .env
-.env.local
-.env.e2e.local
-.env.development
-.env.test
-.env.production
-.env.staging
+.env.*
 !.env.example
+!.env.*.example
 
 # Docker
 docker-compose.override.yml
@@ -71,7 +67,7 @@ public/themes/
 # Astro generated types
 .astro/
 
-# Codegen (run `bun run generate`)
+# Codegen (run `bun scripts/generate.ts` or `bun run typecheck` / `test`)
 convex/_generated/
 apps/web/src/routeTree.gen.ts
 

@@ -4,9 +4,9 @@
  * Checks local toolchain and env files for the Reactor starter.
  *
  * @example
- * bun run doctor
- * bun run doctor -- --strict
- * bun run doctor -- --bootstrap
+ * bun scripts/doctor.ts
+ * bun scripts/doctor.ts -- --strict
+ * bun scripts/doctor.ts -- --bootstrap
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -69,7 +69,7 @@ checks.push({
     typeof Bun !== "undefined"
       ? `bun ${Bun.version} (want ${readBunVersion() ?? ">=1.3.13"})`
       : "not running under Bun",
-  remediation: "Install Bun from https://bun.sh and re-run this command with `bun run doctor`",
+  remediation: "Install Bun from https://bun.sh and re-run `bun scripts/doctor.ts`",
 });
 
 const wantedNode = readNodeVersion();
@@ -92,7 +92,7 @@ checks.push({
   name: "apps/web/.env.local",
   ok: fileExists("apps/web/.env.local"),
   detail: fileExists("apps/web/.env.local") ? "present (VITE_* for Convex/Clerk)" : "missing",
-  remediation: "bun run setup  # or: cp apps/web/.env.example apps/web/.env.local",
+  remediation: "bun scripts/setup.ts  # or: cp apps/web/.env.example apps/web/.env.local",
   bootstrapOnly: true,
 });
 
@@ -113,7 +113,7 @@ checks.push({
     : fileExists(".env.local")
       ? "present but placeholder — run dev:convex to link"
       : "missing",
-  remediation: "bun run dev:convex",
+  remediation: "getting-started §3b: bun run dev:convex (after §2 Clerk + §3a dashboard env)",
   bootstrapOnly: true,
 });
 
@@ -121,7 +121,7 @@ const hasAuthConfig = fileExists("convex/auth.config.ts");
 checks.push({
   name: "convex/auth.config.ts",
   ok: hasAuthConfig,
-  detail: hasAuthConfig ? "present (set CLERK_JWT_ISSUER_DOMAIN in Convex dashboard)" : "missing",
+  detail: hasAuthConfig ? "present (CLERK_JWT_ISSUER_DOMAIN in Convex dashboard — §3a)" : "missing",
   remediation: hasAuthConfig ? undefined : "cp convex/auth.config.ts.example convex/auth.config.ts",
   bootstrapOnly: true,
 });
@@ -133,7 +133,7 @@ checks.push({
   name: "Generated code (routes)",
   ok: hasRoutes,
   detail: hasRoutes ? "routeTree.gen.ts present" : "missing",
-  remediation: "bun run generate:routes",
+  remediation: "bun scripts/generate-routes.ts",
 });
 
 checks.push({
@@ -142,7 +142,7 @@ checks.push({
   detail: hasConvexGenerated
     ? "convex/_generated present"
     : "missing — typecheck and tests will fail",
-  remediation: "bun run dev:convex && bun run generate:convex",
+  remediation: "§3b: bun run dev:convex  # or: bun scripts/generate-convex.ts (after §2–3a)",
   bootstrapOnly: true,
 });
 
@@ -150,7 +150,7 @@ checks.push({
   name: "Convex agent skills",
   ok: fileExists(".agents/skills/convex/SKILL.md"),
   detail: fileExists(".agents/skills/convex/SKILL.md") ? ".agents/ present" : "missing",
-  remediation: "bun run generate:ai",
+  remediation: "bunx convex ai-files install",
   bootstrapOnly: true,
 });
 
@@ -174,7 +174,7 @@ checks.push({
     ? "VITE_CONVEX_URL and VITE_CLERK_PUBLISHABLE_KEY configured"
     : "placeholders or missing in apps/web/.env.local",
   remediation:
-    "Set VITE_CONVEX_URL and VITE_CLERK_PUBLISHABLE_KEY — see docs/getting-started.md §2–3",
+    "§2b VITE_CLERK_PUBLISHABLE_KEY + §3c VITE_CONVEX_URL in apps/web/.env.local (getting-started)",
   strictOnly: true,
 });
 
@@ -194,7 +194,7 @@ checks.push({
   name: "E2E smoke (optional)",
   ok: Boolean(e2eSecret && e2eEmail),
   detail: e2eSecret && e2eEmail ? "CLERK_SECRET_KEY + E2E_CLERK_USER_EMAIL set" : "not configured",
-  remediation: "see apps/web/.env.e2e.example and docs/development.md#e2e-smoke-tasks",
+  remediation: "see apps/web/.env.local.e2e.example and docs/development.md#e2e-smoke-tasks",
   strictOnly: true,
 });
 
@@ -238,7 +238,7 @@ if (blocking.length > 0) {
 }
 
 if (mode === "bootstrap") {
-  console.log("\nSetup OK — next: bun run dev:convex (see docs/getting-started.md §2)");
+  console.log("\nSetup OK — next: docs/getting-started.md §2 (Clerk), then §3 (Convex)");
 } else if (mode === "strict") {
   console.log("\nStrict checks passed — bun run dev:full → http://localhost:5173/tasks");
 } else {

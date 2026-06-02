@@ -415,6 +415,7 @@ jobs:
       - coverage-ui-web
       - web-e2e-smoke
       - web-e2e
+      - marketing-e2e
     if: always() && !cancelled() && needs.detect-changes.result == 'success'
     steps:
       - uses: actions/checkout@v6
@@ -442,4 +443,5 @@ jobs:
           COVERAGE_RESULT: ${{ needs.coverage-ui-web.result }}
           WEB_E2E_SMOKE_RESULT: ${{ needs.web-e2e-smoke.result }}
           WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
+          MARKETING_E2E_RESULT: ${{ needs.marketing-e2e.result }}
         run: bash scripts/ci-verify-required.sh

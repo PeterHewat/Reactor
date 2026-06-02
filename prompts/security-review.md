@@ -33,11 +33,10 @@ Backend/Convex security:
 
 Production headers are committed in Vercel config — not set by Vite in dev.
 
-| Surface   | File                                                                              |
-| --------- | --------------------------------------------------------------------------------- |
-| Web       | `apps/web/vercel.json` → `headers` (CSP includes Clerk + Convex)                  |
-| Marketing | `apps/marketing/vercel.json`                                                      |
-| Shared    | `packages/config/vercel-base-headers.json` → `bun scripts/sync-vercel-headers.ts` |
+| Surface   | File                                                             |
+| --------- | ---------------------------------------------------------------- |
+| Web       | `apps/web/vercel.json` → `headers` (CSP includes Clerk + Convex) |
+| Marketing | `apps/marketing/vercel.json` → `headers` (no CSP)                |
 
 When reviewing or changing CSP:
 

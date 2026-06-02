@@ -2,6 +2,10 @@
 # Emits GitHub Actions outputs: web, marketing, convex, shared, config, any, docs_only
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/monorepo-paths.sh
+source "${SCRIPT_DIR}/lib/monorepo-paths.sh"
+
 web=false
 marketing=false
 convex=false
@@ -21,15 +25,8 @@ for file in $CHANGED_FILES; do
     apps/web/*) web=true ;;
     apps/marketing/*) marketing=true ;;
     convex/*) convex=true ;;
-    packages/ui-web/* | packages/utils/* | packages/test-utils/* | packages/tokens/* | packages/config/* | packages/env-core/*)
-      shared=true
-      ;;
-    scripts/* | .github/actions/* | .husky/*)
-      config=true
-      ;;
-    *.env.example | apps/*/.env.example | .env.example)
-      config=true
-      ;;
+    scripts/* | .github/actions/* | .husky/*) config=true ;;
+    *.env.example | apps/*/.env.example | .env.example) config=true ;;
     package.json | bun.lock | eslint.config.js | tsconfig.json | tsconfig.* | .github/workflows/* | .github/dependabot.yml | .github/release.yml | .github/CODEOWNERS | .github/pull_request_template.md | .github/actions/*)
       config=true
       ;;
@@ -37,6 +34,10 @@ for file in $CHANGED_FILES; do
       config=true
       ;;
   esac
+
+  if path_is_shared_package "$file"; then
+    shared=true
+  fi
 done
 
 # Unclassified root/meta changes should not produce a false-green CI required
@@ -60,8 +61,7 @@ if [ -n "$CHANGED_FILES" ] && [ "$any" = "false" ]; then
   for file in $CHANGED_FILES; do
     case "$file" in
       docs/*) ;;
-      README.md | CONTRIBUTING.md | AGENTS.md | CLAUDE.md | SECURITY.md | LICENSE)
-        ;;
+      README.md | CONTRIBUTING.md | AGENTS.md | CLAUDE.md | SECURITY.md | LICENSE) ;;
       *) all_format_only=false; break ;;
     esac
   done

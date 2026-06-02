@@ -18,7 +18,7 @@
 
 **Web deploy codegen:** Production and preview web deploys run `bun scripts/generate-routes.ts` and `bun scripts/generate-convex.ts` before `vercel build` (`convex/_generated/` is not committed). Requires `CONVEX_DEPLOY_KEY` (production) or `CONVEX_PREVIEW_DEPLOY_KEY` (previews).
 
-**Full E2E on `main`:** When `apps/web/**` changes, [ci.yml](../.github/workflows/ci.yml) runs the full Playwright suite on pushes to `main`; failures fail **CI required** (smoke runs on every web PR; full suite is label-opt-in on PRs via `e2e`).
+**Full E2E on `main`:** When `apps/web/**` or `apps/marketing/**` changes, [ci.yml](../.github/workflows/ci.yml) runs the full Playwright suite on pushes to `main`; failures fail **CI required** (web smoke runs on every web PR; full suite is label-opt-in on PRs via `e2e`).
 
 **No Turborepo/Nx:** Path-based jobs and [setup-bun](../.github/actions/setup-bun/action.yml). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
@@ -142,7 +142,7 @@ Dependabot applies `dependencies`, `github-actions`, `monorepo`, and `typescript
 
 Run once after creating the repo (and again when label names in [sync-labels.yml](../.github/workflows/sync-labels.yml) change):
 
-**Actions → Sync GitHub labels → Run workflow**
+In GitHub: Actions → Sync GitHub labels → Run workflow
 
 Or from a machine with the [GitHub CLI](https://cli.github.com/) authenticated:
 

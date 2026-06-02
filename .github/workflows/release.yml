@@ -148,15 +148,11 @@ jobs:
             esac
           }
 
-          # Get component paths for change detection
+          # shellcheck source=scripts/lib/monorepo-paths.sh
+          source scripts/lib/monorepo-paths.sh
+
           get_component_paths() {
-            local component=$1
-            case $component in
-              "web") echo "apps/web/ packages/ui-web/ packages/utils/" ;;
-              "marketing") echo "apps/marketing/ packages/utils/" ;;
-              "convex") echo "convex/ packages/utils/" ;;
-              *) echo "❌ Unknown component: $component" >&2; exit 1 ;;
-            esac
+            release_component_paths "$1"
           }
 
           # Check if component has changes since last tag

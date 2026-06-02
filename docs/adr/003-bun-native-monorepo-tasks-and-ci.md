@@ -21,14 +21,14 @@ Teams scaling monorepos often adopt **Turborepo** (pipeline + remote cache) or *
 
 **Do** invest in Bun-native orchestration and CI efficiency:
 
-| Area                   | Approach                                                                                                                                                                                  |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Local tasks            | Root scripts (`dev`, `generate`, `test`, `lint`, …) and `bun run --filter @repo/*`                                                                                                        |
-| TypeScript build graph | `tsconfig.json` references + `tsc -b` / `typecheck` (see [monorepo-structure.md](../monorepo-structure.md#typecheck-vs-build))                                                            |
-| Affected work in CI    | Maintain explicit path rules in [ci.yml](../../.github/workflows/ci.yml) (apps, `convex/`, shared packages, root config); extend when new shared packages appear (e.g. `packages/tokens`) |
-| CI install time        | `.github/actions/setup-bun` caches `node_modules` + Bun install cache keyed on `bun.lock` + `.bun-version`                                                                                |
-| Boundaries             | Document in [ADR-002](./002-package-boundary-authoring.md); enforce with ESLint/import rules as the repo matures—not via Nx module boundaries                                             |
-| Per-surface tests      | Prefer explicit scripts (`test:web`, package-level `test`) over a single growing `bun run --filter '*' test` as workspaces multiply                                                       |
+| Area                   | Approach                                                                                                                                                                                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local tasks            | Root scripts (`dev`, `generate`, `test`, `lint`, …) and `bun run --filter @repo/*`                                                                                                                                                                        |
+| TypeScript build graph | `tsconfig.json` references + `tsc -b` / `typecheck` (see [monorepo-structure.md](../monorepo-structure.md#typecheck-vs-build))                                                                                                                            |
+| Affected work in CI    | Path rules in [scripts/lib/monorepo-paths.sh](../../scripts/lib/monorepo-paths.sh) (sourced by [ci-detect-changes.sh](../../scripts/ci-detect-changes.sh) and [release.yml](../../.github/workflows/release.yml)); extend when new shared packages appear |
+| CI install time        | `.github/actions/setup-bun` caches `node_modules` + Bun install cache keyed on `bun.lock` + `.bun-version`                                                                                                                                                |
+| Boundaries             | Document in [ADR-002](./002-package-boundary-authoring.md); enforce with ESLint/import rules as the repo matures—not via Nx module boundaries                                                                                                             |
+| Per-surface tests      | Prefer explicit scripts (`test:web`, package-level `test`) over a single growing `bun run --filter '*' test` as workspaces multiply                                                                                                                       |
 
 Adopters may add Turborepo or Nx in their fork; supersede this ADR if they do.
 

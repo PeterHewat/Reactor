@@ -54,7 +54,7 @@ checks.push({
   ok: typeof Bun !== "undefined",
   detail:
     typeof Bun !== "undefined"
-      ? `bun ${Bun.version} (want ${readBunVersion() ?? ">=1.3.13"})`
+      ? `bun ${Bun.version} (want ${readBunVersion() ?? ">=1.3.14"})`
       : "not running under Bun",
   remediation: "Install Bun from https://bun.sh and re-run `bun scripts/doctor.ts`",
 });

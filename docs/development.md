@@ -22,6 +22,7 @@ bun run format:fix            # Prettier write
 
 # Test / typecheck (codegen runs first when Convex is linked)
 bun run typecheck             # tsc solution-wide, no emit
+bun run typecheck:refs        # tsc -b (project references only)
 bun run test                  # all workspaces with a test script
 bun run test:web              # @repo/web, ui-web, utils unit tests
 bun run test:packages         # @repo/config, env-core, ui-web, utils
@@ -40,6 +41,7 @@ bun run audit                 # security audit (CI uses --audit-level=high)
 
 # Build / clean
 bun run build                 # tsc -b (project references)
+bun run build:all             # tsc -b + each workspace build script
 bun run clean                 # rm node_modules — then bun install
 bun run clean:ts              # tsc -b --clean
 
@@ -58,7 +60,7 @@ bun scripts/doctor.ts         # toolchain, env, generated code
 Install on your PATH:
 
 - [Git](https://git-scm.com/download/)
-- [Bun](https://bun.sh/) — match `.bun-version` (>= 1.3.13)
+- [Bun](https://bun.sh/) — match `.bun-version` (>= 1.3.14)
 - [Node.js](https://nodejs.org/) — **24** (`.node-version`; `engines.node` is `>=24.0.0`)
 
 CI and `bun scripts/doctor.ts` use the same major version. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).

@@ -45,6 +45,9 @@ fi
 if [ "$marketing" = "true" ]; then
   check_job "build-marketing" "true" "${BUILD_MARKETING_RESULT:-}"
   check_job "tests-marketing" "true" "${TESTS_MARKETING_RESULT:-}"
+  if [ "${GITHUB_REF:-}" = "refs/heads/main" ]; then
+    check_job "marketing-e2e" "true" "${MARKETING_E2E_RESULT:-}"
+  fi
 fi
 
 if [ "$convex" = "true" ] && [ "$convex_ci_tests" = "true" ]; then

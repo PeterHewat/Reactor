@@ -1,18 +1,11 @@
-name: Preview Deployments
+name: Deploy Preview
 
-# Manual preview deploys (Convex + Vercel). See docs/ci-cd.md#preview-deployments
+# Manual preview deploys (Convex + Vercel). Checkout ref = branch selected in
+# "Use workflow from". See docs/ci-cd.md#deploy-preview
+
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: Branch name or ref to deploy (e.g. main, feature/my-work)
-        required: true
-        default: main
-        type: string
-      preview_name:
-        description: Convex preview deployment name (optional; defaults from branch)
-        required: false
-        type: string
       deploy_convex:
         description: Deploy Convex preview
         required: true
@@ -28,10 +21,6 @@ on:
         required: true
         default: true
         type: boolean
-      pr_number:
-        description: PR number to post/update a comment with URLs (optional)
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -46,36 +35,59 @@ env:
   NODE_VERSION: "24"
 
 jobs:
-  resolve-inputs:
-    name: Resolve inputs
+  resolve-context:
+    name: Resolve context
     runs-on: ubuntu-latest
     outputs:
       preview_name: ${{ steps.meta.outputs.preview_name }}
+      pr_number: ${{ steps.pr.outputs.number }}
     steps:
-      - name: Set preview deployment name
+      - name: Set Convex preview deployment name
         id: meta
         run: |
           set -euo pipefail
-          if [ -n "${{ inputs.preview_name }}" ]; then
-            name="${{ inputs.preview_name }}"
-          else
-            slug=$(echo "${{ inputs.branch }}" | sed 's|refs/heads/||' | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//;s/-*$//' | cut -c1-48)
-            name="manual-${slug:-run}"
-          fi
+          slug=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//;s/-*$//' | cut -c1-48)
+          name="manual-${slug:-run}"
           echo "preview_name=$name" >> "$GITHUB_OUTPUT"
-          echo "Convex preview name: $name"
+          echo "Branch: ${{ github.ref_name }} → Convex preview \`$name\`"
+      - name: Find open pull request for this branch
+        id: pr
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const branch = context.ref.replace(/^refs\/heads\//, "");
+            const { owner, repo } = context.repo;
+            const { data: open } = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: "open",
+              per_page: 100,
+            });
+            const matches = open.filter((pr) => pr.head.ref === branch);
+            if (matches.length === 1) {
+              core.setOutput("number", String(matches[0].number));
+              core.info(`Open PR #${matches[0].number} for branch ${branch}`);
+            } else if (matches.length > 1) {
+              core.warning(
+                `Multiple open PRs use branch ${branch}; skipping PR comment.`,
+              );
+              core.setOutput("number", "");
+            } else {
+              core.info(`No open PR for branch ${branch}; summary only.`);
+              core.setOutput("number", "");
+            }
 
   preview-convex:
     name: Convex preview
     runs-on: ubuntu-latest
-    needs: resolve-inputs
+    needs: resolve-context
     if: inputs.deploy_convex
     outputs:
       convex_url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.ref }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -94,7 +106,7 @@ jobs:
             echo "::error::CONVEX_PREVIEW_DEPLOY_KEY is required for Convex previews."
             exit 1
           fi
-          bunx convex deploy --preview-create "${{ needs.resolve-inputs.outputs.preview_name }}"
+          bunx convex deploy --preview-create "${{ needs.resolve-context.outputs.preview_name }}"
           URL="${CONVEX_URL:-}"
           if [ -z "$URL" ] && [ -f .env.local ]; then
             URL=$(grep -E '^CONVEX_URL=' .env.local | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'")
@@ -108,7 +120,7 @@ jobs:
   preview-web:
     name: Web preview (Vercel)
     runs-on: ubuntu-latest
-    needs: [resolve-inputs, preview-convex]
+    needs: [resolve-context, preview-convex]
     if: |
       always() &&
       inputs.deploy_web &&
@@ -118,7 +130,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.ref }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -153,14 +165,14 @@ jobs:
   preview-marketing:
     name: Marketing preview (Vercel)
     runs-on: ubuntu-latest
-    needs: resolve-inputs
+    needs: resolve-context
     if: inputs.deploy_marketing
     outputs:
       vercel_url: ${{ steps.vercel.outputs.preview-url }}
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.ref }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -185,13 +197,14 @@ jobs:
   preview-summary:
     name: Preview summary
     runs-on: ubuntu-latest
-    needs: [resolve-inputs, preview-convex, preview-web, preview-marketing]
+    needs: [resolve-context, preview-convex, preview-web, preview-marketing]
     if: always()
     steps:
       - name: Write job summary
         env:
-          BRANCH: ${{ inputs.branch }}
-          PREVIEW_NAME: ${{ needs.resolve-inputs.outputs.preview_name }}
+          REF_NAME: ${{ github.ref_name }}
+          PREVIEW_NAME: ${{ needs.resolve-context.outputs.preview_name }}
+          PR_NUMBER: ${{ needs.resolve-context.outputs.pr_number }}
           CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
           WEB_URL: ${{ needs.preview-web.outputs.vercel_url }}
           MARKETING_URL: ${{ needs.preview-marketing.outputs.vercel_url }}
@@ -203,10 +216,13 @@ jobs:
           DEPLOY_MARKETING: ${{ inputs.deploy_marketing }}
         run: |
           {
-            echo "## Preview deployments"
+            echo "## Deploy Preview"
             echo ""
-            echo "- **Branch:** \`$BRANCH\`"
+            echo "- **Branch:** \`$REF_NAME\` (\`${{ github.ref }}\`)"
             echo "- **Convex preview name:** \`$PREVIEW_NAME\`"
+            if [ -n "$PR_NUMBER" ]; then
+              echo "- **PR:** #$PR_NUMBER (comment updated when deploy succeeded)"
+            fi
             echo ""
             if [ "$DEPLOY_CONVEX" = "true" ]; then
               if [ "$CONVEX_RESULT" = "success" ] && [ -n "$CONVEX_URL" ]; then
@@ -240,12 +256,12 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment on pull request
-        if: inputs.pr_number != ''
+        if: needs.resolve-context.outputs.pr_number != ''
         uses: actions/github-script@v9
         env:
-          PR_NUMBER: ${{ inputs.pr_number }}
-          BRANCH: ${{ inputs.branch }}
-          PREVIEW_NAME: ${{ needs.resolve-inputs.outputs.preview_name }}
+          PR_NUMBER: ${{ needs.resolve-context.outputs.pr_number }}
+          REF_NAME: ${{ github.ref_name }}
+          PREVIEW_NAME: ${{ needs.resolve-context.outputs.preview_name }}
           CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
           WEB_URL: ${{ needs.preview-web.outputs.vercel_url }}
           MARKETING_URL: ${{ needs.preview-marketing.outputs.vercel_url }}
@@ -258,9 +274,9 @@ jobs:
         with:
           script: |
             const lines = [
-              "## Preview deployments",
+              "## Deploy Preview",
               "",
-              `Manual run on branch \`${process.env.BRANCH}\` (Convex preview \`${process.env.PREVIEW_NAME}\`).`,
+              `Manual run on branch \`${process.env.REF_NAME}\` (Convex preview \`${process.env.PREVIEW_NAME}\`).`,
               "",
             ];
 
@@ -281,8 +297,15 @@ jobs:
             }
 
             if (process.env.DEPLOY_MARKETING === "true") {
-              if (process.env.MARKETING_RESULT === "success" && process.env.MARKETING_URL) {
-                lines.push("### Marketing (Vercel)", `- ${process.env.MARKETING_URL}`, "");
+              if (
+                process.env.MARKETING_RESULT === "success" &&
+                process.env.MARKETING_URL
+              ) {
+                lines.push(
+                  "### Marketing (Vercel)",
+                  `- ${process.env.MARKETING_URL}`,
+                  "",
+                );
               } else {
                 lines.push(
                   "### Marketing (Vercel)",

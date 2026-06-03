@@ -1,16 +1,11 @@
-name: E2E (full Playwright)
+name: E2E NRT
 
-# Manual full E2E — not run on pull requests. PRs use web-e2e-smoke in ci.yml.
-# See docs/ci-cd.md#e2e-tests-playwright
+# Manual full E2E NRT — not run on pull requests. PRs use web-e2e-smoke in ci.yml.
+# Checkout ref = branch selected in "Use workflow from". See docs/ci-cd.md#e2e-tests-playwright
 
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: Branch name or ref to test (e.g. main, feature/my-work)
-        required: true
-        default: main
-        type: string
       run_web:
         description: Run @repo/web Playwright suite
         required: true
@@ -41,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.ref }}
       - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -81,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.ref }}
       - uses: ./.github/actions/setup-bun
         with:
           node-version: ${{ env.NODE_VERSION }}

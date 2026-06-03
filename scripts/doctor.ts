@@ -9,7 +9,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { isConvexLinked } from "./lib/convex-link";
-import { isPlaceholderEnvValue, isRealConvexDeployment } from "../packages/config/env-placeholders";
+import {
+  isPlaceholderEnvValue,
+  isRealConvexDeployment,
+  parseDotenvAssignmentValue,
+} from "../packages/config/env-placeholders";
 
 const root = resolve(import.meta.dir, "..");
 
@@ -37,6 +41,26 @@ function readNodeVersion(): string | null {
   const path = resolve(root, ".node-version");
   if (!existsSync(path)) return null;
   return readFileSync(path, "utf8").trim();
+}
+
+/**
+ * Reads `KEY=value` pairs from a dotenv file under the repo root.
+ *
+ * @param relPath - Path relative to repo root
+ */
+function readEnvFile(relPath: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!fileExists(relPath)) {
+    return out;
+  }
+  const raw = readFileSync(resolve(root, relPath), "utf8");
+  for (const line of raw.split("\n")) {
+    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+    if (m) {
+      out[m[1]!] = parseDotenvAssignmentValue(m[2]!);
+    }
+  }
+  return out;
 }
 
 /**
@@ -82,12 +106,8 @@ checks.push({
   remediation: "bun scripts/setup.ts  # or: cp apps/web/.env.example apps/web/.env.local",
 });
 
-let convexDeployment: string | undefined;
-if (fileExists(".env.local")) {
-  const raw = readFileSync(resolve(root, ".env.local"), "utf8");
-  const match = raw.match(/^CONVEX_DEPLOYMENT=(.+)$/m);
-  convexDeployment = match?.[1]?.trim();
-}
+const rootEnv = readEnvFile(".env.local");
+const convexDeployment = rootEnv.CONVEX_DEPLOYMENT;
 
 const convexLinked = isConvexLinked(root);
 
@@ -137,14 +157,7 @@ checks.push({
   optional: true,
 });
 
-const webEnv: Record<string, string> = {};
-if (fileExists("apps/web/.env.local")) {
-  const raw = readFileSync(resolve(root, "apps/web/.env.local"), "utf8");
-  for (const line of raw.split("\n")) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-    if (m) webEnv[m[1]!] = m[2]!.trim();
-  }
-}
+const webEnv = readEnvFile("apps/web/.env.local");
 
 const convexUrl = webEnv.VITE_CONVEX_URL;
 const clerkKey = webEnv.VITE_CLERK_PUBLISHABLE_KEY;
@@ -170,13 +183,14 @@ if (convexDeployment && !isRealConvexDeployment(convexDeployment)) {
   });
 }
 
-const e2eEmail = process.env.E2E_CLERK_USER_EMAIL;
-const e2eSecret = process.env.CLERK_SECRET_KEY;
+const e2eEnv = readEnvFile("apps/web/.env.e2e.local");
+const e2eEmail = process.env.E2E_CLERK_USER_EMAIL ?? e2eEnv.E2E_CLERK_USER_EMAIL;
+const e2eSecret = process.env.CLERK_SECRET_KEY ?? e2eEnv.CLERK_SECRET_KEY;
 checks.push({
   name: "E2E smoke (optional)",
   ok: Boolean(e2eSecret && e2eEmail),
   detail: e2eSecret && e2eEmail ? "CLERK_SECRET_KEY + E2E_CLERK_USER_EMAIL set" : "not configured",
-  remediation: "apps/web/.env.local.e2e.example and docs/development.md#e2e-smoke-tasks",
+  remediation: "apps/web/.env.e2e.example → .env.e2e.local — docs/development.md#e2e-smoke-tasks",
   optional: true,
 });
 

@@ -1,6 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { isRealConvexDeployment } from "../../packages/config/env-placeholders";
+import {
+  isRealConvexDeployment,
+  parseDotenvAssignmentValue,
+} from "../../packages/config/env-placeholders";
 
 /** Instructions printed when Convex codegen is required but not available. */
 export const CONVEX_LINK_HELP = `
@@ -44,7 +47,7 @@ export function isConvexLinked(root: string): boolean {
     return false;
   }
 
-  return isRealConvexDeployment(match[1]!.trim());
+  return isRealConvexDeployment(parseDotenvAssignmentValue(match[1]!));
 }
 
 /**

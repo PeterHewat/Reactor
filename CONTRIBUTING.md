@@ -38,9 +38,9 @@ To update outside ranges, edit versions in `package.json`, then run `bun update`
 - Do not mix `^6.0.3` in workspaces unless you intentionally want minor bumps
 - Bump TypeScript deliberately: edit `~6.0.3` in root and workspace packages together, then `bun install`
 
-## E2E and previews on pull requests
+## E2E and previews
 
-Full Playwright on PRs is **opt-in** via the `e2e` label and **blocks merge** when present; preview deploys use the `preview` label. See [docs/ci-cd.md](docs/ci-cd.md#ci-behavior) and [docs/development.md](docs/development.md#e2e-tests-playwright).
+Pull requests run **unit tests** and **web E2E smoke** (when `apps/web` changes). **Full Playwright** and **preview deploys** are manual: Actions → [E2E (full Playwright)](.github/workflows/e2e.yml) or [Preview Deployments](.github/workflows/preview.yml). See [docs/ci-cd.md](docs/ci-cd.md#manual-workflows).
 
 ## Agent rules
 

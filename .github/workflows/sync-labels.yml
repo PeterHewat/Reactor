@@ -1,4 +1,4 @@
-# Manual sync of issue/PR labels (release notes, Dependabot, CI opt-in labels).
+# Manual sync of issue/PR labels (release notes, Dependabot).
 # Keep in sync with .github/release.yml and workflows that reference label names.
 name: Sync GitHub labels
 
@@ -33,8 +33,6 @@ jobs:
             "chore|fef2c0|Internal work with no user-facing impact"
             "test|ededed|Test-only changes (excluded from release notes)"
             "ignore-for-release|ffffff|Exclude from generated release notes"
-            "e2e|f9d0c4|Run Playwright E2E in CI (opt-in PR label)"
-            "preview|c5def5|Deploy PR previews (opt-in PR label)"
             "monorepo|ededed|Monorepo-wide dependency update (Dependabot)"
             "typescript|3178c6|TypeScript-related dependency update (Dependabot)"
             "duplicate|cfd3d7|This issue or pull request already exists"

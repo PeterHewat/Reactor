@@ -7,8 +7,6 @@ changelog:
       - ignore-for-release
       - chore
       - test
-      - e2e
-      - preview
       - duplicate
       - invalid
       - wontfix

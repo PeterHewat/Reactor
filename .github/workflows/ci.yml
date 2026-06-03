@@ -331,68 +331,6 @@ jobs:
           path: apps/web/playwright-report-smoke/
           retention-days: 7
 
-  web-e2e:
-    name: Web E2E
-    runs-on: ubuntu-latest
-    needs: [detect-changes, tests-web]
-    if: |
-      needs.detect-changes.outputs.web == 'true' &&
-      github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.labels.*.name, 'e2e')
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Codegen, install browsers, and run Playwright (web)
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-        run: |
-          set -euo pipefail
-          bun scripts/generate-routes.ts
-          if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
-            bun scripts/generate-convex.ts
-            bunx playwright install chromium
-            bun run --filter @repo/web e2e
-          elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
-            echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
-            exit 1
-          else
-            echo "::notice::Skipping web E2E — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
-          fi
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report-web
-          path: apps/web/playwright-report/
-          retention-days: 7
-
-  marketing-e2e:
-    name: Marketing E2E
-    runs-on: ubuntu-latest
-    needs: [detect-changes, tests-marketing]
-    if: |
-      needs.detect-changes.outputs.marketing == 'true' &&
-      github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.labels.*.name, 'e2e')
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Install Playwright browsers
-        run: bunx playwright install chromium
-      - name: Run Playwright tests (marketing)
-        run: bun run --filter @repo/marketing e2e
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report-marketing
-          path: apps/marketing/playwright-report/
-          retention-days: 7
-
   ci-required:
     name: CI required
     runs-on: ubuntu-latest
@@ -410,14 +348,11 @@ jobs:
       - storybook-ui-web
       - coverage-ui-web
       - web-e2e-smoke
-      - web-e2e
-      - marketing-e2e
     if: always() && !cancelled() && needs.detect-changes.result == 'success'
     steps:
       - uses: actions/checkout@v6
       - name: Verify required jobs
         env:
-          PR_E2E_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'e2e') }}
           ANY: ${{ needs.detect-changes.outputs.any }}
           WEB: ${{ needs.detect-changes.outputs.web }}
           MARKETING: ${{ needs.detect-changes.outputs.marketing }}
@@ -438,6 +373,4 @@ jobs:
           STORYBOOK_RESULT: ${{ needs.storybook-ui-web.result }}
           COVERAGE_RESULT: ${{ needs.coverage-ui-web.result }}
           WEB_E2E_SMOKE_RESULT: ${{ needs.web-e2e-smoke.result }}
-          WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
-          MARKETING_E2E_RESULT: ${{ needs.marketing-e2e.result }}
         run: bash scripts/ci-verify-required.sh

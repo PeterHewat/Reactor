@@ -18,12 +18,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@clerk/react": "^6.7.2",
+    "@clerk/react": "^6.7.3",
     "@repo/config": "workspace:*",
     "@repo/tokens": "workspace:*",
     "@repo/ui-web": "workspace:*",
     "@repo/utils": "workspace:*",
-    "@tanstack/react-router": "^1.170.10",
+    "@tanstack/react-router": "^1.170.11",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "convex": "^1.40.0",
@@ -32,12 +32,12 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@clerk/testing": "^2.0.34",
+    "@clerk/testing": "^2.0.35",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.3.0",
     "@tanstack/react-router-devtools": "^1.167.0",
-    "@tanstack/router-cli": "^1.167.12",
-    "@tanstack/router-plugin": "^1.168.13",
+    "@tanstack/router-cli": "^1.167.13",
+    "@tanstack/router-plugin": "^1.168.14",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.15",

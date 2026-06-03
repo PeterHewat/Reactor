@@ -44,4 +44,8 @@ Full Playwright on PRs is **opt-in** via the `e2e` label and **blocks merge** wh
 
 ## Agent rules
 
-Follow [AGENTS.md](AGENTS.md) and [docs/spec/](docs/spec/) for feature work. Verify: `bun run format:fix && bun run lint && bun run typecheck && bun run test`.
+Follow [AGENTS.md](AGENTS.md) and [docs/spec/](docs/spec/) for feature work.
+
+- After editing a few files: `bunx prettier --write <path> …`
+- Full verify (code changes): `bun run format:fix && bun run lint && bun run typecheck && bun run test`
+- Docs-only minimum: `bunx prettier --write` on every touched path (see AGENTS.md § Verify gate)

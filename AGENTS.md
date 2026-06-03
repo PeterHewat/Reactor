@@ -39,8 +39,12 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 
 - **Write (agents):** `bunx prettier --write <paths>` or `bun run format:fix` — these update files on disk
 - **Check only (CI/humans):** `bun run format` runs `prettier --check` — it does **not** fix files; never use it when the goal is to format
-- After creating or editing files, run write-mode Prettier on touched paths (or `format:fix` for large changes) before finishing
+- **Scope:** Every path you create or edit in a turn — including Markdown (`*.md`), specs, YAML, and JSON. Docs-only or planning files are **not** exceptions
+- **When:** Run Prettier on touched paths **before** ending the turn — **after** your last edit to each path. If you edit again afterward, `Read` the file again or run Prettier again at the end
+- **Stale context:** Prettier updates disk only; the conversation may still hold pre-format text. Do not rely on memory for `StrReplace` `old_string` after formatting — re-read or format last
+- **Done:** Prettier has been run on every agent-touched path (not merely intended)
 - Do not hand-format spacing, wraps, or tables to match Prettier
+- **Humans (VS Code):** `.vscode/settings.json` enables format-on-save; commits still run lint-staged Prettier on staged files
 
 ## Tool Usage
 
@@ -48,7 +52,7 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 - Do not request review for: trivial changes, no file changes, fixing another review, or after every edit
 - Prefer `/local-review-uncommitted` for uncommitted work; `/local-review` for committed branch changes
 - Be specific: search before broad tool chains; batch independent reads together
-- After non-trivial changes, run the verify gate (Formatting first, then lint/typecheck/test)
+- After non-trivial **code** changes, run the verify gate (Formatting first, then lint/typecheck/test)
 - On Windows prefix Bash commands with `bash -c "..."` to avoid PowerShell `ls` alias; the prefix is a no-op on macOS/Linux
 
 ## Safety
@@ -74,7 +78,13 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 
 ## Verify gate
 
-Run after non-trivial file changes (no need to re-read formatted files unless debugging):
+**Markdown / docs-only edits** (no `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.astro` changed): minimum before finishing:
+
+```bash
+bunx prettier --write <each touched path>
+```
+
+**Code changes** (anything beyond docs-only): run the full gate (no need to re-read formatted files unless you edit again):
 
 ```bash
 bun run format:fix && bun run lint && bun run typecheck && bun run test

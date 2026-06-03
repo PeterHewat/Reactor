@@ -1,5 +1,5 @@
 # Create GitHub releases and deploy new tags (single workflow_dispatch run).
-# Rollback / redeploy an older tag: use the Deploy workflow instead.
+# Rollback / redeploy an older tag: use the Deploy Production workflow instead.
 #
 # USAGE: Actions → Release → Run workflow (scope, version bump)
 

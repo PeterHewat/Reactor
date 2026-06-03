@@ -1,6 +1,6 @@
 # Contributing
 
-Conventions for humans and agents working in this repo. For onboarding, see [docs/getting-started.md](docs/getting-started.md). For CI, releases, and E2E labels, see [docs/ci-cd.md](docs/ci-cd.md).
+Conventions for humans and agents working in this repo. For onboarding, see [docs/getting-started.md](docs/getting-started.md). For CI, releases, and manual E2E/preview workflows, see [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Git hooks (Husky)
 
@@ -40,7 +40,7 @@ To update outside ranges, edit versions in `package.json`, then run `bun update`
 
 ## E2E and previews
 
-Pull requests run **unit tests** and **web E2E smoke** (when `apps/web` changes). **Full Playwright** and **preview deploys** are manual: Actions → [E2E (full Playwright)](.github/workflows/e2e.yml) or [Preview Deployments](.github/workflows/preview.yml). See [docs/ci-cd.md](docs/ci-cd.md#manual-workflows).
+Pull requests run **unit tests** and **web E2E smoke** (when `apps/web` changes). **Full Playwright** and **preview deploys** are manual: Actions → pick branch with **Use workflow from** → [E2E](.github/workflows/e2e.yml) or [Preview](.github/workflows/preview.yml). See [docs/ci-cd.md](docs/ci-cd.md#manual-workflows).
 
 ## Agent rules
 

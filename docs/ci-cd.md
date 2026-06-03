@@ -6,20 +6,20 @@
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | [ci.yml](../.github/workflows/ci.yml)                   | Lint, test, and build on pull requests to `main` (not re-run on merge)                                 |
 | [release.yml](../.github/workflows/release.yml)         | Create GitHub release + deploy **new** tags                                                            |
-| [deploy.yml](../.github/workflows/deploy.yml)           | Deploy or **rollback** to an existing tag (e.g. `web-v1.0.0`)                                          |
-| [preview.yml](../.github/workflows/preview.yml)         | Manual Convex + Vercel preview deploys (`workflow_dispatch`)                                           |
+| [deploy.yml](../.github/workflows/deploy.yml)           | **Deploy Production** — redeploy or rollback an existing tag (e.g. `web-v1.0.0`)                       |
+| [preview.yml](../.github/workflows/preview.yml)         | **Deploy Preview** — manual branch previews (`workflow_dispatch`)                                      |
 | [e2e.yml](../.github/workflows/e2e.yml)                 | Manual full Playwright (web and/or marketing)                                                          |
 | [sync-labels.yml](../.github/workflows/sync-labels.yml) | One-time or occasional: sync issue/PR labels ([source of truth](../.github/workflows/sync-labels.yml)) |
 
 **New release:** Actions → **Release** → Run workflow (scope + version bump). Release notes are auto-generated from merged PRs using [.github/release.yml](../.github/release.yml) (label categories, exclusions).
 
-**Rollback / redeploy:** Actions → **Deploy** → Run workflow → tag `web-v1.0.0` (checks out that git tag, rebuilds, deploys to production).
+**Rollback / redeploy:** Actions → **Deploy Production** → Run workflow → tag `web-v1.0.0` (checks out that git tag, rebuilds, deploys to production).
 
 **CI vs deploy:** [ci.yml](../.github/workflows/ci.yml) runs on **pull requests to `main` only** — merging does not start another run. [deploy.yml](../.github/workflows/deploy.yml) only builds and ships. [Release](../.github/workflows/release.yml) verifies green CI on the release commit or required checks on the merged PR before tagging.
 
 **Web deploy codegen:** Production and preview web deploys run `bun scripts/generate-routes.ts` and `bun scripts/generate-convex.ts` before `vercel build` (`convex/_generated/` is not committed). Requires `CONVEX_DEPLOY_KEY` (production) or `CONVEX_PREVIEW_DEPLOY_KEY` (previews).
 
-**PR CI:** Lint, unit tests, builds, and **web E2E smoke** on pull requests (path-based). **Full E2E** and **preview deploys** are manual workflows only ([below](#manual-workflows)).
+**PR CI:** Lint, unit tests, builds, and **web E2E smoke** on pull requests. **Full E2E** and **preview deploys** are manual workflows ([below](#manual-workflows)).
 
 **No Turborepo/Nx:** Path-based jobs and [setup-bun](../.github/actions/setup-bun/action.yml). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
@@ -70,7 +70,7 @@ Direct pushes to `main` (if allowed) will **not** run [ci.yml](../.github/workfl
 
 - **Smoke (tasks + Clerk + Convex):** `bun run --filter @repo/web e2e:smoke` — runs on every PR when `apps/web/**` changes (`web-e2e-smoke`). Configure `CONVEX_DEPLOY_KEY` (codegen), `CLERK_SECRET_KEY`, `E2E_CLERK_USER_EMAIL`, `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` in GitHub Actions; see [development.md](./development.md#e2e-smoke-tasks).
 - **Full suite:** `bunx playwright install chromium` once, then `bun run --filter @repo/web e2e` (or `@repo/marketing`)
-- **CI (full):** Actions → **E2E (full Playwright)** → Run workflow — pick branch and suites ([e2e.yml](../.github/workflows/e2e.yml)); not merge-blocking
+- **CI (full):** Actions → **E2E NRT** → Run workflow — pick branch via **Use workflow from** and select suites ([e2e.yml](../.github/workflows/e2e.yml)); not merge-blocking
 - **Naming:** `*.e2e.ts` (full), `*.smoke.e2e.ts` (smoke)
 
 **Smoke deployment:** `web-e2e-smoke` creates and deletes tasks against whatever deployment `VITE_CONVEX_URL` points to. In GitHub Actions, set that secret to your **dev** deployment URL (the same one you use locally after `bun run dev:convex`) — **not** production after you ship. Use a dedicated Clerk test user (`E2E_CLERK_USER_EMAIL`). Vercel production/preview use their own `VITE_CONVEX_URL` in the Vercel dashboard; do not reuse the production URL for CI smoke.
@@ -121,44 +121,38 @@ Tune CSP in `apps/web/vercel.json` for your Clerk domain ([prompts/security-revi
 
 ## Manual workflows
 
-Heavy or deploy workflows do not run on pull request events. Run them from **Actions** when you need them.
+Heavy workflows run only from **Actions** → **Run workflow**. Choose the **branch** with GitHub’s **Use workflow from** dropdown; that ref is checked out and deployed/tested (no separate branch text field).
 
-### Preview deployments
+### Deploy Preview
 
-**Workflow:** [preview.yml](../.github/workflows/preview.yml) → **Preview Deployments** → Run workflow
+**Workflow:** [preview.yml](../.github/workflows/preview.yml) → **Deploy Preview**
 
-| Input              | Purpose                                                                 |
-| ------------------ | ----------------------------------------------------------------------- |
-| `branch`           | Branch or ref to deploy (required)                                      |
-| `preview_name`     | Convex preview deployment name (optional; defaults from branch)         |
-| `deploy_convex`    | Create/update Convex preview                                            |
-| `deploy_web`       | Vercel preview for `apps/web` (needs Convex URL from preview or secret) |
-| `deploy_marketing` | Vercel preview for `apps/marketing`                                     |
-| `pr_number`        | Optional — post URLs as a PR comment                                    |
+| Input              | Purpose                             |
+| ------------------ | ----------------------------------- |
+| `deploy_convex`    | Create/update Convex preview        |
+| `deploy_web`       | Vercel preview for `apps/web`       |
+| `deploy_marketing` | Vercel preview for `apps/marketing` |
 
-**Secrets:** `CONVEX_PREVIEW_DEPLOY_KEY` (not production `CONVEX_DEPLOY_KEY`), `VERCEL_*`, `VITE_CLERK_PUBLISHABLE_KEY` for web. Web-only without Convex preview can use `VITE_CONVEX_URL` (dev deployment) instead.
+**Convex preview name** is derived from the branch (`manual-<slug>`). **PR comments:** if exactly one open PR uses that branch head ref, the workflow posts or updates the preview comment; otherwise URLs appear only in the job summary.
 
-**Convex preview key:** Convex Dashboard → Settings → **Generate Preview Deploy Key** → `CONVEX_PREVIEW_DEPLOY_KEY`.
+**Secrets:** `CONVEX_PREVIEW_DEPLOY_KEY`, `VERCEL_*`, `VITE_CLERK_PUBLISHABLE_KEY` for web. Web without Convex preview can use `VITE_CONVEX_URL` (dev deployment) in secrets.
 
-**Clerk:** Allow your Vercel preview origin if you test sign-in on previews.
-
-URLs appear in the workflow **job summary**; optional PR comment when `pr_number` is set. Preview Convex deployments expire automatically ([Convex preview docs](https://docs.convex.dev/production/hosting/preview-deployments)).
+Preview Convex deployments expire automatically ([Convex preview docs](https://docs.convex.dev/production/hosting/preview-deployments)).
 
 ### Full E2E
 
-**Workflow:** [e2e.yml](../.github/workflows/e2e.yml) → **E2E (full Playwright)** → Run workflow
+**Workflow:** [e2e.yml](../.github/workflows/e2e.yml) → **E2E NRT**
 
-| Input           | Purpose                          |
-| --------------- | -------------------------------- |
-| `branch`        | Branch or ref to test (required) |
-| `run_web`       | `@repo/web` Playwright suite     |
-| `run_marketing` | `@repo/marketing` Playwright     |
+| Input           | Purpose                      |
+| --------------- | ---------------------------- |
+| `run_web`       | `@repo/web` Playwright suite |
+| `run_marketing` | `@repo/marketing` Playwright |
 
-Uses the same secrets as smoke E2E where applicable (`CONVEX_DEPLOY_KEY`, Clerk, `VITE_*`). Reports upload as workflow artifacts. Does **not** block PR merge.
+Does **not** block PR merge. Reports upload as workflow artifacts.
 
 ## PR labels and release notes
 
-Release notes group **merged PRs** by label ([release.yml](../.github/release.yml)). Squash-merge PRs so each PR becomes one commit on `main`. Use one primary label per PR (`enhancement`, `fix`, `breaking-change`, `security`, `documentation`, `dependencies`). Use `test`, `chore`, or `ignore-for-release` for work that should not appear in release notes.
+Release notes group **merged PRs** by label ([release.yml](../.github/release.yml)). Squash-merge PRs so each PR becomes one commit on `main`. Use one primary label per PR (`enhancement`, `fix`, `breaking-change`, `security`, `documentation`, `dependencies`). Use `chore` for CI, workflows, and other internal changes; `test` or `ignore-for-release` when those fit better.
 
 | Label                                                                                | Role                                          |
 | ------------------------------------------------------------------------------------ | --------------------------------------------- |
@@ -181,4 +175,4 @@ Or from a machine with the [GitHub CLI](https://cli.github.com/) authenticated:
 gh workflow run sync-labels.yml -R owner/repo
 ```
 
-Safe to re-run (`gh label create --force` updates color/description). Keep labels aligned with [.github/release.yml](../.github/release.yml).
+Safe to re-run (`gh label create --force` updates color/description). Use `chore` for CI and workflow changes. Keep labels aligned with [.github/release.yml](../.github/release.yml).

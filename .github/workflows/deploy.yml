@@ -1,11 +1,11 @@
 # Deploy a release tag to production (Vercel / Convex).
 # Quality gates run in ci.yml on main/PRs — deploy only builds and ships.
 #
-# USAGE: Actions → Deploy → Run workflow → tag e.g. web-v1.0.0
+# USAGE: Actions → Deploy Production → Run workflow → tag e.g. web-v1.0.0
 #
 # REQUIRED GITHUB SECRETS: see docs/ci-cd.md
 
-name: Deploy
+name: Deploy Production
 
 on:
   workflow_call:

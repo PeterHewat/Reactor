@@ -1,61 +1,81 @@
 name: Preview Deployments
 
-# Opt-in PR previews: add the `preview` label (Convex preview + Vercel preview URLs).
-# Requires secrets: CONVEX_PREVIEW_DEPLOY_KEY, VERCEL_*, VITE_CLERK_PUBLISHABLE_KEY (web only).
-# See docs/ci-cd.md#pr-preview-deployments
-
+# Manual preview deploys (Convex + Vercel). See docs/ci-cd.md#preview-deployments
 on:
-  pull_request:
-    types: [labeled, synchronize, opened, reopened]
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch name or ref to deploy (e.g. main, feature/my-work)
+        required: true
+        default: main
+        type: string
+      preview_name:
+        description: Convex preview deployment name (optional; defaults from branch)
+        required: false
+        type: string
+      deploy_convex:
+        description: Deploy Convex preview
+        required: true
+        default: true
+        type: boolean
+      deploy_web:
+        description: Deploy web app to Vercel preview
+        required: true
+        default: true
+        type: boolean
+      deploy_marketing:
+        description: Deploy marketing site to Vercel preview
+        required: true
+        default: true
+        type: boolean
+      pr_number:
+        description: PR number to post/update a comment with URLs (optional)
+        required: false
+        type: string
 
 permissions:
   contents: read
   pull-requests: write
 
 concurrency:
-  group: preview-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: preview-manual-${{ github.run_id }}
+  cancel-in-progress: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   NODE_VERSION: "24"
-  PREVIEW_NAME: pr-${{ github.event.pull_request.number }}
 
 jobs:
-  detect-changes:
+  resolve-inputs:
+    name: Resolve inputs
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'preview')
     outputs:
-      web: ${{ steps.detect.outputs.web }}
-      marketing: ${{ steps.detect.outputs.marketing }}
-      convex: ${{ steps.detect.outputs.convex }}
+      preview_name: ${{ steps.meta.outputs.preview_name }}
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed projects
-        id: detect
+      - name: Set preview deployment name
+        id: meta
         run: |
-          export CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} 2>/dev/null || echo "")
-
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-
-          bash scripts/ci-detect-changes.sh
+          set -euo pipefail
+          if [ -n "${{ inputs.preview_name }}" ]; then
+            name="${{ inputs.preview_name }}"
+          else
+            slug=$(echo "${{ inputs.branch }}" | sed 's|refs/heads/||' | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/^-*//;s/-*$//' | cut -c1-48)
+            name="manual-${slug:-run}"
+          fi
+          echo "preview_name=$name" >> "$GITHUB_OUTPUT"
+          echo "Convex preview name: $name"
 
   preview-convex:
     name: Convex preview
     runs-on: ubuntu-latest
-    needs: detect-changes
-    if: |
-      contains(github.event.pull_request.labels.*.name, 'preview') &&
-      (needs.detect-changes.outputs.convex == 'true' || needs.detect-changes.outputs.web == 'true')
+    needs: resolve-inputs
+    if: inputs.deploy_convex
     outputs:
       convex_url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -74,7 +94,7 @@ jobs:
             echo "::error::CONVEX_PREVIEW_DEPLOY_KEY is required for Convex previews."
             exit 1
           fi
-          bunx convex deploy --preview-create "${{ env.PREVIEW_NAME }}"
+          bunx convex deploy --preview-create "${{ needs.resolve-inputs.outputs.preview_name }}"
           URL="${CONVEX_URL:-}"
           if [ -z "$URL" ] && [ -f .env.local ]; then
             URL=$(grep -E '^CONVEX_URL=' .env.local | head -n1 | cut -d= -f2- | tr -d '"' | tr -d "'")
@@ -88,14 +108,17 @@ jobs:
   preview-web:
     name: Web preview (Vercel)
     runs-on: ubuntu-latest
-    needs: [detect-changes, preview-convex]
+    needs: [resolve-inputs, preview-convex]
     if: |
-      contains(github.event.pull_request.labels.*.name, 'preview') &&
-      needs.detect-changes.outputs.web == 'true'
+      always() &&
+      inputs.deploy_web &&
+      (needs.preview-convex.result == 'success' || needs.preview-convex.result == 'skipped')
     outputs:
       vercel_url: ${{ steps.vercel.outputs.preview-url }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -111,12 +134,12 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-          VITE_CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
+          VITE_CONVEX_URL: ${{ inputs.deploy_convex && needs.preview-convex.outputs.convex_url || secrets.VITE_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
           if [ -z "${VITE_CONVEX_URL:-}" ]; then
-            echo "::error::Convex preview URL missing — preview-convex job must succeed first."
+            echo "::error::Web preview needs a Convex URL — enable deploy_convex or set VITE_CONVEX_URL in Actions secrets."
             exit 1
           fi
           bun scripts/generate-routes.ts
@@ -130,14 +153,14 @@ jobs:
   preview-marketing:
     name: Marketing preview (Vercel)
     runs-on: ubuntu-latest
-    needs: detect-changes
-    if: |
-      contains(github.event.pull_request.labels.*.name, 'preview') &&
-      needs.detect-changes.outputs.marketing == 'true'
+    needs: resolve-inputs
+    if: inputs.deploy_marketing
     outputs:
       vercel_url: ${{ steps.vercel.outputs.preview-url }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -159,104 +182,119 @@ jobs:
           URL=$(bunx vercel deploy --prebuilt --token="$VERCEL_TOKEN")
           echo "preview-url=$URL" >> "$GITHUB_OUTPUT"
 
-  preview-comment:
+  preview-summary:
     name: Preview summary
     runs-on: ubuntu-latest
-    needs: [detect-changes, preview-convex, preview-web, preview-marketing]
-    if: |
-      always() &&
-      contains(github.event.pull_request.labels.*.name, 'preview') &&
-      needs.detect-changes.result == 'success'
+    needs: [resolve-inputs, preview-convex, preview-web, preview-marketing]
+    if: always()
     steps:
-      - name: Comment on pull request
-        uses: actions/github-script@v9
+      - name: Write job summary
         env:
+          BRANCH: ${{ inputs.branch }}
+          PREVIEW_NAME: ${{ needs.resolve-inputs.outputs.preview_name }}
           CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
-          PREVIEW_NAME: ${{ env.PREVIEW_NAME }}
           WEB_URL: ${{ needs.preview-web.outputs.vercel_url }}
           MARKETING_URL: ${{ needs.preview-marketing.outputs.vercel_url }}
           CONVEX_RESULT: ${{ needs.preview-convex.result }}
           WEB_RESULT: ${{ needs.preview-web.result }}
           MARKETING_RESULT: ${{ needs.preview-marketing.result }}
-          WEB_REQUESTED: ${{ needs.detect-changes.outputs.web }}
-          MARKETING_REQUESTED: ${{ needs.detect-changes.outputs.marketing }}
-          CONVEX_REQUESTED: ${{ needs.detect-changes.outputs.convex }}
+          DEPLOY_CONVEX: ${{ inputs.deploy_convex }}
+          DEPLOY_WEB: ${{ inputs.deploy_web }}
+          DEPLOY_MARKETING: ${{ inputs.deploy_marketing }}
+        run: |
+          {
+            echo "## Preview deployments"
+            echo ""
+            echo "- **Branch:** \`$BRANCH\`"
+            echo "- **Convex preview name:** \`$PREVIEW_NAME\`"
+            echo ""
+            if [ "$DEPLOY_CONVEX" = "true" ]; then
+              if [ "$CONVEX_RESULT" = "success" ] && [ -n "$CONVEX_URL" ]; then
+                echo "### Convex"
+                echo "- $CONVEX_URL"
+              else
+                echo "### Convex"
+                echo "- Failed or skipped (see job logs)"
+              fi
+              echo ""
+            fi
+            if [ "$DEPLOY_WEB" = "true" ]; then
+              if [ "$WEB_RESULT" = "success" ] && [ -n "$WEB_URL" ]; then
+                echo "### Web (Vercel)"
+                echo "- $WEB_URL"
+              else
+                echo "### Web (Vercel)"
+                echo "- Failed or skipped (see job logs)"
+              fi
+              echo ""
+            fi
+            if [ "$DEPLOY_MARKETING" = "true" ]; then
+              if [ "$MARKETING_RESULT" = "success" ] && [ -n "$MARKETING_URL" ]; then
+                echo "### Marketing (Vercel)"
+                echo "- $MARKETING_URL"
+              else
+                echo "### Marketing (Vercel)"
+                echo "- Failed or skipped (see job logs)"
+              fi
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on pull request
+        if: inputs.pr_number != ''
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          BRANCH: ${{ inputs.branch }}
+          PREVIEW_NAME: ${{ needs.resolve-inputs.outputs.preview_name }}
+          CONVEX_URL: ${{ needs.preview-convex.outputs.convex_url }}
+          WEB_URL: ${{ needs.preview-web.outputs.vercel_url }}
+          MARKETING_URL: ${{ needs.preview-marketing.outputs.vercel_url }}
+          CONVEX_RESULT: ${{ needs.preview-convex.result }}
+          WEB_RESULT: ${{ needs.preview-web.result }}
+          MARKETING_RESULT: ${{ needs.preview-marketing.result }}
+          DEPLOY_CONVEX: ${{ inputs.deploy_convex }}
+          DEPLOY_WEB: ${{ inputs.deploy_web }}
+          DEPLOY_MARKETING: ${{ inputs.deploy_marketing }}
         with:
           script: |
             const lines = [
               "## Preview deployments",
               "",
-              "Triggered by the `preview` label. Push new commits or re-apply the label to refresh.",
+              `Manual run on branch \`${process.env.BRANCH}\` (Convex preview \`${process.env.PREVIEW_NAME}\`).`,
               "",
             ];
 
-            const convexRequested =
-              process.env.CONVEX_REQUESTED === "true" || process.env.WEB_REQUESTED === "true";
-            const anyRequested =
-              convexRequested ||
-              process.env.WEB_REQUESTED === "true" ||
-              process.env.MARKETING_REQUESTED === "true";
-
-            if (convexRequested) {
-              if (process.env.CONVEX_RESULT === "success") {
-                const url = process.env.CONVEX_URL;
-                const name = process.env.PREVIEW_NAME;
-                lines.push(
-                  "### Convex",
-                  url
-                    ? `- Deployment URL: ${url}`
-                    : `- Preview deployment \`${name}\` (open the [Convex dashboard](https://dashboard.convex.dev) → Deployments)`,
-                  "",
-                );
-              } else if (process.env.CONVEX_RESULT === "skipped") {
-                lines.push("### Convex", "- Skipped (no `convex/` or `apps/web/` changes)", "");
+            if (process.env.DEPLOY_CONVEX === "true") {
+              if (process.env.CONVEX_RESULT === "success" && process.env.CONVEX_URL) {
+                lines.push("### Convex", `- ${process.env.CONVEX_URL}`, "");
               } else {
-                lines.push(
-                  "### Convex",
-                  "- Failed — check workflow logs (is `CONVEX_PREVIEW_DEPLOY_KEY` set?)",
-                  "",
-                );
+                lines.push("### Convex", "- Failed — check workflow logs", "");
               }
             }
 
-            if (process.env.WEB_REQUESTED === "true") {
+            if (process.env.DEPLOY_WEB === "true") {
               if (process.env.WEB_RESULT === "success" && process.env.WEB_URL) {
                 lines.push("### Web (Vercel)", `- ${process.env.WEB_URL}`, "");
-              } else if (process.env.WEB_RESULT === "skipped") {
-                lines.push("### Web (Vercel)", "- Skipped", "");
               } else {
-                lines.push(
-                  "### Web (Vercel)",
-                  "- Failed — check workflow logs (`VERCEL_*`, `VITE_CLERK_PUBLISHABLE_KEY`)",
-                  "",
-                );
+                lines.push("### Web (Vercel)", "- Failed — check workflow logs", "");
               }
             }
 
-            if (process.env.MARKETING_REQUESTED === "true") {
+            if (process.env.DEPLOY_MARKETING === "true") {
               if (process.env.MARKETING_RESULT === "success" && process.env.MARKETING_URL) {
                 lines.push("### Marketing (Vercel)", `- ${process.env.MARKETING_URL}`, "");
-              } else if (process.env.MARKETING_RESULT === "skipped") {
-                lines.push("### Marketing (Vercel)", "- Skipped", "");
               } else {
                 lines.push(
                   "### Marketing (Vercel)",
-                  "- Failed — check workflow logs (`VERCEL_*`)",
+                  "- Failed — check workflow logs",
                   "",
                 );
               }
-            }
-
-            if (!anyRequested) {
-              lines.push(
-                "_No deployable paths changed (`apps/web`, `apps/marketing`, `convex/`)._",
-                "",
-              );
             }
 
             const marker = "<!-- preview-deployments -->";
             const body = `${marker}\n${lines.join("\n")}`;
-            const prNumber = context.payload.pull_request.number;
+            const prNumber = Number(process.env.PR_NUMBER);
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,

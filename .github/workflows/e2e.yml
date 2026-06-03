@@ -1,0 +1,98 @@
+name: E2E (full Playwright)
+
+# Manual full E2E — not run on pull requests. PRs use web-e2e-smoke in ci.yml.
+# See docs/ci-cd.md#e2e-tests-playwright
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch name or ref to test (e.g. main, feature/my-work)
+        required: true
+        default: main
+        type: string
+      run_web:
+        description: Run @repo/web Playwright suite
+        required: true
+        default: true
+        type: boolean
+      run_marketing:
+        description: Run @repo/marketing Playwright suite
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-manual-${{ github.run_id }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_VERSION: "24"
+
+jobs:
+  web-e2e:
+    name: Web E2E
+    runs-on: ubuntu-latest
+    if: inputs.run_web
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
+      - uses: ./.github/actions/setup-bun
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Codegen, install browsers, and run Playwright (web)
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          bun scripts/generate-routes.ts
+          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+            if [ "${{ vars.CI_STRICT }}" = "1" ]; then
+              echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
+              exit 1
+            fi
+            echo "::error::Web E2E requires CONVEX_DEPLOY_KEY for convex/_generated."
+            exit 1
+          fi
+          bun scripts/generate-convex.ts
+          bunx playwright install chromium
+          bun run --filter @repo/web e2e
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-web-manual
+          path: apps/web/playwright-report/
+          retention-days: 7
+
+  marketing-e2e:
+    name: Marketing E2E
+    runs-on: ubuntu-latest
+    if: inputs.run_marketing
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
+      - uses: ./.github/actions/setup-bun
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install Playwright browsers
+        run: bunx playwright install chromium
+      - name: Run Playwright tests (marketing)
+        run: bun run --filter @repo/marketing e2e
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-marketing-manual
+          path: apps/marketing/playwright-report/
+          retention-days: 7

@@ -164,7 +164,7 @@ Home, routing, theme, and i18n tests do not require Clerk secrets:
 bun run --filter @repo/web e2e
 ```
 
-On PRs, add the **`e2e`** label to run the full Playwright suite and require it for merge (**CI required**). CI does not run again after merge — see [ci-cd.md](./ci-cd.md#branch-protection).
+Run the full suite in CI manually: Actions → **E2E (full Playwright)** ([ci-cd.md](./ci-cd.md#full-e2e)). PRs only run smoke E2E automatically. CI does not run again after merge — see [ci-cd.md](./ci-cd.md#branch-protection).
 
 CSP on deploys: `apps/web/vercel.json` — [prompts/security-review.md](../prompts/security-review.md).
 

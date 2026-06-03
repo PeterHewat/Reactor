@@ -26,7 +26,6 @@ shared="${SHARED:-false}"
 config="${CONFIG:-false}"
 docs_only="${DOCS_ONLY:-false}"
 convex_ci_tests="${CONVEX_CI_TESTS:-false}"
-pr_e2e_label="${PR_E2E_LABEL:-false}"
 
 if [ "$any" = "true" ] || { [ "$docs_only" = "true" ] && [ "$any" = "false" ]; }; then
   check_job "quality" "true" "${QUALITY_RESULT:-}"
@@ -38,17 +37,11 @@ if [ "$web" = "true" ]; then
   check_job "storybook-ui-web" "true" "${STORYBOOK_RESULT:-}"
   check_job "coverage-ui-web" "true" "${COVERAGE_RESULT:-}"
   check_job "web-e2e-smoke" "true" "${WEB_E2E_SMOKE_RESULT:-}"
-  if [ "$pr_e2e_label" = "true" ]; then
-    check_job "web-e2e" "true" "${WEB_E2E_RESULT:-}"
-  fi
 fi
 
 if [ "$marketing" = "true" ]; then
   check_job "build-marketing" "true" "${BUILD_MARKETING_RESULT:-}"
   check_job "tests-marketing" "true" "${TESTS_MARKETING_RESULT:-}"
-  if [ "$pr_e2e_label" = "true" ]; then
-    check_job "marketing-e2e" "true" "${MARKETING_E2E_RESULT:-}"
-  fi
 fi
 
 if [ "$convex" = "true" ] && [ "$convex_ci_tests" = "true" ]; then

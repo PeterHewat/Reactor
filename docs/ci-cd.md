@@ -29,21 +29,11 @@ Job definitions live in [ci.yml](../.github/workflows/ci.yml). Use **CI required
 
 **Docs-only PRs:** only **quality** runs Prettier; lint/typecheck/build are skipped.
 
-**Without `CONVEX_DEPLOY_KEY`:** `convex/_generated/` is not committed. Typecheck, web build, `@repo/web` tests, and Convex tests run `bun scripts/generate-convex.ts` when the key exists; otherwise they log a `::notice::` and exit 0.
+**`CONVEX_DEPLOY_KEY`:** `convex/_generated/` is not committed. Jobs that typecheck, build, or test the web app or Convex backend run `bun scripts/generate-convex.ts` and **fail** if the deploy key is missing ([getting-started.md](./getting-started.md#5-github-actions-secrets)).
 
 **Web job:** When `apps/web/**` changes, one job builds `@repo/web` and runs `test:coverage` for `@repo/web`, `@repo/ui-web`, and `@repo/utils` (plus utils integration tests). `@repo/web` and `@repo/ui-web` enforce minimum coverage percentages.
 
-**Package / marketing / Convex jobs:** `test:coverage` for `@repo/config`, `@repo/env-core`, `@repo/marketing`, and `@repo/convex` when those paths change (Convex job still requires `CONVEX_DEPLOY_KEY`).
-
-### Optional CI guardrails
-
-Repository variables (**Settings → Secrets and variables → Actions → Variables**) change behavior only when secrets are **missing** or removed:
-
-| Variable    | When set to `1`                                                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `CI_STRICT` | Fail typecheck, web build/tests, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
-
-Set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` exists ([getting-started.md](./getting-started.md)) so missing keys fail CI instead of skipping.
+**Package / marketing / Convex jobs:** `test:coverage` for `@repo/config`, `@repo/env-core`, `@repo/marketing`, and `@repo/convex` when those paths change.
 
 ## Branch protection
 

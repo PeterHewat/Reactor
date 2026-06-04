@@ -68,12 +68,6 @@ async function main(): Promise<void> {
 
   copyTemplateIfMissing("apps/web/.env.example", "apps/web/.env.local");
 
-  if (!existsSync(resolve(root, "convex/auth.config.ts"))) {
-    copyTemplateIfMissing("convex/auth.config.ts.example", "convex/auth.config.ts");
-  } else {
-    console.log("✓ convex/auth.config.ts present");
-  }
-
   const github = resolveGitHubRepo(root);
   if (github) {
     const identity = applyIdentity(root, github);

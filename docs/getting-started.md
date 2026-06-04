@@ -1,6 +1,8 @@
 # Getting started
 
-Starter for a product web app (React + Vite), marketing site (Astro), and Convex + Clerk backend. **Production** (GitHub Actions, Vercel, releases) is in [ci-cd.md](./ci-cd.md).
+Starter for a product web app (React + Vite), marketing site (Astro), and Convex + Clerk backend. Shipping and CI are in [ci-cd.md](./ci-cd.md).
+
+The template includes a small signed-in CRUD todo list (`/tasks`) to prove Clerk, Convex, and the web app work together. Use it as your setup check; replace it with your own product when you are ready.
 
 [Prerequisites](./development.md#prerequisites): Git, Bun, Node.
 
@@ -15,28 +17,25 @@ bun install
 bun scripts/setup.ts
 ```
 
-`setup` copies `apps/web/.env.example`, sets `PRODUCT_NAME` from `git remote` when possible, updates README off the upstream template, and runs route codegen + `doctor`.
+`setup` copies [apps/web/.env.example](../apps/web/.env.example) to [apps/web/.env.local](../apps/web/.env.local), sets `PRODUCT_NAME` from `git remote` when possible, updates README off the upstream template, and runs route codegen + `doctor`.
 
-### 2. Clerk
+### 2. Clerk and the web app
 
-[Create an application](https://dashboard.clerk.com).
-
-- **Publishable key** (`pk_test_…`) — Clerk → Configure → API keys → **React** → `apps/web/.env.local` as `VITE_CLERK_PUBLISHABLE_KEY`
-- **Issuer** (`https://….clerk.accounts.dev`) — Clerk → Sessions → JWT templates → **Convex** preset → Convex deployment `CLERK_JWT_ISSUER_DOMAIN` (not in web `.env.local`)
-
-Add `CLERK_SECRET_KEY` and `E2E_CLERK_USER_EMAIL` to `apps/web/.env.local` for Playwright (see [development.md](./development.md#e2e-tests-playwright)). Optional: [Google OAuth branding](https://console.cloud.google.com/apis/credentials/consent) if the consent screen should show your product name instead of “Clerk”.
+1. [Create a Clerk application](https://dashboard.clerk.com).
+2. Open [apps/web/.env.local](../apps/web/.env.local) and replace each placeholder using the comments for guidance. E2E variables are optional until [Playwright](./development.md#e2e-tests-playwright).
 
 ### 3. Convex
 
-On the **dev** deployment (Convex dashboard → Settings → Environment variables), set `CLERK_JWT_ISSUER_DOMAIN` to the Issuer from step 2, then:
+1. In the [Convex dashboard](https://dashboard.convex.dev), open your **Development** deployment → **Settings** → **Environment variables** and add **`CLERK_JWT_ISSUER_DOMAIN`**. In Clerk: **Sessions** → **JWT templates** → **Convex** preset → copy the **Issuer** URL (e.g. `https://your-app.clerk.accounts.dev`).
+2. Link the project and start the dev backend:
 
 ```bash
 bun run dev:convex
 ```
 
-In `apps/web/.env.local`, set `VITE_CONVEX_URL` to your deployment URL (from the `dev:convex` banner or the Convex dashboard).
+Follow the CLI prompts on first run. Set `VITE_CONVEX_URL` in [apps/web/.env.local](../apps/web/.env.local) to your deployment URL (shown in the terminal or the Convex dashboard) if it is still a placeholder.
 
-### 4. Run and verify `/tasks`
+### 4. Run and verify the sample app
 
 ```bash
 bun run dev:full
@@ -45,16 +44,19 @@ bun run dev:full
 - Web: [localhost:5173/tasks](http://localhost:5173/tasks)
 - Marketing: [localhost:4321](http://localhost:4321)
 
-Run `bun scripts/doctor.ts` when env is complete. Commands: [development.md](./development.md#commands).
+Day-to-day commands: [development.md](./development.md#commands).
+
+### 5. GitHub Actions secrets
+
+Before opening pull requests that touch the web app or Convex backend, add at least **`CONVEX_DEPLOY_KEY`** in GitHub (**Settings → Secrets and variables → Actions**). See [GitHub Actions secrets](./ci-cd.md#github-actions-secrets) for the full list (Clerk, Vercel, E2E, and so on).
 
 ---
 
-## Production
+## Next
 
-When `/tasks` works locally:
+When the sample app works locally and CI secrets are configured:
 
-1. **GitHub Actions** — [secrets](./ci-cd.md#github-actions-secrets) (`CONVEX_DEPLOY_KEY`, Clerk/Convex URLs for CI), then `CI_STRICT=1`. Enable [branch protection](./ci-cd.md#branch-protection) on `main` (PR-only merges; required checks). Run [Sync GitHub labels](../.github/workflows/sync-labels.yml) once.
-2. **Convex + Vercel** — production `CLERK_JWT_ISSUER_DOMAIN`; Vercel projects for `apps/web` and `apps/marketing` ([ci-cd.md](./ci-cd.md)). Tune [apps/web/vercel.json](../apps/web/vercel.json) CSP if your Clerk host differs ([security-review](../prompts/security-review.md)).
-3. **Your product** — remove the sample tasks code and [docs/spec/v0/](./spec/v0/); add [product.md](./product.md), [architecture.md](./architecture.md), and specs under [docs/spec/](./spec/README.md). `setup` already updates README and `PRODUCT_NAME` when `git remote` is set. Optionally rename `@repo/*`.
-
-Ship with the **Release** workflow ([ci-cd.md](./ci-cd.md)).
+- [Branch protection](./ci-cd.md#branch-protection)
+- [Vercel (web + marketing)](./ci-cd.md#vercel-web--marketing)
+- [Releases](./ci-cd.md#workflows)
+- [Replace the tasks demo](./spec/README.md) with your own specs

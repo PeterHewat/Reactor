@@ -74,7 +74,7 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 | Path                                                  | Restore with                                                                |
 | ----------------------------------------------------- | --------------------------------------------------------------------------- |
 | `convex/_generated/`, `apps/web/src/routeTree.gen.ts` | `bun scripts/generate.ts` (`pretypecheck` / `pretest` run it automatically) |
-| `.agents/`, `skills-lock.json`                        | `bunx convex ai-files install` (via `bun scripts/generate.ts`)              |
+| `.agents/`, `skills-lock.json`                        | `bunx convex ai-files install` (optional; see `bun scripts/doctor.ts`)      |
 
 ## Verify gate
 

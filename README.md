@@ -12,8 +12,6 @@
 
 **Reactor** is a production-shaped **Bun monorepo template** for teams shipping a **product web app** (React), a **marketing site** (Astro), and a **Convex + Clerk** backend—with shared packages, per-surface CI/CD, and agent-first conventions (`AGENTS.md`).
 
-[**Use this template**](https://github.com/PeterHewat/Reactor/generate) to create your repository—replace the sample **tasks** slice with your product while keeping env wiring, monorepo layout, and deploy tags. It is **not** a deployable SaaS out of the box.
-
 **Good fit:** product + marketing + realtime backend, Vercel deploys, AI-assisted development.
 
 ## Resources

@@ -5,19 +5,18 @@ Shared behaviour for every v0 epic. Read this before [tasks.md](./tasks.md), [sh
 ## Authentication
 
 - **Web app:** Clerk via `@clerk/react` when `VITE_CLERK_PUBLISHABLE_KEY` is set (`apps/web/src/providers/app-providers.tsx`).
-- **Convex:** JWT validation via committed `convex/auth.config.ts` and dashboard var `CLERK_JWT_ISSUER_DOMAIN`.
+- **Convex:** JWT validation via `CLERK_JWT_ISSUER_DOMAIN` in the Convex dashboard.
 - **Tasks (F-01):** All `api.tasks.*` handlers call `requireIdentity()` — tasks are scoped to `identity.subject`.
 - **Shell (F-02):** Home route (`/`) renders without Clerk or Convex.
 
 ## Environment (degraded mode)
 
-| Layer            | File                      | Required for demo                                       |
+| Layer            | Where                     | Required for demo                                       |
 | ---------------- | ------------------------- | ------------------------------------------------------- |
-| Convex CLI       | Root `.env.local`         | Tasks + typecheck                                       |
 | Web (Vite)       | `apps/web/.env.local`     | Tasks (`VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY`) |
 | Convex dashboard | `CLERK_JWT_ISSUER_DOMAIN` | Tasks auth                                              |
 
-When Convex/Clerk env is missing, the web app shows setup instructions (`BackendSetup`) instead of crashing. See [monorepo-structure.md](../../monorepo-structure.md) for the three-layer env model.
+When Convex/Clerk env is missing, the web app shows setup instructions (`BackendSetup`) instead of crashing. Setup: [getting-started.md](../../getting-started.md).
 
 ## Data model (tasks demo)
 

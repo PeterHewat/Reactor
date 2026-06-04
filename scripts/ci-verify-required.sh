@@ -47,8 +47,7 @@ if [ ${#failures[@]} -gt 0 ]; then
     echo "  - $f"
   done
   echo ""
-  echo "Skipped Convex/typecheck/build jobs exit 0 when CONVEX_DEPLOY_KEY is missing."
-  echo "Configure secrets (see docs/ci-cd.md) or set CI_STRICT=1 to fail closed (optional guardrail)."
+  echo "Configure CONVEX_DEPLOY_KEY and other secrets before opening PRs (see docs/ci-cd.md#github-actions-secrets)."
   exit 1
 fi
 

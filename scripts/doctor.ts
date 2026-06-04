@@ -128,7 +128,7 @@ checks.push({
   name: "convex/auth.config.ts",
   ok: hasAuthConfig,
   detail: hasAuthConfig ? "present" : "missing",
-  remediation: "cp convex/auth.config.ts.example convex/auth.config.ts",
+  remediation: "restore convex/auth.config.ts from the template (committed in repo)",
 });
 
 const hasConvexGenerated = fileExists("convex/_generated/api.d.ts");
@@ -169,7 +169,7 @@ checks.push({
   detail: backendConfigured
     ? "VITE_CONVEX_URL and VITE_CLERK_PUBLISHABLE_KEY set"
     : "placeholders or missing in apps/web/.env.local",
-  remediation: "docs/getting-started.md steps 2–3",
+  remediation: "docs/getting-started.md#3-convex",
   deferUntilConvex: true,
 });
 

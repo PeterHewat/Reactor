@@ -112,7 +112,7 @@ const env = loadEnv({
 
 ## Convex patterns
 
-Sample schema and handlers: `convex/schema.ts`, `convex/tasks.ts`, `convex/model/tasks.ts`. Auth: `convex/lib/auth.ts`. Link a deployment: [getting-started.md §3](./getting-started.md#3-convex) · [convex/README.md](../convex/README.md).
+Sample schema and handlers: `convex/schema.ts`, `convex/tasks.ts`, `convex/model/tasks.ts`. Auth: `convex/lib/auth.ts`. Env and deployment: [getting-started.md](./getting-started.md) · [convex/README.md](../convex/README.md).
 
 **Client:** `useQuery` / `useMutation` for data; `useConvexAuth()` for auth — not `fetch` + `useEffect`.
 
@@ -136,11 +136,10 @@ test("create inserts a task for the signed-in user", async () => {
 
 CI: [ci-cd.md](./ci-cd.md#e2e-tests-playwright).
 
-Web specs: `apps/web/tests/*.e2e.ts` via `playwright.config.ts`.
+Web specs: `apps/web/tests/*.e2e.ts` via `playwright.config.ts`. Env vars: comments in [apps/web/.env.example](../apps/web/.env.example); base setup in [getting-started.md](./getting-started.md).
 
-1. Fill in `apps/web/.env.local` (from `.env.example`): Convex, Clerk, `CLERK_SECRET_KEY`, and `E2E_CLERK_USER_EMAIL`.
-2. In Clerk: enable **Email** and **Password**; create a dev user for `E2E_CLERK_USER_EMAIL` (or use a `+clerk_test` address per Clerk testing docs).
-3. Run:
+1. In Clerk: enable **Email** and **Password**; create the dev user named in `E2E_CLERK_USER_EMAIL` (or use a `+clerk_test` address per [Clerk testing docs](https://clerk.com/docs/guides/development/testing/overview)).
+2. Run:
 
 ```bash
 bun run e2e:install

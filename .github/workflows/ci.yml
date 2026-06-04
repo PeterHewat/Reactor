@@ -94,15 +94,12 @@ jobs:
           fi
           bun run lint
           bun scripts/generate-routes.ts
-          if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
-            bun scripts/generate-convex.ts
-            bun run typecheck
-          elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
-            echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
+          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+            echo "::error::CONVEX_DEPLOY_KEY is required for typecheck. See docs/ci-cd.md#github-actions-secrets"
             exit 1
-          else
-            echo "::notice::Skipping typecheck — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
           fi
+          bun scripts/generate-convex.ts
+          bun run typecheck
 
   web:
     name: Web build & test
@@ -119,17 +116,14 @@ jobs:
           VITE_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
         run: |
           set -euo pipefail
-          bun scripts/generate-routes.ts
-          if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
-            bun scripts/generate-convex.ts
-            bun run --filter @repo/web build
-            bun run --filter @repo/web test:coverage
-          elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
-            echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
+          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+            echo "::error::CONVEX_DEPLOY_KEY is required for web build and tests. See docs/ci-cd.md#github-actions-secrets"
             exit 1
-          else
-            echo "::notice::Skipping @repo/web build and tests — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
           fi
+          bun scripts/generate-routes.ts
+          bun scripts/generate-convex.ts
+          bun run --filter @repo/web build
+          bun run --filter @repo/web test:coverage
           bun run --filter @repo/ui-web test:coverage
           bun run --filter @repo/utils test:coverage
           bun run --filter @repo/utils test:integration
@@ -175,12 +169,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
-            if [ "${{ vars.CI_STRICT }}" = "1" ]; then
-              echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
-              exit 1
-            fi
-            echo "::notice::Skipping Convex tests — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
-            exit 0
+            echo "::error::CONVEX_DEPLOY_KEY is required for Convex tests. See docs/ci-cd.md#github-actions-secrets"
+            exit 1
           fi
           bun scripts/generate-convex.ts
           bun run --filter @repo/convex test:coverage

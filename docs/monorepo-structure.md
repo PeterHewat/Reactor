@@ -46,14 +46,14 @@ docs/               # Human + agent documentation
 
 `@repo/utils/env` re-exports the same parsers for apps already on `@repo/utils`. Do **not** import `@repo/utils` from Convex: the package has React peer deps and Zustand. Convex uses `convex/lib/env.ts` only (see [ADR-002](./adr/002-package-boundary-authoring.md)).
 
-### Env file map
+### Env files
 
-| Template                | Copy to                  | Scope                                         |
-| ----------------------- | ------------------------ | --------------------------------------------- |
-| _(none — Convex CLI)_   | `.env.local` (repo root) | `CONVEX_DEPLOYMENT` from `bun run dev:convex` |
-| `apps/web/.env.example` | `apps/web/.env.local`    | `VITE_*` for the web app                      |
+Setup: [getting-started.md](./getting-started.md).
 
-`CLERK_JWT_ISSUER_DOMAIN` lives in the **Convex dashboard**, not root `.env.local` — see [getting-started.md](./getting-started.md) steps 2–3.
+| Source                  | File                  | Scope                       |
+| ----------------------- | --------------------- | --------------------------- |
+| `apps/web/.env.example` | `apps/web/.env.local` | `VITE_*`, optional E2E vars |
+| Convex dashboard        | _(dashboard only)_    | `CLERK_JWT_ISSUER_DOMAIN`   |
 
 ## Path aliases
 
@@ -105,7 +105,7 @@ Run **`bun run dev:convex`** before the first `typecheck` / `test` (also enforce
 - `bun scripts/generate.ts` — routes always; Convex only when linked (root `.env.local` or `CONVEX_DEPLOY_KEY`)
 - Gitignored in `.gitignore`
 - ESLint ignores `convex/_generated/`; Prettier ignores both paths (see `.prettierignore`)
-- **CI:** jobs that need Convex run `bun scripts/generate-convex.ts` only when `CONVEX_DEPLOY_KEY` is set; otherwise they log a `::notice::` and skip (see [ci-cd.md](./ci-cd.md))
+- **CI:** jobs that need Convex require `CONVEX_DEPLOY_KEY` and run `bun scripts/generate-convex.ts` (see [ci-cd.md](./ci-cd.md))
 
 ## Starter growth thresholds
 

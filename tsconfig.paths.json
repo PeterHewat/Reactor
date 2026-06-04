@@ -17,7 +17,6 @@
       "@repo/config/aliases": ["./packages/config/aliases.ts"],
       "@repo/config/product": ["./packages/config/product.ts"],
       "@repo/config/env-placeholders": ["./packages/config/env-placeholders.ts"],
-      "@repo/config/repo-url": ["./packages/config/repo-url.ts"],
       "@convex/api": ["./convex/_generated/api.js"],
       "@convex/dataModel": ["./convex/_generated/dataModel.d.ts"]
     }

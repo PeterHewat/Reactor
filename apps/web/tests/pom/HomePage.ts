@@ -14,7 +14,6 @@ export class HomePage {
   // Main content elements
   readonly title: Locator;
   readonly subtitle: Locator;
-  readonly githubLink: Locator;
 
   // Features section
   readonly featuresTitle: Locator;
@@ -30,7 +29,6 @@ export class HomePage {
     // Main content
     this.title = page.getByRole("heading", { level: 1 });
     this.subtitle = page.locator("main p").first();
-    this.githubLink = page.getByRole("link", { name: /github/i });
 
     // Features section
     this.featuresTitle = page.locator("main h2.text-2xl");

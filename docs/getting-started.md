@@ -15,7 +15,7 @@ bun install
 bun scripts/setup.ts
 ```
 
-`setup` copies env examples, sets `PRODUCT_NAME` and repo URLs from `git remote` when possible, updates README badges off the upstream template, and runs route codegen + `doctor`.
+`setup` copies `apps/web/.env.example`, sets `PRODUCT_NAME` from `git remote` when possible, updates README off the upstream template, and runs route codegen + `doctor`.
 
 ### 2. Clerk
 
@@ -24,7 +24,7 @@ bun scripts/setup.ts
 - **Publishable key** (`pk_test_…`) — Clerk → Configure → API keys → **React** → `apps/web/.env.local` as `VITE_CLERK_PUBLISHABLE_KEY`
 - **Issuer** (`https://….clerk.accounts.dev`) — Clerk → Sessions → JWT templates → **Convex** preset → Convex deployment `CLERK_JWT_ISSUER_DOMAIN` (not in web `.env.local`)
 
-`CLERK_SECRET_KEY` is for Playwright E2E later. Optional: [Google OAuth branding](https://console.cloud.google.com/apis/credentials/consent) if the consent screen should show your product name instead of “Clerk”.
+Add `CLERK_SECRET_KEY` and `E2E_CLERK_USER_EMAIL` to `apps/web/.env.local` for Playwright (see [development.md](./development.md#e2e-tests-playwright)). Optional: [Google OAuth branding](https://console.cloud.google.com/apis/credentials/consent) if the consent screen should show your product name instead of “Clerk”.
 
 ### 3. Convex
 

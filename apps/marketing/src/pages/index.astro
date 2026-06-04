@@ -2,10 +2,7 @@
 import Features from "../components/Features.astro";
 import Hero from "../components/Hero.astro";
 import Layout from "../layouts/Layout.astro";
-import { repoSetupGuideUrl } from "../lib/repo-url";
 import { SITE_NAME, SITE_TAGLINE } from "../lib/site";
-
-const ctaHref = repoSetupGuideUrl();
 
 // SEO props for the page
 const title = `${SITE_NAME} - ${SITE_TAGLINE}`;
@@ -40,8 +37,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       <Hero
         title={`Build faster with ${SITE_NAME}`}
         subtitle="A production-ready monorepo template for web and marketing."
-        ctaText="Get Started"
-        ctaHref={ctaHref}
+        ctaText="Read the blog"
+        ctaHref="/blog"
       />
       <Features />
     </Layout>

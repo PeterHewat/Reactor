@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PRODUCT_NAME } from "./helpers/product-name";
+import { PRODUCT_NAME } from "@repo/config/product";
 import { HomePage } from "./pom/HomePage";
 
 test.describe("Routing", () => {

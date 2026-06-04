@@ -6,7 +6,6 @@ import {
   productNameFromRepo,
   shouldRebrandFromTemplate,
   TEMPLATE_PRODUCT_NAME,
-  TEMPLATE_REPO_PLACEHOLDER,
   TEMPLATE_REPO_SLUG,
   type GitHubRepo,
 } from "./repo-identity";
@@ -47,40 +46,7 @@ export function resolveGitHubRepo(root: string): GitHubRepo | null {
 }
 
 /**
- * Replaces `KEY=value` or appends when missing in a dotenv file.
- */
-export function setEnvKeyInFile(absPath: string, key: string, value: string): void {
-  if (!existsSync(absPath)) {
-    return;
-  }
-
-  const lines = readFileSync(absPath, "utf8").split("\n");
-  const prefix = `${key}=`;
-  let found = false;
-  const next = lines.map((line) => {
-    if (line.startsWith(prefix)) {
-      found = true;
-      return `${prefix}${value}`;
-    }
-    return line;
-  });
-  if (!found) {
-    next.push(`${prefix}${value}`);
-  }
-  writeFileSync(absPath, `${next.join("\n").replace(/\r\n/g, "\n").trimEnd()}\n`);
-}
-
-/**
- * Substitutes template repo placeholders in file content.
- */
-export function substituteRepoPlaceholders(content: string, repoUrl: string): string {
-  return content
-    .replaceAll(TEMPLATE_REPO_PLACEHOLDER, repoUrl)
-    .replaceAll(/https:\/\/github\.com\/PeterHewat\/Reactor/g, repoUrl);
-}
-
-/**
- * Applies repo URL and product name to env files and template defaults.
+ * Applies product name and template rebranding from `git remote`.
  *
  * @param root - Repository root
  * @param github - Parsed GitHub repository
@@ -89,22 +55,6 @@ export function applyIdentity(root: string, github: GitHubRepo): IdentityResult 
   const productName = productNameFromRepo(github);
   const rebranded = shouldRebrandFromTemplate(github);
   const changes: string[] = [];
-
-  const envTargets = ["apps/web/.env.local", "apps/marketing/.env.local"];
-
-  for (const rel of envTargets) {
-    const abs = resolve(root, rel);
-    if (!existsSync(abs)) {
-      continue;
-    }
-    const raw = readFileSync(abs, "utf8");
-    const next = substituteRepoPlaceholders(raw, github.repoUrl);
-    if (next !== raw) {
-      writeFileSync(abs, `${next.replace(/\r\n/g, "\n").trimEnd()}\n`);
-      changes.push(rel);
-    }
-    setEnvKeyInFile(abs, rel.includes("web") ? "VITE_REPO_URL" : "PUBLIC_REPO_URL", github.repoUrl);
-  }
 
   const productPath = resolve(root, "packages/config/product.ts");
   if (existsSync(productPath)) {

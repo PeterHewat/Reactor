@@ -19,7 +19,7 @@
 
 **Web deploy codegen:** Production and preview web deploys run `bun scripts/generate-routes.ts` and `bun scripts/generate-convex.ts` before `vercel build` (`convex/_generated/` is not committed). Requires `CONVEX_DEPLOY_KEY` (production) or `CONVEX_PREVIEW_DEPLOY_KEY` (previews).
 
-**PR CI:** Lint, unit tests, builds, and **web E2E smoke** on pull requests. **Full E2E** and **preview deploys** are manual workflows ([below](#manual-workflows)).
+**PR CI:** Lint, unit tests, and builds on pull requests. **Playwright E2E** and **preview deploys** are manual workflows ([below](#manual-workflows)).
 
 **No Turborepo/Nx:** Path-based jobs and [setup-bun](../.github/actions/setup-bun/action.yml). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
@@ -29,16 +29,19 @@ Job definitions live in [ci.yml](../.github/workflows/ci.yml). Use **CI required
 
 **Docs-only PRs:** only **quality** runs Prettier; lint/typecheck/build are skipped.
 
-**Without `CONVEX_DEPLOY_KEY`:** `convex/_generated/` is not committed. Typecheck, web build, `@repo/web` tests, Convex tests, and web E2E run `bun scripts/generate-convex.ts` when the key exists; otherwise they log a `::notice::` and exit 0. Smoke E2E also needs Clerk/Convex URL secrets when it runs.
+**Without `CONVEX_DEPLOY_KEY`:** `convex/_generated/` is not committed. Typecheck, web build, `@repo/web` tests, and Convex tests run `bun scripts/generate-convex.ts` when the key exists; otherwise they log a `::notice::` and exit 0.
+
+**Web Tests job:** When `apps/web/**` changes, runs `test:coverage` for `@repo/web`, `@repo/ui-web`, and `@repo/utils` (plus utils integration tests). `@repo/web` and `@repo/ui-web` enforce minimum coverage percentages.
+
+**Package / marketing / Convex jobs:** `test:coverage` for `@repo/config`, `@repo/env-core`, `@repo/marketing`, and `@repo/convex` when those paths change (Convex job still requires `CONVEX_DEPLOY_KEY`).
 
 ### Optional CI guardrails
 
 Repository variables (**Settings → Secrets and variables → Actions → Variables**) change behavior only when secrets are **missing** or removed:
 
-| Variable                    | When set to `1`                                                                                                                                      |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CI_STRICT`                 | Fail quality typecheck, build-web, `@repo/web` tests, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
-| `E2E_SMOKE_REQUIRE_SECRETS` | Fail `web-e2e-smoke` if smoke secrets are missing (default: skip Playwright, job still passes).                                                      |
+| Variable    | When set to `1`                                                                                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CI_STRICT` | Fail quality typecheck, build-web, `@repo/web` tests, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
 
 Set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` exists ([getting-started.md](./getting-started.md)) so missing keys fail CI instead of skipping.
 
@@ -68,12 +71,14 @@ Direct pushes to `main` (if allowed) will **not** run [ci.yml](../.github/workfl
 
 ## E2E tests (Playwright)
 
-- **Smoke (tasks + Clerk + Convex):** `bun run --filter @repo/web e2e:smoke` — runs on every PR when `apps/web/**` changes (`web-e2e-smoke`). Configure `CONVEX_DEPLOY_KEY` (codegen), `CLERK_SECRET_KEY`, `E2E_CLERK_USER_EMAIL`, `VITE_CONVEX_URL`, `VITE_CLERK_PUBLISHABLE_KEY` in GitHub Actions; see [development.md](./development.md#e2e-smoke-tasks).
-- **Full suite:** `bunx playwright install chromium` once, then `bun run --filter @repo/web e2e` (or `@repo/marketing`)
-- **CI (full):** Actions → **E2E NRT** → Run workflow — pick branch via **Use workflow from** and select suites ([e2e.yml](../.github/workflows/e2e.yml)); not merge-blocking
-- **Naming:** `*.e2e.ts` (full), `*.smoke.e2e.ts` (smoke)
+Playwright does **not** run on pull requests. Run locally or via the manual workflow ([below](#manual-workflows)).
 
-**Smoke deployment:** `web-e2e-smoke` creates and deletes tasks against whatever deployment `VITE_CONVEX_URL` points to. In GitHub Actions, set that secret to your **dev** deployment URL (the same one you use locally after `bun run dev:convex`) — **not** production after you ship. Use a dedicated Clerk test user (`E2E_CLERK_USER_EMAIL`). Vercel production/preview use their own `VITE_CONVEX_URL` in the Vercel dashboard; do not reuse the production URL for CI smoke.
+- **Local:** `bun run e2e:install` then `bun run --filter @repo/web e2e` (and/or `@repo/marketing`). See [development.md](./development.md#e2e-tests-playwright).
+- **CI:** Actions → **E2E** → **Run workflow** ([e2e.yml](../.github/workflows/e2e.yml)). Choose the branch with **Use workflow from**. Toggle `run_web` / `run_marketing`.
+
+The **E2E** workflow runs **UI-only** (`home`, `routing`) when Clerk/Convex secrets are missing; with secrets it runs the full suite including `tasks.e2e.ts`. Locally, `bun run --filter @repo/web e2e` does the same (UI-only without `.env.local` secrets).
+
+**E2E deployment:** `tasks.e2e.ts` creates and deletes tasks against whatever deployment `VITE_CONVEX_URL` points to. Set that secret to your **dev** deployment URL (the same one you use locally after `bun run dev:convex`) — **not** production after you ship. Use a dedicated Clerk test user (`E2E_CLERK_USER_EMAIL`). Vercel production/preview use their own `VITE_CONVEX_URL` in the Vercel dashboard.
 
 ## GitHub Actions secrets
 
@@ -81,14 +86,14 @@ Configure these in the repository: **Settings → Secrets and variables → Acti
 
 ### Required secrets (adopter projects)
 
-| Secret                       | Description                                                       | Where to find it                                                                                                    |
-| ---------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `CONVEX_DEPLOY_KEY`          | Convex **production** deploy key (releases)                       | Convex Dashboard → Settings → Deploy Key                                                                            |
-| `CONVEX_PREVIEW_DEPLOY_KEY`  | Convex **preview** deploy key (manual Preview workflow)           | Convex Dashboard → Settings → [Preview deploy keys](https://docs.convex.dev/production/hosting/preview-deployments) |
-| `VITE_CONVEX_URL`            | Convex URL for **CI smoke only** (dev deployment; not production) | Convex Dashboard → dev deployment → Settings → URL                                                                  |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key                                             | Clerk Dashboard → API Keys                                                                                          |
-| `CLERK_SECRET_KEY`           | Clerk secret key (E2E smoke only)                                 | Clerk Dashboard → API Keys — never expose in the client                                                             |
-| `E2E_CLERK_USER_EMAIL`       | Dev test user for Playwright `clerk.signIn`                       | Create in Clerk (Email + Password enabled); see [development.md](./development.md#e2e-smoke-tasks)                  |
+| Secret                       | Description                                                    | Where to find it                                                                                                    |
+| ---------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `CONVEX_DEPLOY_KEY`          | Convex **production** deploy key (releases)                    | Convex Dashboard → Settings → Deploy Key                                                                            |
+| `CONVEX_PREVIEW_DEPLOY_KEY`  | Convex **preview** deploy key (manual Preview workflow)        | Convex Dashboard → Settings → [Preview deploy keys](https://docs.convex.dev/production/hosting/preview-deployments) |
+| `VITE_CONVEX_URL`            | Convex URL for **manual E2E** (dev deployment; not production) | Convex Dashboard → dev deployment → Settings → URL                                                                  |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key                                          | Clerk Dashboard → API Keys                                                                                          |
+| `CLERK_SECRET_KEY`           | Clerk secret key (Playwright only)                             | Clerk Dashboard → API Keys — never expose in the client                                                             |
+| `E2E_CLERK_USER_EMAIL`       | Dev test user for Playwright `clerk.signIn`                    | Create in Clerk (Email + Password enabled); see [development.md](./development.md#e2e-tests-playwright)             |
 
 ### Vercel (web + marketing)
 
@@ -139,16 +144,16 @@ Heavy workflows run only from **Actions** → **Run workflow**. Choose the **bra
 
 Preview Convex deployments expire automatically ([Convex preview docs](https://docs.convex.dev/production/hosting/preview-deployments)).
 
-### Full E2E
+### E2E (Playwright)
 
-**Workflow:** [e2e.yml](../.github/workflows/e2e.yml) → **E2E NRT**
+**Workflow:** [e2e.yml](../.github/workflows/e2e.yml) → **E2E**
 
-| Input           | Purpose                      |
-| --------------- | ---------------------------- |
-| `run_web`       | `@repo/web` Playwright suite |
-| `run_marketing` | `@repo/marketing` Playwright |
+| Input           | Purpose                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `run_web`       | `@repo/web` — UI-only without secrets; full suite (incl. `tasks.e2e.ts`) when secrets + `CONVEX_DEPLOY_KEY` are set |
+| `run_marketing` | `@repo/marketing` Playwright                                                                                        |
 
-Does **not** block PR merge. Reports upload as workflow artifacts.
+Full web E2E requires `CONVEX_DEPLOY_KEY` for codegen; UI-only does not. Does **not** run on PRs. Reports upload as workflow artifacts.
 
 ## PR labels and release notes
 

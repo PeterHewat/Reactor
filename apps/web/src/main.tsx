@@ -1,5 +1,4 @@
 import { initializeI18n, initializeTheme } from "@repo/utils";
-import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
@@ -25,7 +24,6 @@ createRoot(root).render(
   <StrictMode>
     <AppProviders>
       <RouterProvider router={router} />
-      <Analytics />
       <SpeedInsights />
     </AppProviders>
   </StrictMode>,

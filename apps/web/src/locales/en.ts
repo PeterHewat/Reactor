@@ -39,7 +39,6 @@ const en = {
   home: {
     title: PRODUCT_NAME,
     subtitle: "React 19 + Convex + Clerk + Tailwind CSS",
-    viewRepository: "View repository on GitHub",
     features: {
       title: "Features",
       react: "React 19 with TanStack Router file routes",
@@ -58,9 +57,8 @@ const en = {
       "Set CLERK_JWT_ISSUER_DOMAIN in Convex (Clerk JWT template Issuer), then bun run dev:convex and VITE_CONVEX_URL",
     stepClerk:
       "Clerk: JWT templates → Convex preset (copy Issuer); API keys → React → VITE_CLERK_PUBLISHABLE_KEY",
-    stepEnv: "See docs/getting-started.md §2–3 on GitHub",
-    setupGuide: "Open setup guide on GitHub (README)",
-    setupGuideLocal: "See README in your repository for cloud setup",
+    stepEnv: "See docs/getting-started.md §2–3 in this repository",
+    setupGuide: "Full walkthrough: docs/getting-started.md in this repository",
     backHome: "Back to home",
   },
   tasks: {

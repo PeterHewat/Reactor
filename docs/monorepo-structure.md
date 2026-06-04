@@ -6,12 +6,12 @@
 
 ```text
 apps/web/           # Product UI — @repo/ui-web, utils, tokens, config, env-core
-apps/marketing/     # Astro site — @repo/tokens, config, env-core (no React workspace packages)
+apps/marketing/     # Astro site — @repo/tokens, config (no React workspace packages)
 packages/utils/     # Shared client utilities (@repo/utils)
 packages/tokens/    # Shared CSS variables (@repo/tokens)
 packages/ui-web/    # Shared React components (@repo/ui-web)
 packages/test-utils/# Test fixtures (dev/test only)
-packages/config/    # Aliases, product name, repo URLs, env placeholders (@repo/config)
+packages/config/    # Aliases, product name, env placeholders (@repo/config)
 packages/env-core/  # Framework-agnostic env loaders (@repo/env-core) — no React/Zustand
 convex/             # Backend — no @repo imports; Convex CLI root
 scripts/            # Setup, doctor, generate (`bun scripts/…` — not imported by apps)
@@ -48,11 +48,10 @@ docs/               # Human + agent documentation
 
 ### Env file map
 
-| Template                      | Copy to                     | Scope                                         |
-| ----------------------------- | --------------------------- | --------------------------------------------- |
-| _(none — Convex CLI)_         | `.env.local` (repo root)    | `CONVEX_DEPLOYMENT` from `bun run dev:convex` |
-| `apps/web/.env.example`       | `apps/web/.env.local`       | `VITE_*` for the web app                      |
-| `apps/marketing/.env.example` | `apps/marketing/.env.local` | `PUBLIC_*` (optional)                         |
+| Template                | Copy to                  | Scope                                         |
+| ----------------------- | ------------------------ | --------------------------------------------- |
+| _(none — Convex CLI)_   | `.env.local` (repo root) | `CONVEX_DEPLOYMENT` from `bun run dev:convex` |
+| `apps/web/.env.example` | `apps/web/.env.local`    | `VITE_*` for the web app                      |
 
 `CLERK_JWT_ISSUER_DOMAIN` lives in the **Convex dashboard**, not root `.env.local` — see [getting-started.md](./getting-started.md) steps 2–3.
 

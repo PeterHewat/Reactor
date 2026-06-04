@@ -184,15 +184,15 @@ jobs:
           bun scripts/generate-routes.ts
           if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
             bun scripts/generate-convex.ts
-            bun run --filter @repo/web test
+            bun run --filter @repo/web test:coverage
           elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
             echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
             exit 1
           else
             echo "::notice::Skipping @repo/web tests — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
           fi
-          bun run --filter @repo/ui-web test
-          bun run --filter @repo/utils test
+          bun run --filter @repo/ui-web test:coverage
+          bun run --filter @repo/utils test:coverage
           bun run --filter @repo/utils test:integration
 
   tests-packages:
@@ -208,7 +208,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Run shared package tests
-        run: bun run --filter @repo/config test && bun run --filter @repo/env-core test
+        run: bun run --filter @repo/config test:coverage && bun run --filter @repo/env-core test:coverage
 
   tests-marketing:
     name: Marketing Tests
@@ -221,33 +221,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Run marketing tests
-        run: bun run --filter @repo/marketing test
-
-  storybook-ui-web:
-    name: Storybook (ui-web)
-    runs-on: ubuntu-latest
-    needs: [detect-changes, quality]
-    if: needs.detect-changes.outputs.web == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Build Storybook
-        run: bun run --filter @repo/ui-web build-storybook
-
-  coverage-ui-web:
-    name: Coverage (ui-web)
-    runs-on: ubuntu-latest
-    needs: [detect-changes, tests-web]
-    if: needs.detect-changes.outputs.web == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Run ui-web coverage
-        run: bun run --filter @repo/ui-web test:coverage
+        run: bun run --filter @repo/marketing test:coverage
 
   tests-convex:
     name: Convex Tests
@@ -273,63 +247,7 @@ jobs:
             exit 0
           fi
           bun scripts/generate-convex.ts
-          bun run --filter @repo/convex test
-
-  web-e2e-smoke:
-    name: Web E2E smoke
-    runs-on: ubuntu-latest
-    needs: [detect-changes, tests-web]
-    if: needs.detect-changes.outputs.web == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Report E2E smoke configuration
-        id: e2e-smoke-config
-        run: |
-          missing=()
-          [ -z "${{ secrets.CLERK_SECRET_KEY }}" ] && missing+=("CLERK_SECRET_KEY")
-          [ -z "${{ secrets.E2E_CLERK_USER_EMAIL }}" ] && missing+=("E2E_CLERK_USER_EMAIL")
-          [ -z "${{ secrets.VITE_CONVEX_URL }}" ] && missing+=("VITE_CONVEX_URL")
-          [ -z "${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" ] && missing+=("VITE_CLERK_PUBLISHABLE_KEY")
-          if [ ${#missing[@]} -eq 0 ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-            echo "E2E smoke: secrets configured — running authenticated tests"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::E2E smoke skipped — missing secrets: ${missing[*]}. See docs/ci-cd.md#github-actions-secrets"
-            if [ "${{ vars.E2E_SMOKE_REQUIRE_SECRETS }}" = "1" ]; then
-              echo "::error::E2E_SMOKE_REQUIRE_SECRETS=1 but smoke secrets are missing."
-              exit 1
-            fi
-          fi
-      - name: Codegen, install browsers, and run Playwright smoke (tasks)
-        if: steps.e2e-smoke-config.outputs.configured == 'true'
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
-          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-          E2E_SMOKE_REQUIRE_SECRETS: ${{ vars.E2E_SMOKE_REQUIRE_SECRETS }}
-        run: |
-          set -euo pipefail
-          bun scripts/generate-routes.ts
-          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
-            echo "::error::E2E smoke requires CONVEX_DEPLOY_KEY for convex/_generated (Vite imports @convex/api)."
-            exit 1
-          fi
-          bun scripts/generate-convex.ts
-          bunx playwright install chromium
-          bun run --filter @repo/web e2e:smoke
-      - name: Upload Playwright smoke report
-        uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report-web-smoke
-          path: apps/web/playwright-report-smoke/
-          retention-days: 7
+          bun run --filter @repo/convex test:coverage
 
   ci-required:
     name: CI required
@@ -345,9 +263,6 @@ jobs:
       - tests-marketing
       - tests-packages
       - tests-convex
-      - storybook-ui-web
-      - coverage-ui-web
-      - web-e2e-smoke
     if: always() && !cancelled() && needs.detect-changes.result == 'success'
     steps:
       - uses: actions/checkout@v6
@@ -370,7 +285,4 @@ jobs:
           TESTS_MARKETING_RESULT: ${{ needs.tests-marketing.result }}
           TESTS_PACKAGES_RESULT: ${{ needs.tests-packages.result }}
           TESTS_CONVEX_RESULT: ${{ needs.tests-convex.result }}
-          STORYBOOK_RESULT: ${{ needs.storybook-ui-web.result }}
-          COVERAGE_RESULT: ${{ needs.coverage-ui-web.result }}
-          WEB_E2E_SMOKE_RESULT: ${{ needs.web-e2e-smoke.result }}
         run: bash scripts/ci-verify-required.sh

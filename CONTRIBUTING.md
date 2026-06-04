@@ -40,7 +40,7 @@ To update outside ranges, edit versions in `package.json`, then run `bun update`
 
 ## E2E and previews
 
-Pull requests run **unit tests** and **web E2E smoke** (when `apps/web` changes). **Full Playwright** and **preview deploys** are manual: Actions → pick branch with **Use workflow from** → [E2E](.github/workflows/e2e.yml) or [Preview](.github/workflows/preview.yml). See [docs/ci-cd.md](docs/ci-cd.md#manual-workflows).
+Pull requests run **unit tests** only (lint, typecheck, build). **Playwright E2E** and **preview deploys** are manual: Actions → pick branch with **Use workflow from** → [E2E](.github/workflows/e2e.yml) or [Preview](.github/workflows/preview.yml). See [docs/ci-cd.md](docs/ci-cd.md#manual-workflows).
 
 ## Agent rules
 

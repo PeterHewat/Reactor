@@ -2,14 +2,12 @@ import { useTranslation } from "@repo/utils";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { BackendSetup } from "../components/backend-setup";
 import { isAuthEnabled } from "../lib/backend";
-import { getRepoUrl } from "../lib/repo-url";
 
 /**
  * Home page: feature overview and setup prompts until Convex + Clerk are wired.
  */
 export function HomePage() {
   const { t } = useTranslation();
-  const repoUrl = getRepoUrl();
 
   const featureKeys = [
     "home.features.react",
@@ -27,16 +25,6 @@ export function HomePage() {
         <p className="text-muted-foreground mb-8 text-lg">{t("home.subtitle")}</p>
 
         <div className="mb-12 flex flex-wrap items-center justify-center gap-4">
-          {repoUrl ? (
-            <a
-              href={repoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80 text-lg underline underline-offset-4 transition-colors"
-            >
-              {t("home.viewRepository")}
-            </a>
-          ) : null}
           {isAuthEnabled() ? (
             <Link
               to="/tasks"

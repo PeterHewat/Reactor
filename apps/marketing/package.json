@@ -12,17 +12,16 @@
     "lint": "eslint .",
     "typecheck": "astro check && tsc",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "e2e:debug": "playwright test --headed --debug",
     "astro": "astro"
   },
   "dependencies": {
     "@repo/config": "workspace:*",
-    "@repo/env-core": "workspace:*",
     "@repo/tokens": "workspace:*",
     "@astrojs/check": "^0.9.9",
     "@astrojs/sitemap": "^3.7.3",
-    "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "typescript": "~6.0.3"
   },

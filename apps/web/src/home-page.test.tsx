@@ -28,7 +28,6 @@ describe("HomePage", () => {
         const translations: Record<string, string> = {
           "home.title": PRODUCT_NAME,
           "home.subtitle": "React 19 + Convex + Clerk + Tailwind CSS",
-          "home.viewRepository": "View repository on GitHub",
           "home.features.title": "Features",
           "home.features.react": "React 19",
           "nav.main": "Main",
@@ -38,7 +37,7 @@ describe("HomePage", () => {
           "backend.stepConvex": "Convex",
           "backend.stepClerk": "Clerk",
           "backend.stepEnv": "Env",
-          "backend.setupGuide": "Guide",
+          "backend.setupGuide": "See docs/getting-started.md",
           "backend.backHome": "Home",
         };
         return translations[key] ?? key;
@@ -52,13 +51,5 @@ describe("HomePage", () => {
   it("renders the heading", async () => {
     render(<RouterProvider router={router} />);
     expect(await screen.findByRole("heading", { name: /reactor/i })).toBeInTheDocument();
-  });
-
-  it("renders the repository link when VITE_REPO_URL is set", async () => {
-    vi.stubEnv("VITE_REPO_URL", "https://github.com/acme/my-app");
-    render(<RouterProvider router={router} />);
-    const link = await screen.findByRole("link", { name: /repository/i });
-    expect(link).toHaveAttribute("href", "https://github.com/acme/my-app");
-    vi.unstubAllEnvs();
   });
 });

@@ -6,5 +6,5 @@
     "rootDir": ".",
     "types": ["node"]
   },
-  "include": ["aliases.ts", "repo-url.ts", "repo-url.test.ts"]
+  "include": ["aliases.ts", "env-placeholders.ts", "env-placeholders.test.ts"]
 }

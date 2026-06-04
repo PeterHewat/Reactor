@@ -34,9 +34,6 @@ fi
 if [ "$web" = "true" ]; then
   check_job "build-web" "true" "${BUILD_WEB_RESULT:-}"
   check_job "tests-web" "true" "${TESTS_WEB_RESULT:-}"
-  check_job "storybook-ui-web" "true" "${STORYBOOK_RESULT:-}"
-  check_job "coverage-ui-web" "true" "${COVERAGE_RESULT:-}"
-  check_job "web-e2e-smoke" "true" "${WEB_E2E_SMOKE_RESULT:-}"
 fi
 
 if [ "$marketing" = "true" ]; then

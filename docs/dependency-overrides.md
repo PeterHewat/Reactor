@@ -13,12 +13,4 @@ Root [package.json](../package.json) `overrides` pin **transitive** dependency v
 | `picomatch`       | `^4.0.4`  | Aligns with tooling that depends on picomatch 4                                                          |
 | `yaml`            | `^2.9.0`  | [GHSA-48c2-rrv3-qjmp](https://github.com/advisories/GHSA-48c2-rrv3-qjmp) (stack overflow in nested YAML) |
 
-## Removed overrides (not needed)
-
-These were dropped after `bun audit` / semver review — they forced newer minors without a current advisory:
-
-- `h3` — `unstorage` already accepts `^1.15.10`; no CVE at time of review
-- `flatted` — `eslint` → `flat-cache` tree works without override
-- `smol-toml` — Astro markdown stack resolves a safe version without override
-
 Re-add an override only when `bun audit` reports a vulnerable range and upstream has not released a fix.

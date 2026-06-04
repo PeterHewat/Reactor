@@ -36,7 +36,6 @@ const fr: TranslationDictionary = {
   home: {
     title: PRODUCT_NAME,
     subtitle: "React 19 + Convex + Clerk + Tailwind CSS",
-    viewRepository: "Voir le dépôt sur GitHub",
     features: {
       title: "Fonctionnalités",
       react: "React 19 avec routes fichier TanStack Router",
@@ -55,9 +54,8 @@ const fr: TranslationDictionary = {
       "Convex : CLERK_JWT_ISSUER_DOMAIN (Issuer du modèle JWT Convex), puis bun run dev:convex et VITE_CONVEX_URL",
     stepClerk:
       "Clerk : modèles JWT → preset Convex (copier Issuer) ; Clés API → React → VITE_CLERK_PUBLISHABLE_KEY",
-    stepEnv: "Voir docs/getting-started.md §2–3 sur GitHub",
-    setupGuide: "Ouvrir le guide de configuration sur GitHub (README)",
-    setupGuideLocal: "Voir le README de votre dépôt pour la configuration cloud",
+    stepEnv: "Voir docs/getting-started.md §2–3 dans ce dépôt",
+    setupGuide: "Guide complet : docs/getting-started.md dans ce dépôt",
     backHome: "Retour à l'accueil",
   },
   tasks: {

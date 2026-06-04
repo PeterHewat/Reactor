@@ -11,7 +11,7 @@ dist-ssr/
 # Node.js dependencies
 node_modules/
 
-# Codegen hash cache (scripts/generate.ts)
+# Local tool caches
 .cache/
 
 # Rust/Cargo build artifacts

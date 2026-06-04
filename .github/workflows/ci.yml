@@ -13,13 +13,12 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  NODE_VERSION: "24"
   GITLEAKS_VERSION: "8.30.1"
   CONVEX_CI_TESTS: true
 
 jobs:
-  detect-changes:
-    name: Detect changes
+  checks:
+    name: CI checks
     runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.detect.outputs.web }}
@@ -32,7 +31,8 @@ jobs:
       convex_ci_tests: ${{ steps.ci-flags.outputs.convex_ci_tests }}
     steps:
       - id: ci-flags
-        run: echo "convex_ci_tests=${{ env.CONVEX_CI_TESTS }}" >> $GITHUB_OUTPUT
+        run: echo "convex_ci_tests=${{ env.CONVEX_CI_TESTS }}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -51,28 +51,16 @@ jobs:
 
           bash scripts/ci-detect-changes.sh
 
-  security-audit:
-    name: Security audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+
       - name: Run security audit
         run: bun audit --audit-level=high
 
-  secrets-scan:
-    name: Secrets scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
       - name: Install Gitleaks
         run: |
           curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${{ env.GITLEAKS_VERSION }}/gitleaks_${{ env.GITLEAKS_VERSION }}_linux_x64.tar.gz" | tar -xz gitleaks
           sudo install -m 755 gitleaks /usr/local/bin/gitleaks
+
       - name: Scan for secrets
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -91,22 +79,13 @@ jobs:
             gitleaks detect --source . --redact --verbose
           fi
 
-  quality:
-    name: Lint, format & typecheck
-    runs-on: ubuntu-latest
-    needs: detect-changes
-    if: |
-      needs.detect-changes.outputs.any == 'true' ||
-      needs.detect-changes.outputs.docs_only == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
       - name: Format, lint, and typecheck
+        if: |
+          steps.detect.outputs.any == 'true' ||
+          steps.detect.outputs.docs_only == 'true'
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          ANY_CHANGED: ${{ needs.detect-changes.outputs.any }}
+          ANY_CHANGED: ${{ steps.detect.outputs.any }}
         run: |
           set -euo pipefail
           bun run format
@@ -125,17 +104,15 @@ jobs:
             echo "::notice::Skipping typecheck — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
           fi
 
-  build-web:
-    name: Build Web
+  web:
+    name: Web build & test
     runs-on: ubuntu-latest
-    needs: [detect-changes, quality]
-    if: needs.detect-changes.outputs.web == 'true'
+    needs: checks
+    if: needs.checks.outputs.web == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Generate and build web app
+      - name: Build and test web app
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
           VITE_CONVEX_URL: https://ci-placeholder.convex.cloud
@@ -146,119 +123,52 @@ jobs:
           if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
             bun scripts/generate-convex.ts
             bun run --filter @repo/web build
+            bun run --filter @repo/web test:coverage
           elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
             echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
             exit 1
           else
-            echo "::notice::Skipping web build — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
+            echo "::notice::Skipping @repo/web build and tests — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
           fi
-
-  build-marketing:
-    name: Build Marketing
-    runs-on: ubuntu-latest
-    needs: [detect-changes, quality]
-    if: needs.detect-changes.outputs.marketing == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Build marketing site
-        run: bun run --filter @repo/marketing build
-
-  tests-web:
-    name: Web Tests
-    runs-on: ubuntu-latest
-    needs: [detect-changes, quality, build-web]
-    if: needs.detect-changes.outputs.web == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Run web tests
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-        run: |
-          set -euo pipefail
-          bun scripts/generate-routes.ts
-          if [ -n "${CONVEX_DEPLOY_KEY:-}" ]; then
-            bun scripts/generate-convex.ts
-            bun run --filter @repo/web test
-          elif [ "${{ vars.CI_STRICT }}" = "1" ]; then
-            echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
-            exit 1
-          else
-            echo "::notice::Skipping @repo/web tests — CONVEX_DEPLOY_KEY not set. See docs/ci-cd.md#github-actions-secrets"
-          fi
-          bun run --filter @repo/ui-web test
-          bun run --filter @repo/utils test
+          bun run --filter @repo/ui-web test:coverage
+          bun run --filter @repo/utils test:coverage
           bun run --filter @repo/utils test:integration
 
-  tests-packages:
-    name: Package Tests
+  marketing:
+    name: Marketing build & test
     runs-on: ubuntu-latest
-    needs: [detect-changes, quality]
+    needs: checks
+    if: needs.checks.outputs.marketing == 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
+      - name: Build and test marketing site
+        run: |
+          set -euo pipefail
+          bun run --filter @repo/marketing build
+          bun run --filter @repo/marketing test:coverage
+
+  packages:
+    name: Package tests
+    runs-on: ubuntu-latest
+    needs: checks
     if: |
-      needs.detect-changes.outputs.shared == 'true' ||
-      needs.detect-changes.outputs.config == 'true'
+      needs.checks.outputs.shared == 'true' ||
+      needs.checks.outputs.config == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
       - name: Run shared package tests
-        run: bun run --filter @repo/config test && bun run --filter @repo/env-core test
+        run: bun run --filter @repo/config test:coverage && bun run --filter @repo/env-core test:coverage
 
-  tests-marketing:
-    name: Marketing Tests
+  convex:
+    name: Convex tests
     runs-on: ubuntu-latest
-    needs: [detect-changes, quality, build-marketing]
-    if: needs.detect-changes.outputs.marketing == 'true'
+    needs: checks
+    if: needs.checks.outputs.convex == 'true' && needs.checks.outputs.convex_ci_tests == 'true'
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Run marketing tests
-        run: bun run --filter @repo/marketing test
-
-  storybook-ui-web:
-    name: Storybook (ui-web)
-    runs-on: ubuntu-latest
-    needs: [detect-changes, quality]
-    if: needs.detect-changes.outputs.web == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Build Storybook
-        run: bun run --filter @repo/ui-web build-storybook
-
-  coverage-ui-web:
-    name: Coverage (ui-web)
-    runs-on: ubuntu-latest
-    needs: [detect-changes, tests-web]
-    if: needs.detect-changes.outputs.web == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Run ui-web coverage
-        run: bun run --filter @repo/ui-web test:coverage
-
-  tests-convex:
-    name: Convex Tests
-    runs-on: ubuntu-latest
-    needs: [detect-changes, quality]
-    if: needs.detect-changes.outputs.convex == 'true' && needs.detect-changes.outputs.convex_ci_tests == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
       - name: Convex tests
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
@@ -273,104 +183,33 @@ jobs:
             exit 0
           fi
           bun scripts/generate-convex.ts
-          bun run --filter @repo/convex test
+          bun run --filter @repo/convex test:coverage
 
-  web-e2e-smoke:
-    name: Web E2E smoke
-    runs-on: ubuntu-latest
-    needs: [detect-changes, tests-web]
-    if: needs.detect-changes.outputs.web == 'true'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Report E2E smoke configuration
-        id: e2e-smoke-config
-        run: |
-          missing=()
-          [ -z "${{ secrets.CLERK_SECRET_KEY }}" ] && missing+=("CLERK_SECRET_KEY")
-          [ -z "${{ secrets.E2E_CLERK_USER_EMAIL }}" ] && missing+=("E2E_CLERK_USER_EMAIL")
-          [ -z "${{ secrets.VITE_CONVEX_URL }}" ] && missing+=("VITE_CONVEX_URL")
-          [ -z "${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" ] && missing+=("VITE_CLERK_PUBLISHABLE_KEY")
-          if [ ${#missing[@]} -eq 0 ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-            echo "E2E smoke: secrets configured — running authenticated tests"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::E2E smoke skipped — missing secrets: ${missing[*]}. See docs/ci-cd.md#github-actions-secrets"
-            if [ "${{ vars.E2E_SMOKE_REQUIRE_SECRETS }}" = "1" ]; then
-              echo "::error::E2E_SMOKE_REQUIRE_SECRETS=1 but smoke secrets are missing."
-              exit 1
-            fi
-          fi
-      - name: Codegen, install browsers, and run Playwright smoke (tasks)
-        if: steps.e2e-smoke-config.outputs.configured == 'true'
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
-          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-          E2E_SMOKE_REQUIRE_SECRETS: ${{ vars.E2E_SMOKE_REQUIRE_SECRETS }}
-        run: |
-          set -euo pipefail
-          bun scripts/generate-routes.ts
-          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
-            echo "::error::E2E smoke requires CONVEX_DEPLOY_KEY for convex/_generated (Vite imports @convex/api)."
-            exit 1
-          fi
-          bun scripts/generate-convex.ts
-          bunx playwright install chromium
-          bun run --filter @repo/web e2e:smoke
-      - name: Upload Playwright smoke report
-        uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report-web-smoke
-          path: apps/web/playwright-report-smoke/
-          retention-days: 7
-
-  ci-required:
+  required:
     name: CI required
     runs-on: ubuntu-latest
     needs:
-      - detect-changes
-      - security-audit
-      - secrets-scan
-      - quality
-      - build-web
-      - build-marketing
-      - tests-web
-      - tests-marketing
-      - tests-packages
-      - tests-convex
-      - storybook-ui-web
-      - coverage-ui-web
-      - web-e2e-smoke
-    if: always() && !cancelled() && needs.detect-changes.result == 'success'
+      - checks
+      - web
+      - marketing
+      - packages
+      - convex
+    if: always() && !cancelled()
     steps:
       - uses: actions/checkout@v6
       - name: Verify required jobs
         env:
-          ANY: ${{ needs.detect-changes.outputs.any }}
-          WEB: ${{ needs.detect-changes.outputs.web }}
-          MARKETING: ${{ needs.detect-changes.outputs.marketing }}
-          CONVEX: ${{ needs.detect-changes.outputs.convex }}
-          SHARED: ${{ needs.detect-changes.outputs.shared }}
-          CONFIG: ${{ needs.detect-changes.outputs.config }}
-          DOCS_ONLY: ${{ needs.detect-changes.outputs.docs_only }}
-          CONVEX_CI_TESTS: ${{ needs.detect-changes.outputs.convex_ci_tests }}
-          SECURITY_AUDIT_RESULT: ${{ needs.security-audit.result }}
-          SECRETS_SCAN_RESULT: ${{ needs.secrets-scan.result }}
-          QUALITY_RESULT: ${{ needs.quality.result }}
-          BUILD_WEB_RESULT: ${{ needs.build-web.result }}
-          BUILD_MARKETING_RESULT: ${{ needs.build-marketing.result }}
-          TESTS_WEB_RESULT: ${{ needs.tests-web.result }}
-          TESTS_MARKETING_RESULT: ${{ needs.tests-marketing.result }}
-          TESTS_PACKAGES_RESULT: ${{ needs.tests-packages.result }}
-          TESTS_CONVEX_RESULT: ${{ needs.tests-convex.result }}
-          STORYBOOK_RESULT: ${{ needs.storybook-ui-web.result }}
-          COVERAGE_RESULT: ${{ needs.coverage-ui-web.result }}
-          WEB_E2E_SMOKE_RESULT: ${{ needs.web-e2e-smoke.result }}
+          ANY: ${{ needs.checks.outputs.any }}
+          WEB: ${{ needs.checks.outputs.web }}
+          MARKETING: ${{ needs.checks.outputs.marketing }}
+          CONVEX: ${{ needs.checks.outputs.convex }}
+          SHARED: ${{ needs.checks.outputs.shared }}
+          CONFIG: ${{ needs.checks.outputs.config }}
+          DOCS_ONLY: ${{ needs.checks.outputs.docs_only }}
+          CONVEX_CI_TESTS: ${{ needs.checks.outputs.convex_ci_tests }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          WEB_RESULT: ${{ needs.web.result }}
+          MARKETING_RESULT: ${{ needs.marketing.result }}
+          PACKAGES_RESULT: ${{ needs.packages.result }}
+          CONVEX_RESULT: ${{ needs.convex.result }}
         run: bash scripts/ci-verify-required.sh

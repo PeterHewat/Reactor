@@ -1,6 +1,5 @@
 import { useTranslation } from "@repo/utils";
 import { isAuthEnabled, isBackendEnabled } from "../lib/backend";
-import { repoSetupGuideUrl } from "../lib/repo-url";
 
 /**
  * Instructions when Convex/Clerk env vars are not configured.
@@ -13,7 +12,6 @@ export function BackendSetup() {
   }
 
   const needsConvex = !isBackendEnabled();
-  const setupGuideUrl = repoSetupGuideUrl();
 
   return (
     <section className="border-border bg-muted/40 mx-auto mt-8 max-w-lg rounded-lg border p-6 text-left">
@@ -24,20 +22,7 @@ export function BackendSetup() {
         <li>{t("backend.stepClerk")}</li>
         <li>{t("backend.stepEnv")}</li>
       </ol>
-      <p className="mt-4 text-sm">
-        {setupGuideUrl ? (
-          <a
-            href={setupGuideUrl}
-            className="text-primary hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t("backend.setupGuide")}
-          </a>
-        ) : (
-          <span>{t("backend.setupGuideLocal")}</span>
-        )}
-      </p>
+      <p className="text-muted-foreground mt-4 text-sm">{t("backend.setupGuide")}</p>
     </section>
   );
 }

@@ -3,16 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Vite/Vitest aliases, product name, repo URLs, env placeholders",
+  "description": "Vite/Vitest aliases, product name, env placeholders",
   "exports": {
     "./aliases": "./aliases.ts",
     "./product": "./product.ts",
-    "./env-placeholders": "./env-placeholders.ts",
-    "./repo-url": "./repo-url.ts"
+    "./env-placeholders": "./env-placeholders.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "vitest": "^4.1.8"

@@ -1,7 +1,6 @@
-name: E2E NRT
+name: E2E
 
-# Manual full E2E NRT — not run on pull requests. PRs use web-e2e-smoke in ci.yml.
-# Checkout ref = branch selected in "Use workflow from". See docs/ci-cd.md#e2e-tests-playwright
+# Manual Playwright only (not run on pull requests). See docs/ci-cd.md#e2e-tests-playwright
 
 on:
   workflow_dispatch:
@@ -38,8 +37,21 @@ jobs:
         with:
           ref: ${{ github.ref }}
       - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+      - name: Resolve E2E mode
+        id: e2e
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -z "${{ secrets.CLERK_SECRET_KEY }}" ] && missing+=("CLERK_SECRET_KEY")
+          [ -z "${{ secrets.E2E_CLERK_USER_EMAIL }}" ] && missing+=("E2E_CLERK_USER_EMAIL")
+          [ -z "${{ secrets.VITE_CONVEX_URL }}" ] && missing+=("VITE_CONVEX_URL")
+          [ -z "${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" ] && missing+=("VITE_CLERK_PUBLISHABLE_KEY")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "ui_only=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Missing E2E secrets (${missing[*]}). Running UI-only Playwright (home, routing)."
+          else
+            echo "ui_only=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Codegen, install browsers, and run Playwright (web)
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
@@ -47,15 +59,22 @@ jobs:
           E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          PLAYWRIGHT_UI_ONLY: ${{ steps.e2e.outputs.ui_only == 'true' && '1' || '0' }}
         run: |
           set -euo pipefail
           bun scripts/generate-routes.ts
+          if [ "${{ steps.e2e.outputs.ui_only }}" = "true" ]; then
+            export VITE_CONVEX_URL="${VITE_CONVEX_URL:-https://test-project.convex.cloud}"
+            bunx playwright install chromium
+            bun run --filter @repo/web e2e
+            exit 0
+          fi
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
             if [ "${{ vars.CI_STRICT }}" = "1" ]; then
               echo "::error::CI_STRICT=1 but CONVEX_DEPLOY_KEY is not configured."
               exit 1
             fi
-            echo "::error::Web E2E requires CONVEX_DEPLOY_KEY for convex/_generated."
+            echo "::error::Full web E2E (tasks) requires CONVEX_DEPLOY_KEY for convex/_generated."
             exit 1
           fi
           bun scripts/generate-convex.ts
@@ -65,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report-web-manual
+          name: playwright-report-web
           path: apps/web/playwright-report/
           retention-days: 7
 
@@ -78,8 +97,6 @@ jobs:
         with:
           ref: ${{ github.ref }}
       - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
       - name: Install Playwright browsers
         run: bunx playwright install chromium
       - name: Run Playwright tests (marketing)
@@ -88,6 +105,6 @@ jobs:
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report-marketing-manual
+          name: playwright-report-marketing
           path: apps/marketing/playwright-report/
           retention-days: 7

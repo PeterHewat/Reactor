@@ -8,7 +8,7 @@
 
 - [ ] Home page builds statically (no Convex/Clerk)
 - [ ] Shared design tokens from `@repo/tokens`
-- [ ] Optional `PUBLIC_REPO_URL` links to fork documentation
+- [ ] Hero CTA links to on-site content (e.g. `/blog`)
 
 ## Out of scope (starter)
 

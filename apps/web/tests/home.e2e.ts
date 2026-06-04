@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PRODUCT_NAME } from "./helpers/product-name";
+import { PRODUCT_NAME } from "@repo/config/product";
 import { HomePage } from "./pom/HomePage";
 
 test.describe("Home Page", () => {
@@ -22,16 +22,6 @@ test.describe("Home Page", () => {
       await expect(homePage.subtitle).toBeVisible();
       const subtitleText = await homePage.getSubtitleText();
       expect(subtitleText).toContain("React 19");
-    });
-
-    test("displays the GitHub link", async () => {
-      const v = process.env.VITE_REPO_URL;
-      if (!v || /YOUR_ORG|YOUR_REPO|your-org|your-repo/i.test(v)) {
-        return;
-      }
-      await expect(homePage.githubLink).toBeVisible();
-      await expect(homePage.githubLink).toHaveAttribute("href", /github\.com/);
-      await expect(homePage.githubLink).toHaveAttribute("target", "_blank");
     });
 
     test("displays the features section", async () => {
@@ -145,14 +135,6 @@ test.describe("Home Page", () => {
 
       const h2Count = await page.locator("h2").count();
       expect(h2Count).toBeGreaterThanOrEqual(1);
-    });
-
-    test("GitHub link opens in new tab with security attributes", async () => {
-      const v = process.env.VITE_REPO_URL;
-      if (!v || /YOUR_ORG|YOUR_REPO|your-org|your-repo/i.test(v)) {
-        return;
-      }
-      await expect(homePage.githubLink).toHaveAttribute("rel", /noopener/);
     });
 
     test("interactive elements are keyboard accessible", async ({ page }) => {

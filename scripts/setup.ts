@@ -67,7 +67,6 @@ async function main(): Promise<void> {
   console.log("Reactor setup\n");
 
   copyTemplateIfMissing("apps/web/.env.example", "apps/web/.env.local");
-  copyTemplateIfMissing("apps/marketing/.env.example", "apps/marketing/.env.local");
 
   if (!existsSync(resolve(root, "convex/auth.config.ts"))) {
     copyTemplateIfMissing("convex/auth.config.ts.example", "convex/auth.config.ts");
@@ -85,9 +84,7 @@ async function main(): Promise<void> {
       console.log(`✓ Updated: ${identity.changes.join(", ")}`);
     }
   } else {
-    console.log(
-      "○ No GitHub remote — set VITE_REPO_URL and PUBLIC_REPO_URL in apps/web/.env.local and apps/marketing/.env.local",
-    );
+    console.log("○ No GitHub remote — product name stays at template default until you add origin");
   }
 
   const generateCode = await runGenerate();

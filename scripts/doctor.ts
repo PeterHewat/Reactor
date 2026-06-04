@@ -8,12 +8,12 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { isConvexLinked } from "./lib/convex-link";
 import {
   isPlaceholderEnvValue,
   isRealConvexDeployment,
   parseDotenvAssignmentValue,
 } from "../packages/config/env-placeholders";
+import { isConvexLinked } from "./lib/convex-link";
 
 const root = resolve(import.meta.dir, "..");
 
@@ -183,14 +183,14 @@ if (convexDeployment && !isRealConvexDeployment(convexDeployment)) {
   });
 }
 
-const e2eEnv = readEnvFile("apps/web/.env.e2e.local");
-const e2eEmail = process.env.E2E_CLERK_USER_EMAIL ?? e2eEnv.E2E_CLERK_USER_EMAIL;
-const e2eSecret = process.env.CLERK_SECRET_KEY ?? e2eEnv.CLERK_SECRET_KEY;
+const e2eEmail = process.env.E2E_CLERK_USER_EMAIL ?? webEnv.E2E_CLERK_USER_EMAIL;
+const e2eSecret = process.env.CLERK_SECRET_KEY ?? webEnv.CLERK_SECRET_KEY;
 checks.push({
-  name: "E2E smoke (optional)",
+  name: "E2E tasks (optional)",
   ok: Boolean(e2eSecret && e2eEmail),
   detail: e2eSecret && e2eEmail ? "CLERK_SECRET_KEY + E2E_CLERK_USER_EMAIL set" : "not configured",
-  remediation: "apps/web/.env.e2e.example → .env.e2e.local — docs/development.md#e2e-smoke-tasks",
+  remediation:
+    "Add CLERK_SECRET_KEY and E2E_CLERK_USER_EMAIL to apps/web/.env.local — docs/development.md",
   optional: true,
 });
 

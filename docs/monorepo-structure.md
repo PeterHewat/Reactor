@@ -98,7 +98,7 @@ Deploy workflows use tags: `web-v*`, `marketing-v*`, `convex-v*`. See [ci-cd.md]
 | ------------------------------------- | ------------------------- | ------------------------------------------------------------------ |
 | `convex/_generated/`                  | Convex                    | `bun run dev:convex` or `bun scripts/generate-convex.ts`           |
 | `apps/web/src/routeTree.gen.ts`       | TanStack Router           | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`) |
-| `.agents/skills/`, `skills-lock.json` | Convex `ai-files install` | `bunx convex ai-files install` (part of `bun scripts/generate.ts`) |
+| `.agents/skills/`, `skills-lock.json` | Convex `ai-files install` | `bunx convex ai-files install` (optional; `doctor` reports status) |
 
 Run **`bun run dev:convex`** before the first `typecheck` / `test` (also enforced via `pretypecheck` / `pretest` + `scripts/assert-convex-generated.ts`). There are **no committed** Convex stubs — missing `_generated` fails with remediation text.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console -- CLI output */
 /**
- * Runs codegen: routes (always), Convex (when linked), AI skills (best effort).
+ * Runs codegen: routes (always), Convex (when linked).
  */
 import { resolve } from "node:path";
 import { hasConvexGenerated, isConvexLinked } from "./lib/convex-link";
@@ -12,7 +12,6 @@ const linked = isConvexLinked(root);
 type Step = {
   name: string;
   command: string[];
-  optional?: boolean;
 };
 
 const steps: Step[] = [
@@ -28,11 +27,6 @@ const steps: Step[] = [
         } satisfies Step,
       ]
     : []),
-  {
-    name: "ai",
-    command: ["bunx", "convex", "ai-files", "install"],
-    optional: true,
-  },
 ];
 
 /**
@@ -58,10 +52,6 @@ if (!linked) {
 for (const step of steps) {
   const code = await runStep(step);
   if (code !== 0) {
-    if (step.optional) {
-      console.warn(`○ generate:${step.name} failed (optional) — continuing`);
-      continue;
-    }
     if (step.name === "convex" && hasConvexGenerated(root)) {
       console.warn(
         "○ generate:convex failed — keeping existing convex/_generated (fix dashboard env and re-run)",

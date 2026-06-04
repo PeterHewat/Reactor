@@ -93,12 +93,10 @@ jobs:
             exit 0
           fi
           bun run lint
-          bun scripts/generate-routes.ts
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
             echo "::error::CONVEX_DEPLOY_KEY is required for typecheck. See docs/ci-cd.md#github-actions-secrets"
             exit 1
           fi
-          bun scripts/generate-convex.ts
           bun run typecheck
 
   web:

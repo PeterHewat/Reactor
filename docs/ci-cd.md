@@ -21,7 +21,7 @@
 
 **PR CI:** Lint, unit tests, and builds on pull requests. **Playwright E2E** and **preview deploys** are manual workflows ([below](#manual-workflows)).
 
-**No Turborepo/Nx:** Path-based jobs and [setup-bun](../.github/actions/setup-bun/action.yml). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
+**No Turborepo/Nx:** Path-based jobs and [setup-bun](../.github/actions/setup-bun/action.yml) (`bun install --ignore-scripts` in CI; lifecycle scripts run only where needed). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
 ## CI behavior
 
@@ -31,7 +31,7 @@ Job definitions live in [ci.yml](../.github/workflows/ci.yml). Use **CI required
 
 **Without `CONVEX_DEPLOY_KEY`:** `convex/_generated/` is not committed. Typecheck, web build, `@repo/web` tests, and Convex tests run `bun scripts/generate-convex.ts` when the key exists; otherwise they log a `::notice::` and exit 0.
 
-**Web Tests job:** When `apps/web/**` changes, runs `test:coverage` for `@repo/web`, `@repo/ui-web`, and `@repo/utils` (plus utils integration tests). `@repo/web` and `@repo/ui-web` enforce minimum coverage percentages.
+**Web job:** When `apps/web/**` changes, one job builds `@repo/web` and runs `test:coverage` for `@repo/web`, `@repo/ui-web`, and `@repo/utils` (plus utils integration tests). `@repo/web` and `@repo/ui-web` enforce minimum coverage percentages.
 
 **Package / marketing / Convex jobs:** `test:coverage` for `@repo/config`, `@repo/env-core`, `@repo/marketing`, and `@repo/convex` when those paths change (Convex job still requires `CONVEX_DEPLOY_KEY`).
 
@@ -39,9 +39,9 @@ Job definitions live in [ci.yml](../.github/workflows/ci.yml). Use **CI required
 
 Repository variables (**Settings → Secrets and variables → Actions → Variables**) change behavior only when secrets are **missing** or removed:
 
-| Variable    | When set to `1`                                                                                                                                      |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CI_STRICT` | Fail quality typecheck, build-web, `@repo/web` tests, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
+| Variable    | When set to `1`                                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `CI_STRICT` | Fail typecheck, web build/tests, and Convex tests if `CONVEX_DEPLOY_KEY` is not configured (default: skip with notice, exit 0). |
 
 Set `CI_STRICT=1` once `CONVEX_DEPLOY_KEY` exists ([getting-started.md](./getting-started.md)) so missing keys fail CI instead of skipping.
 
@@ -61,11 +61,12 @@ In **Settings → Branches** → add a rule for `main`:
 
 Suggested **required status checks** (from [ci.yml](../.github/workflows/ci.yml)):
 
-| Check          | Job                                        |
-| -------------- | ------------------------------------------ |
-| CI required    | `ci-required` (aggregates path-based jobs) |
-| Security audit | `security-audit`                           |
-| Secrets scan   | `secrets-scan`                             |
+| Check       | Job                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| CI required | `required` (job id; display name **CI required** — aggregates path-based jobs)                  |
+| CI checks   | `checks` (detect, audit, secrets, format/lint/typecheck) — optional duplicate of the gate above |
+
+`checks` replaces the former `detect-changes`, `security-audit`, `secrets-scan`, and `quality` jobs. Remove legacy required checks named `security-audit`, `secrets-scan`, or old job ids (`ci-required`, `ci-checks`) from branch protection if still listed.
 
 Direct pushes to `main` (if allowed) will **not** run [ci.yml](../.github/workflows/ci.yml) and will block [Release](../.github/workflows/release.yml) until a PR-based check exists.
 

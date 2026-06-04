@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Validates CI job results for branch protection. Used by ci.yml `ci-required` job.
+# Validates CI job results for branch protection. Used by ci.yml `required` job.
 set -euo pipefail
 
 failures=()
@@ -14,9 +14,7 @@ check_job() {
   fi
 }
 
-# Always required
-check_job "security-audit" "true" "${SECURITY_AUDIT_RESULT:-}"
-check_job "secrets-scan" "true" "${SECRETS_SCAN_RESULT:-}"
+check_job "checks" "true" "${CHECKS_RESULT:-}"
 
 any="${ANY:-false}"
 web="${WEB:-false}"
@@ -27,26 +25,20 @@ config="${CONFIG:-false}"
 docs_only="${DOCS_ONLY:-false}"
 convex_ci_tests="${CONVEX_CI_TESTS:-false}"
 
-if [ "$any" = "true" ] || { [ "$docs_only" = "true" ] && [ "$any" = "false" ]; }; then
-  check_job "quality" "true" "${QUALITY_RESULT:-}"
-fi
-
 if [ "$web" = "true" ]; then
-  check_job "build-web" "true" "${BUILD_WEB_RESULT:-}"
-  check_job "tests-web" "true" "${TESTS_WEB_RESULT:-}"
+  check_job "web" "true" "${WEB_RESULT:-}"
 fi
 
 if [ "$marketing" = "true" ]; then
-  check_job "build-marketing" "true" "${BUILD_MARKETING_RESULT:-}"
-  check_job "tests-marketing" "true" "${TESTS_MARKETING_RESULT:-}"
+  check_job "marketing" "true" "${MARKETING_RESULT:-}"
 fi
 
 if [ "$convex" = "true" ] && [ "$convex_ci_tests" = "true" ]; then
-  check_job "tests-convex" "true" "${TESTS_CONVEX_RESULT:-}"
+  check_job "convex" "true" "${CONVEX_RESULT:-}"
 fi
 
 if [ "$shared" = "true" ] || [ "$config" = "true" ]; then
-  check_job "tests-packages" "true" "${TESTS_PACKAGES_RESULT:-}"
+  check_job "packages" "true" "${PACKAGES_RESULT:-}"
 fi
 
 if [ ${#failures[@]} -gt 0 ]; then

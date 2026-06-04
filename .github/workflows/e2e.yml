@@ -37,8 +37,6 @@ jobs:
         with:
           ref: ${{ github.ref }}
       - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
       - name: Resolve E2E mode
         id: e2e
         run: |
@@ -99,8 +97,6 @@ jobs:
         with:
           ref: ${{ github.ref }}
       - uses: ./.github/actions/setup-bun
-        with:
-          node-version: ${{ env.NODE_VERSION }}
       - name: Install Playwright browsers
         run: bunx playwright install chromium
       - name: Run Playwright tests (marketing)

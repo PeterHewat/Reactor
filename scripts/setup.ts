@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console -- CLI output */
 /**
- * First-run setup: env templates, identity from `git remote`, generate, doctor.
+ * Setup and readiness — safe to re-run anytime.
  *
  * @example
  * bun scripts/setup.ts
@@ -10,6 +10,7 @@ import { copyFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { applyIdentity, resolveGitHubRepo } from "./lib/apply-identity";
 import { isConvexLinked } from "./lib/convex-link";
+import { runReadiness } from "./lib/readiness";
 
 const root = resolve(import.meta.dir, "..");
 
@@ -49,13 +50,13 @@ async function runGenerate(): Promise<number> {
 }
 
 /**
- * Runs `bun scripts/doctor.ts` from the repo root.
+ * Installs Convex agent skills for local AI editors (best effort; optional).
  *
  * @returns Process exit code (0 = success)
  */
-async function runDoctor(): Promise<number> {
-  console.log("\n→ bun scripts/doctor.ts");
-  const proc = Bun.spawn(["bun", "scripts/doctor.ts"], {
+async function runAgentSkills(): Promise<number> {
+  console.log("\n→ bunx convex ai-files install");
+  const proc = Bun.spawn(["bunx", "convex", "ai-files", "install"], {
     cwd: root,
     stdout: "inherit",
     stderr: "inherit",
@@ -89,13 +90,23 @@ async function main(): Promise<void> {
     process.exit(generateCode);
   }
 
-  const doctorCode = await runDoctor();
-  if (doctorCode !== 0) {
-    console.error(
-      "\nSetup incomplete — fix doctor failures above, then re-run `bun scripts/setup.ts`.",
+  const skillsCode = await runAgentSkills();
+  if (skillsCode !== 0) {
+    console.warn(
+      "○ Convex agent skills not installed (optional). Retry: bunx convex ai-files install",
     );
-    process.exit(doctorCode);
   }
+
+  console.log("\nReadiness");
+  const readinessCode = runReadiness(root);
+  if (readinessCode !== 0) {
+    console.error(
+      "\nSetup incomplete — fix blocking items above, then re-run `bun scripts/setup.ts`.",
+    );
+    process.exit(readinessCode);
+  }
+
+  console.log("\n✓ Setup complete — continue with docs/getting-started.md");
 }
 
 main().catch((err: unknown) => {

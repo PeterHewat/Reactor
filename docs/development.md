@@ -51,8 +51,7 @@ bun run --filter @repo/web e2e          # Playwright (web)
 bun run --filter @repo/marketing e2e    # Playwright (marketing)
 
 # Setup — getting-started.md
-bun scripts/setup.ts          # env templates, identity, codegen, doctor
-bun scripts/doctor.ts         # toolchain, env, generated code
+bun scripts/setup.ts          # bootstrap + readiness (re-run anytime)
 ```
 
 ## Prerequisites
@@ -63,7 +62,7 @@ Install on your PATH:
 - [Bun](https://bun.sh/) — match `.bun-version` (>= 1.3.14)
 - [Node.js](https://nodejs.org/) — **24** (`.node-version`; `engines.node` is `>=24.0.0`)
 
-CI and `bun scripts/doctor.ts` use the same major version. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
+CI and local scripts use the same major version. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
 
 ## Tailwind and UI
 
@@ -152,7 +151,7 @@ Playwright does **not** run on pull requests. In CI: Actions → **E2E** → **R
 
 PR CI runs `test:coverage` in path-based jobs (`@repo/web` + `@repo/ui-web` enforce thresholds when `apps/web` changes; `@repo/config`, `@repo/env-core`, `@repo/marketing`, `@repo/convex` when those paths change).
 
-`bun scripts/setup.ts` runs `doctor` after codegen. Once Convex is linked, `doctor` also checks generated API and `VITE_*` env.
+Re-run `bun scripts/setup.ts` when local setup is complete ([getting-started.md](./getting-started.md)).
 
 CSP on deploys: `apps/web/vercel.json` — [prompts/security-review.md](../prompts/security-review.md).
 

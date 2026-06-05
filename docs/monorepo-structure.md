@@ -14,7 +14,7 @@ packages/test-utils/# Test fixtures (dev/test only)
 packages/config/    # Aliases, product name, env placeholders (@repo/config)
 packages/env-core/  # Framework-agnostic env loaders (@repo/env-core) — no React/Zustand
 convex/             # Backend — no @repo imports; Convex CLI root
-scripts/            # Setup, doctor, generate (`bun scripts/…` — not imported by apps)
+scripts/            # Setup, generate (`bun scripts/…` — not imported by apps)
 docs/               # Human + agent documentation
 ```
 
@@ -94,11 +94,11 @@ Deploy workflows use tags: `web-v*`, `marketing-v*`, `convex-v*`. See [ci-cd.md]
 
 ## Generated code (not committed)
 
-| Output                                | Generator                 | Command                                                            |
-| ------------------------------------- | ------------------------- | ------------------------------------------------------------------ |
-| `convex/_generated/`                  | Convex                    | `bun run dev:convex` or `bun scripts/generate-convex.ts`           |
-| `apps/web/src/routeTree.gen.ts`       | TanStack Router           | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`) |
-| `.agents/skills/`, `skills-lock.json` | Convex `ai-files install` | `bunx convex ai-files install` (optional; `doctor` reports status) |
+| Output                                | Generator                 | Command                                                                |
+| ------------------------------------- | ------------------------- | ---------------------------------------------------------------------- |
+| `convex/_generated/`                  | Convex                    | `bun run dev:convex` or `bun scripts/generate-convex.ts`               |
+| `apps/web/src/routeTree.gen.ts`       | TanStack Router           | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`)     |
+| `.agents/skills/`, `skills-lock.json` | Convex `ai-files install` | `bun scripts/setup.ts` (best effort) or `bunx convex ai-files install` |
 
 Run **`bun run dev:convex`** before the first `typecheck` / `test` (also enforced via `pretypecheck` / `pretest` + `scripts/assert-convex-generated.ts`). There are **no committed** Convex stubs — missing `_generated` fails with remediation text.
 

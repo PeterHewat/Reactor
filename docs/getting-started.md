@@ -17,7 +17,7 @@ bun install
 bun scripts/setup.ts
 ```
 
-`setup` copies [apps/web/.env.example](../apps/web/.env.example) to [apps/web/.env.local](../apps/web/.env.local), sets `PRODUCT_NAME` from `git remote` when possible, updates README off the upstream template, and runs route codegen + `doctor`.
+`setup` is safe to **re-run anytime**. It copies [apps/web/.env.example](../apps/web/.env.example) to [apps/web/.env.local](../apps/web/.env.local) when missing, sets `PRODUCT_NAME` from `git remote` when possible, updates README off the upstream template, runs codegen, optionally installs Convex agent skills, then prints a readiness report. **Exit 0** means blocking checks passed; **exit 1** lists what to fix next ([getting-started](./getting-started.md) steps below).
 
 ### 2. Clerk and the web app
 
@@ -35,6 +35,8 @@ bun run dev:convex
 
 Follow the CLI prompts on first run. Set `VITE_CONVEX_URL` in [apps/web/.env.local](../apps/web/.env.local) to your deployment URL (shown in the terminal or the Convex dashboard) if it is still a placeholder.
 
+Re-run `bun scripts/setup.ts` to refresh Convex codegen and see which checks still need attention.
+
 ### 4. Run and verify the sample app
 
 ```bash
@@ -45,6 +47,8 @@ bun run dev:full
 - Marketing: [localhost:4321](http://localhost:4321)
 
 Day-to-day commands: [development.md](./development.md#commands).
+
+Re-run `bun scripts/setup.ts` when `/tasks` works — it should exit 0 before you open pull requests.
 
 ### 5. GitHub Actions secrets
 

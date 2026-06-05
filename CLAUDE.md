@@ -52,7 +52,7 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 - Do not request review for: trivial changes, no file changes, fixing another review, or after every edit
 - Prefer `/local-review-uncommitted` for uncommitted work; `/local-review` for committed branch changes
 - Be specific: search before broad tool chains; batch independent reads together
-- After non-trivial **code** changes, run the verify gate (Formatting first, then lint/typecheck/test)
+- Before ending a turn, run the Verify gate steps that apply to your edits
 - On Windows prefix Bash commands with `bash -c "..."` to avoid PowerShell `ls` alias; the prefix is a no-op on macOS/Linux
 
 ## Safety
@@ -84,13 +84,30 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 bunx prettier --write <each touched path>
 ```
 
-**Code changes** (anything beyond docs-only): run the full gate (no need to re-read formatted files unless you edit again):
+**Code changes — fast gate** (any touched `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, or `.astro` file):
 
 ```bash
-bun run format:fix && bun run lint && bun run typecheck && bun run test
+bunx prettier --write <each touched path>
+bun run lint && bun run typecheck
 ```
 
-- If a dev server is already running (e.g. `vite`, `convex dev`), use its rebuild/typecheck output as the compile signal instead of launching a redundant build.
+**Tests — scoped** (same code extensions under a package path below):
+
+| Touched paths                                | Command                                                                                            |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `convex/**`                                  | `bun run --filter @repo/convex test`                                                               |
+| `apps/web/**`                                | `bun run --filter @repo/web test` (+ `@repo/ui-web` / `@repo/utils` if those packages were edited) |
+| `apps/marketing/**`                          | `bun run --filter @repo/marketing test`                                                            |
+| `packages/utils/**`, `packages/ui-web/**`    | matching `--filter`                                                                                |
+| `packages/config/**`, `packages/env-core/**` | `bun run test:packages`                                                                            |
+
+**Full suite** (any of: multiple package paths above; shared packages; root tooling — `package.json`, `eslint.config.js`, `tsconfig*`; or you are finishing the task):
+
+```bash
+bun run lint && bun run typecheck && bun run test
+```
+
+- If a dev server is already running (e.g. `vite`, `convex dev`), use its rebuild/typecheck output as the compile signal instead of launching a redundant typecheck.
 
 ## Error Handling
 

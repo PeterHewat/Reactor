@@ -47,5 +47,5 @@ Pull requests run **unit tests** only (lint, typecheck, build). **Playwright E2E
 Follow [AGENTS.md](AGENTS.md) and [docs/spec/](docs/spec/) for feature work.
 
 - After editing a few files: `bunx prettier --write <path> …`
-- Full verify (code changes): `bun run format:fix && bun run lint && bun run typecheck && bun run test`
+- Fast verify (code files touched): `bun run lint && bun run typecheck` after formatting touched paths; scoped tests per package path; full `bun run test` per AGENTS.md § Verify gate (see file-type rules there)
 - Docs-only minimum: `bunx prettier --write` on every touched path (see AGENTS.md § Verify gate)

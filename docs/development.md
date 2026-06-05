@@ -5,8 +5,10 @@
 Repo root ([package.json](../package.json)):
 
 ```bash
-# Quality gate
-bun run format:fix && bun run lint && bun run typecheck && bun run test
+# Quality gate (see AGENTS.md § Verify gate)
+bun run lint && bun run typecheck   # default after code edits (~5s)
+bun run test                        # full suite at task completion
+bun run --filter @repo/web test     # scoped tests (mirror CI path detection)
 
 # Dev
 bun run dev                   # web + marketing

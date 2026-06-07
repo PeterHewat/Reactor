@@ -130,6 +130,7 @@ jobs:
   create-release:
     needs: [gate, e2e]
     if: |
+      always() &&
       needs.gate.result == 'success' &&
       (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
     runs-on: ubuntu-latest
@@ -222,6 +223,7 @@ jobs:
     name: Deploy ${{ needs.create-release.outputs.tag }}
     needs: [gate, e2e, create-release]
     if: |
+      always() &&
       needs.gate.result == 'success' &&
       (needs.e2e.result == 'success' || needs.e2e.result == 'skipped') &&
       needs.create-release.result == 'success' &&

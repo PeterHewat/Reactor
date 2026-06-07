@@ -2,7 +2,27 @@
 
 Good title + description + label sets for squash-merge release notes.
 
-## Feature
+## Regulatory (what/why vs how)
+
+Distinguish **what/why** from **how** by removing implementation specifics from
+title and description. Leading phrases like "using," "with," or "via" that name
+tools, packages, or API versions qualify as how and should be stripped.
+
+**Label:** `chore`
+
+**Title:** Continue release flow when E2E is skipped
+
+**Description:**
+
+Ensure the CI pipeline progresses past gate/verify even when E2E is skipped.
+
+- Prevent E2E skip from halting the entire pipeline by adding `always()` to
+  release/deploy job conditions.
+
+_Why good:_ describes the outcome (release flow continues). Not "Add `always()`"
+which states how.
+
+## Bug fix
 
 **Label:** `enhancement`
 

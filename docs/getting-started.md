@@ -21,15 +21,15 @@ bun run setup
 
 Safe to **re-run anytime**. Each run re-asks questions with your previous answers as defaults (press **Enter** to keep).
 
-| Step           | What it does                                                                                                                                                   |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Identity**   | Product name + apex domain (e.g. `example.com`) → [`.reactor/setup.json`](../.reactor/setup.json), [packages/config/product.ts](../packages/config/product.ts) |
-| **Clerk**      | [Create app](https://dashboard.clerk.com/apps) → Development keys → E2E user `e2e.test@{apex}` (API) → [allowed origins](./environments.md#clerk)              |
-| **Convex**     | If not linked: run `bun run dev:convex`; then `npx convex env set CLERK_JWT_ISSUER_DOMAIN` and sync `VITE_CONVEX_URL`                                          |
-| **Codegen**    | Routes + Convex `_generated/` + readiness report (**exit 0** = ready for PRs)                                                                                  |
-| **GitHub**     | Optional: sync dev CI secrets via `gh` (default **yes** first time) — needs `gh auth login`                                                                    |
-| **Vercel**     | Optional: two projects, web env vars, domains, **DNS hints**, optional `VERCEL_*` → `gh`                                                                       |
-| **Production** | Optional: GitHub **`production`** environment for `prod-*` releases (live Clerk/Convex keys, prod deploy key)                                                  |
+| Step           | What it does                                                                                                                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Identity**   | Product name + apex domain (e.g. `example.com`) + optional MIT removal → [`.reactor/setup.json`](../.reactor/setup.json), [packages/config/product.ts](../packages/config/product.ts), `LICENSE` |
+| **Clerk**      | [Create app](https://dashboard.clerk.com/apps) → Development keys → E2E user `e2e.test@{apex}` (API) → [allowed origins](./environments.md#clerk)                                                |
+| **Convex**     | If not linked: run `bun run dev:convex`; then `npx convex env set CLERK_JWT_ISSUER_DOMAIN` and sync `VITE_CONVEX_URL`                                                                            |
+| **Codegen**    | Routes + Convex `_generated/` + readiness report (**exit 0** = ready for PRs)                                                                                                                    |
+| **GitHub**     | Optional: sync dev CI secrets via `gh` (default **yes** first time) — needs `gh auth login`                                                                                                      |
+| **Vercel**     | Optional: two projects, web env vars, domains, **DNS hints**, optional `VERCEL_*` → `gh`                                                                                                         |
+| **Production** | Optional: GitHub **`production`** environment for `prod-*` releases (live Clerk/Convex keys, prod deploy key)                                                                                    |
 
 Dashboard URLs are printed as clickable links; the wizard asks **Open link? [y/N]** before opening your browser.
 

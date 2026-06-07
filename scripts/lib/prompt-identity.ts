@@ -1,8 +1,9 @@
 /* eslint-disable no-console -- CLI wizard */
 import { deriveHostnames } from "../../packages/config/hostnames";
 import { isValidApexDomain, normalizeApexDomainInput } from "../../packages/config/validate-domain";
+import { shouldOfferLicenseRemoval } from "./license-identity";
+import { promptConfirm, promptLine } from "./prompt";
 import { productNameFromRepo, type GitHubRepo } from "./repo-identity";
-import { promptLine } from "./prompt";
 import { writeProductName } from "./product-name";
 import {
   buildSetupConfig,
@@ -61,7 +62,14 @@ export async function runIdentityWizard(
     }
   }
 
-  const config = buildSetupConfig(productName, apexDomain, github, existing);
+  let removeMitLicense = existing?.removeMitLicense;
+  if (shouldOfferLicenseRemoval(github)) {
+    removeMitLicense = await promptConfirm("Remove MIT licence?", {
+      defaultYes: existing?.removeMitLicense ?? true,
+    });
+  }
+
+  const config = buildSetupConfig(productName, apexDomain, github, existing, removeMitLicense);
   writeSetupConfig(root, config);
   if (writeProductName(root, productName)) {
     console.log(`✓ Updated packages/config/product.ts → "${productName}"`);

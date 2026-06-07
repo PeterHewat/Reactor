@@ -9,6 +9,7 @@
 import { copyFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { applyIdentity, resolveGitHubRepo } from "./lib/apply-identity";
+import { applyLicenseFromConfig } from "./lib/license-identity";
 import { applyReadmeIdentity } from "./lib/readme-identity";
 import { bootstrapCiSecrets } from "./lib/bootstrap-ci";
 import { bootstrapClerkConvex } from "./lib/bootstrap-clerk-convex";
@@ -101,8 +102,15 @@ async function main(): Promise<void> {
     );
   } else if (!setupConfig) {
     console.log("○ No GitHub remote — product name stays at template default until you add origin");
-  } else if (applyReadmeIdentity(root, setupConfig.productName)) {
-    console.log("✓ Updated README.md");
+  } else {
+    const readmeUpdated = applyReadmeIdentity(root, setupConfig.productName);
+    const licenseUpdated = applyLicenseFromConfig(root, setupConfig, null);
+    if (readmeUpdated) {
+      console.log("✓ Updated README.md");
+    }
+    if (licenseUpdated) {
+      console.log("✓ Updated LICENSE and package.json (license)");
+    }
   }
 
   if (setupConfig) {

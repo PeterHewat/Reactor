@@ -21,11 +21,11 @@ Step-by-step summary: [getting-started.md](./getting-started.md#2-setup-wizard-b
   "productName": "My App",
   "apexDomain": "example.com",
   "github": { "org": "acme", "repo": "my-app" },
-  "setupVersion": 1
+  "removeMitLicense": true
 }
 ```
 
-Also writes `packages/config/product.ts` (`PRODUCT_NAME`) and rebrands `README.md` when forking from the template.
+Also writes `packages/config/product.ts` (`PRODUCT_NAME`), rebrands `README.md` when forking from the template, and when `removeMitLicense` is true replaces MIT [`LICENSE`](../LICENSE) from [`.reactor/LICENSE.proprietary.template`](../.reactor/LICENSE.proprietary.template) (skipped on the upstream `PeterHewat/Reactor` remote).
 
 ### Secrets (never in `.reactor/`)
 

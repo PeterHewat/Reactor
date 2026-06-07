@@ -2,8 +2,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { GitHubRepo } from "./repo-identity";
 
-export const SETUP_VERSION = 1;
-
 export type VercelSetupMeta = {
   orgId: string;
   webProjectId: string;
@@ -16,7 +14,8 @@ export type SetupConfig = {
   productName: string;
   apexDomain: string;
   github: { org: string; repo: string } | null;
-  setupVersion: number;
+  /** When true, setup replaces MIT `LICENSE` with the proprietary stub. */
+  removeMitLicense?: boolean;
   /** Set after dev repository secrets were pushed via setup + `gh`. */
   githubSecretsSynced?: boolean;
   /** Set after Vercel projects/domains were configured via setup. */
@@ -37,16 +36,6 @@ const REL_PATH = ".reactor/setup.json";
  */
 export function setupConfigPath(root: string): string {
   return resolve(root, REL_PATH);
-}
-
-/**
- * Returns whether persisted setup config exists and is complete.
- *
- * @param root - Repository root
- */
-export function hasSetupConfig(root: string): boolean {
-  const config = readSetupConfig(root);
-  return Boolean(config?.productName && config?.apexDomain);
 }
 
 /**
@@ -94,12 +83,13 @@ export function buildSetupConfig(
   apexDomain: string,
   github: GitHubRepo | null,
   existing?: SetupConfig | null,
+  removeMitLicense?: boolean,
 ): SetupConfig {
   return {
     productName,
     apexDomain,
     github: github ? { org: github.org, repo: github.repo } : null,
-    setupVersion: SETUP_VERSION,
+    removeMitLicense,
     githubSecretsSynced: existing?.githubSecretsSynced,
     vercelSynced: existing?.vercelSynced,
     vercelGithubSecretsSynced: existing?.vercelGithubSecretsSynced,

@@ -8,6 +8,7 @@ import {
   TEMPLATE_PRODUCT_NAME,
   type GitHubRepo,
 } from "./repo-identity";
+import { applyLicenseFromConfig } from "./license-identity";
 import { applyReadmeIdentity } from "./readme-identity";
 import { readSetupConfig } from "./setup-config";
 
@@ -93,6 +94,10 @@ export function applyIdentity(root: string, github: GitHubRepo): IdentityResult 
 
   if (applyReadmeIdentity(root, productName)) {
     changes.push("README.md");
+  }
+
+  if (setupConfig && applyLicenseFromConfig(root, setupConfig, github)) {
+    changes.push("LICENSE", "package.json (license)");
   }
 
   return { github, productName, rebranded, changes };

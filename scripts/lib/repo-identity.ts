@@ -2,7 +2,6 @@
 export const TEMPLATE_UPSTREAM = { org: "PeterHewat", repo: "Reactor" } as const;
 
 export const TEMPLATE_PRODUCT_NAME = "Reactor";
-export const TEMPLATE_REPO_SLUG = `${TEMPLATE_UPSTREAM.org}/${TEMPLATE_UPSTREAM.repo}`;
 
 export type GitHubRepo = {
   org: string;

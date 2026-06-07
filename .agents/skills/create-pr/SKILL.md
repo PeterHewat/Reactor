@@ -144,7 +144,11 @@ Only after approval.
 If current branch is `main` / `master`:
 
 ```bash
-git checkout -b <type>/<short-slug>
+branch="${type}/${short-slug}"
+if git show-ref --verify --quiet "refs/heads/$branch" 2>/dev/null; then
+  branch="${type}/${short-slug}-$RANDOM"
+fi
+git checkout -b "$branch"
 ```
 
 Branch slug: lowercase, hyphenated, derived from the PR title (drop filler

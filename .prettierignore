@@ -11,7 +11,8 @@ node_modules/
 convex/_generated/
 apps/web/src/routeTree.gen.ts
 .convex/
-.agents/
+.agents/skills/convex/
+.agents/skills/convex-*/
 skills-lock.json
 *.min.js
 *.min.css

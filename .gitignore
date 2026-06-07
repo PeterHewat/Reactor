@@ -75,7 +75,8 @@ apps/web/src/routeTree.gen.ts
 .convex/
 
 # Convex agent skills (run `npx convex ai-files install`)
-.agents/
+.agents/skills/convex/
+.agents/skills/convex-*/
 skills-lock.json
 
 # Test results

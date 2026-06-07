@@ -47,7 +47,7 @@ if [ ${#failures[@]} -gt 0 ]; then
     echo "  - $f"
   done
   echo ""
-  echo "Configure CONVEX_DEPLOY_KEY and other secrets before opening PRs (see docs/ci-cd.md#github-actions-secrets)."
+  echo "Configure repository secrets (e.g. CONVEX_DEPLOY_KEY for CI) before opening PRs (see docs/ci-cd.md#repository-secrets)."
   exit 1
 fi
 

@@ -1,0 +1,63 @@
+name: Deploy Web to Vercel
+description: Build and deploy apps/web to Vercel (production or preview).
+
+inputs:
+  convex_deploy_key:
+    description: Convex deploy key for codegen
+    required: true
+  vercel_token:
+    description: Vercel API token
+    required: true
+  vercel_org_id:
+    description: Vercel org/team ID
+    required: true
+  vercel_project_id:
+    description: Vercel project ID for apps/web
+    required: true
+  vite_convex_url:
+    description: VITE_CONVEX_URL for the web build
+    required: true
+  vite_clerk_publishable_key:
+    description: VITE_CLERK_PUBLISHABLE_KEY for the web build
+    required: true
+  vercel_pull_environment:
+    description: Vercel pull environment (production or preview)
+    required: true
+  vercel_prod_flag:
+    description: Pass --prod to vercel build/deploy (true for production)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Generate and deploy to Vercel (web)
+      shell: bash
+      env:
+        CONVEX_DEPLOY_KEY: ${{ inputs.convex_deploy_key }}
+        VERCEL_TOKEN: ${{ inputs.vercel_token }}
+        VERCEL_ORG_ID: ${{ inputs.vercel_org_id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel_project_id }}
+        VITE_CONVEX_URL: ${{ inputs.vite_convex_url }}
+        VITE_CLERK_PUBLISHABLE_KEY: ${{ inputs.vite_clerk_publishable_key }}
+        VERCEL_PULL_ENV: ${{ inputs.vercel_pull_environment }}
+        VERCEL_PROD_FLAG: ${{ inputs.vercel_prod_flag }}
+      run: |
+        set -euo pipefail
+        if [ -z "${VITE_CONVEX_URL:-}" ]; then
+          echo "::error::Web deploy needs VITE_CONVEX_URL."
+          exit 1
+        fi
+        if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+          echo "::error::CONVEX_DEPLOY_KEY is required for web deploy (convex/_generated is not committed)."
+          exit 1
+        fi
+        PROD_ARGS=()
+        if [ "$VERCEL_PROD_FLAG" = "true" ]; then
+          PROD_ARGS=(--prod)
+        fi
+        bun scripts/generate-routes.ts
+        bun scripts/generate-convex.ts
+        cd apps/web
+        bunx vercel pull --yes --environment="$VERCEL_PULL_ENV" --token="$VERCEL_TOKEN"
+        bunx vercel build "${PROD_ARGS[@]}" --token="$VERCEL_TOKEN"
+        bunx vercel deploy --prebuilt "${PROD_ARGS[@]}" --token="$VERCEL_TOKEN"

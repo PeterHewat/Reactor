@@ -1,25 +1,6 @@
 #!/usr/bin/env bash
-# Shared path roots for CI change detection and release tagging.
-# Sourced by scripts/ci-detect-changes.sh and .github/workflows/release.yml
-
-# Release: git diff roots per deployable component (trailing slash for `git diff -- path/`)
-release_component_paths() {
-  case "$1" in
-    web)
-      echo "apps/web/ packages/ui-web/ packages/utils/ packages/tokens/ packages/config/ packages/env-core/"
-      ;;
-    marketing)
-      echo "apps/marketing/ packages/utils/ packages/tokens/ packages/config/ packages/env-core/"
-      ;;
-    convex)
-      echo "convex/"
-      ;;
-    *)
-      echo "Unknown release component: $1" >&2
-      return 1
-      ;;
-  esac
-}
+# Shared path roots for CI change detection.
+# Sourced by scripts/ci-detect-changes.sh
 
 # CI: workspace prefixes that fan out to web, marketing, and convex
 SHARED_PACKAGE_PREFIXES=(

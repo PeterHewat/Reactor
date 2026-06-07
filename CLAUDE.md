@@ -71,10 +71,10 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 
 ## Generated / installed artifacts (gitignored)
 
-| Path                                                  | Restore with                                                                |
-| ----------------------------------------------------- | --------------------------------------------------------------------------- |
-| `convex/_generated/`, `apps/web/src/routeTree.gen.ts` | `bun scripts/generate.ts` (`pretypecheck` / `pretest` run it automatically) |
-| `.agents/`, `skills-lock.json`                        | `bunx convex ai-files install` (optional; via `bun scripts/setup.ts`)       |
+| Path                                                  | Restore with                                                          |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| `convex/_generated/`, `apps/web/src/routeTree.gen.ts` | `bun run codegen` (or `bun scripts/generate.ts`)                      |
+| `.agents/`, `skills-lock.json`                        | `bunx convex ai-files install` (optional; via `bun scripts/setup.ts`) |
 
 ## Verify gate
 
@@ -84,14 +84,23 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 bunx prettier --write <each touched path>
 ```
 
-**Code changes — fast gate** (any touched `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, or `.astro` file):
+**Scripts-only** (`scripts/**` only — outside the solution `tsc` graph):
 
 ```bash
 bunx prettier --write <each touched path>
-bun run lint && bun run typecheck
+bun run lint
 ```
 
-**Tests — scoped** (same code extensions under a package path below):
+**Workspace code** (any other touched `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, or `.astro` file):
+
+```bash
+bunx prettier --write <each touched path>
+bun run check
+```
+
+(`check` = `codegen` → `lint` → `typecheck`, once. Use bare `typecheck` only when generated artifacts already exist.)
+
+**Tests — scoped** (after `check` when the package imports generated files):
 
 | Touched paths                                | Command                                                                                            |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------- |
@@ -104,10 +113,10 @@ bun run lint && bun run typecheck
 **Full suite** (any of: multiple package paths above; shared packages; root tooling — `package.json`, `eslint.config.js`, `tsconfig*`; or you are finishing the task):
 
 ```bash
-bun run lint && bun run typecheck && bun run test
+bun run verify
 ```
 
-- If a dev server is already running (e.g. `vite`, `convex dev`), use its rebuild/typecheck output as the compile signal instead of launching a redundant typecheck.
+- If a dev server is already running (e.g. `vite`, `convex dev`), use its rebuild/typecheck output as the compile signal instead of launching a redundant `check`.
 
 ## Error Handling
 

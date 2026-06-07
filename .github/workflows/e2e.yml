@@ -1,6 +1,6 @@
 name: E2E
 
-# Manual Playwright only (not run on pull requests). See docs/ci-cd.md#e2e-tests-playwright
+# Manual Playwright or reusable from release.yml. See docs/ci-cd.md#e2e-tests-playwright
 
 on:
   workflow_dispatch:
@@ -15,12 +15,28 @@ on:
         required: true
         default: true
         type: boolean
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to checkout (defaults to caller ref)
+        required: false
+        type: string
+      run_web:
+        description: Run @repo/web Playwright suite
+        required: false
+        type: boolean
+        default: true
+      run_marketing:
+        description: Run @repo/marketing Playwright suite
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: e2e-manual-${{ github.run_id }}
+  group: e2e-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
 
 env:
@@ -35,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
       - uses: ./.github/actions/setup-bun
       - name: Resolve E2E mode
         id: e2e
@@ -70,7 +86,7 @@ jobs:
             exit 0
           fi
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
-            echo "::error::Full web E2E (tasks) requires CONVEX_DEPLOY_KEY for convex/_generated. See docs/ci-cd.md#github-actions-secrets"
+            echo "::error::Full web E2E (tasks) requires CONVEX_DEPLOY_KEY for convex/_generated. See docs/ci-cd.md#repository-secrets"
             exit 1
           fi
           bun scripts/generate-convex.ts
@@ -91,7 +107,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
       - uses: ./.github/actions/setup-bun
       - name: Install Playwright browsers
         run: bunx playwright install chromium

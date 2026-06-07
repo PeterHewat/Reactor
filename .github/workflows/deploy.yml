@@ -1,145 +1,128 @@
-# Deploy a release tag to production (Vercel / Convex).
-# Quality gates run in ci.yml on main/PRs — deploy only builds and ships.
+# Deploy a release tag — Convex, web, and marketing (lane encoded in tag name).
 #
-# USAGE: Actions → Deploy Production → Run workflow → tag e.g. web-v1.0.0
+# USAGE: Actions → Deploy → tag [dev|prod]-yyyy-MM-dd-HH-mm-ss (UTC)
+#        or workflow_call from release.yml
 #
-# REQUIRED GITHUB SECRETS: see docs/ci-cd.md
+# dev-* → repository secrets; prod-* → GitHub production environment
+# SECRETS: see docs/environments.md
 
-name: Deploy Production
+name: Deploy
 
 on:
   workflow_call:
     inputs:
       tag:
-        description: "Release tag (e.g. web-v1.0.0)"
+        description: "Release tag [dev|prod]-yyyy-MM-dd-HH-mm-ss (UTC)"
         required: true
         type: string
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to deploy or rollback (e.g. web-v1.0.0)"
+        description: "Release tag [dev|prod]-yyyy-MM-dd-HH-mm-ss (UTC)"
         required: true
         type: string
 
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  NODE_VERSION: "24"
 
 jobs:
   parse-release:
     runs-on: ubuntu-latest
     outputs:
-      target: ${{ steps.parse.outputs.target }}
-      version: ${{ steps.parse.outputs.version }}
+      stamp: ${{ steps.parse.outputs.stamp }}
       tag: ${{ steps.parse.outputs.tag }}
+      pre_release: ${{ steps.parse.outputs.pre_release }}
+      deploy_lane: ${{ steps.parse.outputs.deploy_lane }}
     steps:
       - name: Parse release tag
         id: parse
         run: |
+          set -euo pipefail
           TAG="${{ inputs.tag || github.event.inputs.tag }}"
           echo "Parsing tag: $TAG"
-          if [[ "$TAG" =~ ^(web|marketing|convex)-v(.+)$ ]]; then
-            echo "target=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-            echo "version=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
-            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          if [[ "$TAG" =~ ^dev-([0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2})$ ]]; then
+            echo "stamp=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+            echo "pre_release=true" >> "$GITHUB_OUTPUT"
+            echo "deploy_lane=dev" >> "$GITHUB_OUTPUT"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG" =~ ^prod-([0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2})$ ]]; then
+            echo "stamp=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+            echo "pre_release=false" >> "$GITHUB_OUTPUT"
+            echo "deploy_lane=prod" >> "$GITHUB_OUTPUT"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           else
-            echo "Invalid tag format. Expected: {web|marketing|convex}-v{version}"
+            echo "::error::Invalid tag. Expected [dev|prod]-yyyy-MM-dd-HH-mm-ss (UTC)"
             exit 1
           fi
 
-  release-convex:
+  deploy-convex:
     needs: parse-release
-    if: needs.parse-release.outputs.target == 'convex'
     runs-on: ubuntu-latest
+    environment: ${{ needs.parse-release.outputs.pre_release == 'false' && 'production' || '' }}
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-release.outputs.tag }}
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
+      - name: Deploy Convex
+        uses: ./.github/actions/deploy-convex
         with:
-          node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Deploy to Convex
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-        run: bunx convex deploy --cmd 'bun run build'
+          convex_deploy_key: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
-  release-web:
-    needs: parse-release
-    if: needs.parse-release.outputs.target == 'web'
+  deploy-web:
+    needs: [parse-release, deploy-convex]
     runs-on: ubuntu-latest
+    environment: ${{ needs.parse-release.outputs.pre_release == 'false' && 'production' || '' }}
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-release.outputs.tag }}
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
+      - name: Deploy web
+        uses: ./.github/actions/deploy-web-vercel
         with:
-          node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Generate and deploy to Vercel (web)
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-        run: |
-          set -euo pipefail
-          if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
-            echo "::error::CONVEX_DEPLOY_KEY is required for web deploy (convex/_generated is not committed)."
-            exit 1
-          fi
-          bun scripts/generate-routes.ts
-          bun scripts/generate-convex.ts
-          cd apps/web
-          bunx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-          bunx vercel build --prod --token="$VERCEL_TOKEN"
-          bunx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          convex_deploy_key: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          vercel_token: ${{ secrets.VERCEL_TOKEN }}
+          vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel_project_id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+          vite_convex_url: ${{ secrets.VITE_CONVEX_URL }}
+          vite_clerk_publishable_key: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          vercel_pull_environment: ${{ needs.parse-release.outputs.pre_release == 'true' && 'preview' || 'production' }}
+          vercel_prod_flag: ${{ needs.parse-release.outputs.pre_release == 'false' && 'true' || 'false' }}
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: web-build-${{ needs.parse-release.outputs.version }}
+          name: web-build-${{ needs.parse-release.outputs.stamp }}-${{ needs.parse-release.outputs.deploy_lane }}
           path: apps/web/dist/
           retention-days: 30
 
-  release-marketing:
-    needs: parse-release
-    if: needs.parse-release.outputs.target == 'marketing'
+  deploy-marketing:
+    needs: [parse-release, deploy-convex]
     runs-on: ubuntu-latest
+    environment: ${{ needs.parse-release.outputs.pre_release == 'false' && 'production' || '' }}
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.parse-release.outputs.tag }}
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-bun
+      - name: Deploy marketing
+        uses: ./.github/actions/deploy-marketing-vercel
         with:
-          node-version: ${{ env.NODE_VERSION }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Deploy to Vercel (marketing)
-        working-directory: apps/marketing
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_MARKETING_PROJECT_ID }}
-        run: |
-          bunx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-          bunx vercel build --prod --token="$VERCEL_TOKEN"
-          bunx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+          vercel_token: ${{ secrets.VERCEL_TOKEN }}
+          vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel_project_id: ${{ secrets.VERCEL_MARKETING_PROJECT_ID }}
+          vercel_pull_environment: ${{ needs.parse-release.outputs.pre_release == 'true' && 'preview' || 'production' }}
+          vercel_prod_flag: ${{ needs.parse-release.outputs.pre_release == 'false' && 'true' || 'false' }}
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: marketing-build-${{ needs.parse-release.outputs.version }}
+          name: marketing-build-${{ needs.parse-release.outputs.stamp }}-${{ needs.parse-release.outputs.deploy_lane }}
           path: apps/marketing/dist/
           retention-days: 30

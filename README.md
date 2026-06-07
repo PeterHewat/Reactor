@@ -16,14 +16,15 @@
 
 ## Resources
 
-| Resource                                                 | Purpose                                         |
-| -------------------------------------------------------- | ----------------------------------------------- |
-| [docs/getting-started.md](docs/getting-started.md)       | **Start here** — local setup through production |
-| [docs/development.md](docs/development.md)               | Day-to-day commands, E2E, Convex tests          |
-| [docs/ci-cd.md](docs/ci-cd.md)                           | Workflows, secrets, releases, PR labels         |
-| [docs/monorepo-structure.md](docs/monorepo-structure.md) | Layout, surfaces, env, aliases, codegen         |
-| [AGENTS.md](AGENTS.md)                                   | Rules for coding agents                         |
-| [CONTRIBUTING.md](CONTRIBUTING.md)                       | Branches, commits, hooks                        |
-| [convex/README.md](convex/README.md)                     | Convex folder map                               |
-| [SECURITY.md](SECURITY.md)                               | Vulnerability reporting                         |
-| [prompts/](prompts/)                                     | AI prompt templates (incl. security review)     |
+| Resource                                                 | Purpose                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------- |
+| [docs/getting-started.md](docs/getting-started.md)       | **Start here** — local setup through production         |
+| [docs/development.md](docs/development.md)               | Day-to-day commands, E2E, Convex tests                  |
+| [docs/environments.md](docs/environments.md)             | Convex, Clerk, Vercel, domains, GitHub `production` env |
+| [docs/ci-cd.md](docs/ci-cd.md)                           | Workflows, secrets, releases, PR labels                 |
+| [docs/monorepo-structure.md](docs/monorepo-structure.md) | Layout, surfaces, env, aliases, codegen                 |
+| [AGENTS.md](AGENTS.md)                                   | Rules for coding agents                                 |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                       | Branches, commits, hooks                                |
+| [convex/README.md](convex/README.md)                     | Convex folder map                                       |
+| [SECURITY.md](SECURITY.md)                               | Vulnerability reporting                                 |
+| [prompts/](prompts/)                                     | AI prompt templates (incl. security review)             |

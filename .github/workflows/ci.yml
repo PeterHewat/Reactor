@@ -10,6 +10,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -56,28 +57,11 @@ jobs:
       - name: Run security audit
         run: bun audit --audit-level=high
 
-      - name: Install Gitleaks
-        run: |
-          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${{ env.GITLEAKS_VERSION }}/gitleaks_${{ env.GITLEAKS_VERSION }}_linux_x64.tar.gz" | tar -xz gitleaks
-          sudo install -m 755 gitleaks /usr/local/bin/gitleaks
-
       - name: Scan for secrets
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            gitleaks detect \
-              --source . \
-              --redact \
-              --verbose \
-              --log-opts="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
-          elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            gitleaks detect \
-              --source . \
-              --redact \
-              --verbose \
-              --log-opts="${{ github.event.before }}..${{ github.event.after }}"
-          else
-            gitleaks detect --source . --redact --verbose
-          fi
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: ${{ env.GITLEAKS_VERSION }}
 
       - name: Format and check
         if: |

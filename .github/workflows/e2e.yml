@@ -31,6 +31,11 @@ on:
         required: false
         type: boolean
         default: true
+      require_full_web_e2e:
+        description: Fail when web E2E secrets are missing (release gate; no UI-only fallback)
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -63,6 +68,10 @@ jobs:
           [ -z "${{ secrets.VITE_CONVEX_URL }}" ] && missing+=("VITE_CONVEX_URL")
           [ -z "${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" ] && missing+=("VITE_CLERK_PUBLISHABLE_KEY")
           if [ ${#missing[@]} -gt 0 ]; then
+            if [ "${{ inputs.require_full_web_e2e }}" = "true" ]; then
+              echo "::error::Full web E2E required but secrets are missing: ${missing[*]}. See docs/ci-cd.md#repository-secrets"
+              exit 1
+            fi
             echo "ui_only=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Missing E2E secrets (${missing[*]}). Running UI-only Playwright (home, routing)."
           else

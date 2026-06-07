@@ -17,7 +17,7 @@ bun install
 bun scripts/setup.ts
 ```
 
-`setup` is safe to **re-run anytime**. It copies [apps/web/.env.example](../apps/web/.env.example) to [apps/web/.env.local](../apps/web/.env.local) when missing, sets `PRODUCT_NAME` from `git remote` when possible, updates README off the upstream template, runs codegen, optionally installs Convex agent skills, then prints a readiness report. **Exit 0** means blocking checks passed; **exit 1** lists what to fix next ([getting-started](./getting-started.md) steps below).
+`setup` is safe to **re-run anytime**. It copies [apps/web/.env.example](../apps/web/.env.example) to [apps/web/.env.local](../apps/web/.env.local) when missing, sets `PRODUCT_NAME` from `git remote` when possible, runs codegen, optionally installs Convex agent skills, then prints a readiness report. **Exit 0** means blocking checks passed; **exit 1** lists what to fix next ([getting-started](./getting-started.md) steps below).
 
 ### 2. Clerk and the web app
 

@@ -6,7 +6,6 @@ import {
   productNameFromRepo,
   shouldRebrandFromTemplate,
   TEMPLATE_PRODUCT_NAME,
-  TEMPLATE_REPO_SLUG,
   type GitHubRepo,
 } from "./repo-identity";
 
@@ -76,21 +75,6 @@ export function applyIdentity(root: string, github: GitHubRepo): IdentityResult 
   }
 
   if (rebranded) {
-    const readmePath = resolve(root, "README.md");
-    if (existsSync(readmePath)) {
-      const raw = readFileSync(readmePath, "utf8");
-      let next = raw.replaceAll(TEMPLATE_REPO_SLUG, `${github.org}/${github.repo}`);
-      next = next.replaceAll(/PeterHewat\/Reactor/g, `${github.org}/${github.repo}`);
-      if (currentProductStillTemplate(raw)) {
-        next = next.replace(/^# Reactor\b/m, `# ${productName}`);
-        next = next.replace(/\*\*Reactor\*\*/g, `**${productName}**`);
-      }
-      if (next !== raw) {
-        writeFileSync(readmePath, next);
-        changes.push("README.md");
-      }
-    }
-
     const pkgPath = resolve(root, "package.json");
     if (existsSync(pkgPath)) {
       const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { name?: string };
@@ -105,8 +89,4 @@ export function applyIdentity(root: string, github: GitHubRepo): IdentityResult 
   }
 
   return { github, productName, rebranded, changes };
-}
-
-function currentProductStillTemplate(readme: string): boolean {
-  return readme.startsWith("# Reactor") || readme.includes("**Reactor** is a production-shaped");
 }

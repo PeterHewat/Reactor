@@ -1,6 +1,8 @@
 # Create one GitHub release + deploy the full stack (single workflow_dispatch run).
 # Rollback / redeploy an older tag: use the Deploy workflow instead.
 #
+# Order: validate → CI verify → E2E (optional) → tag/release → deploy
+#
 # USAGE: Actions → Release → Run workflow (optional E2E)
 
 name: Release
@@ -22,17 +24,16 @@ on:
 permissions:
   contents: write
   packages: read
+  pull-requests: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  create-release:
+  gate:
+    name: Validate & verify CI
     runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.release.outputs.tag }}
-      summary_url: ${{ steps.release.outputs.summary_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -79,7 +80,8 @@ jobs:
           SHA="${{ github.sha }}"
           REPO="${{ github.repository }}"
 
-          if gh run list --commit "$SHA" --workflow ci.yml --json conclusion --jq -e 'any(.[]; .conclusion == "success")'; then
+          if gh run list --commit "$SHA" --workflow ci.yml --json conclusion \
+            | jq -e 'any(.[]; .conclusion == "success")' >/dev/null; then
             echo "✅ CI succeeded for commit ${SHA}"
             exit 0
           fi
@@ -92,8 +94,19 @@ jobs:
             exit 1
           fi
 
-          if gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state --jq -e \
-            'any(.[]; .name == "CI required" and .state == "SUCCESS")'; then
+          PR_STATE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state,mergeCommit --jq '.state')
+          MERGE_OID=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json mergeCommit --jq '.mergeCommit.oid // empty')
+          if [ "$PR_STATE" != "MERGED" ]; then
+            echo "❌ Associated PR #${PR_NUMBER} is not merged (state: ${PR_STATE})."
+            exit 1
+          fi
+          if [ "$MERGE_OID" != "$SHA" ]; then
+            echo "❌ PR #${PR_NUMBER} merge commit (${MERGE_OID}) does not match release commit ${SHA}."
+            exit 1
+          fi
+
+          if gh pr checks "$PR_NUMBER" --repo "$REPO" --json name,state \
+            | jq -e 'any(.[]; .name == "CI required" and .state == "SUCCESS")' >/dev/null; then
             echo "✅ CI required passed on merged PR #${PR_NUMBER} for commit ${SHA}"
             exit 0
           fi
@@ -102,11 +115,39 @@ jobs:
           gh pr checks "$PR_NUMBER" --repo "$REPO" || true
           exit 1
 
+  e2e:
+    name: E2E
+    needs: gate
+    if: inputs.run_e2e
+    uses: ./.github/workflows/e2e.yml
+    with:
+      ref: ${{ github.sha }}
+      run_web: true
+      run_marketing: true
+      require_full_web_e2e: true
+    secrets: inherit
+
+  create-release:
+    needs: [gate, e2e]
+    if: |
+      needs.gate.result == 'success' &&
+      (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      summary_url: ${{ steps.release.outputs.summary_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create release
         id: release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PRE_RELEASE: ${{ github.event.inputs.pre_release }}
+          PRE_RELEASE: ${{ inputs.pre_release }}
         run: |
           set -euo pipefail
 
@@ -122,7 +163,7 @@ jobs:
 
           echo "🚀 Release configuration:"
           echo "  Pre-release: $PRE_RELEASE"
-          echo "  Run E2E: ${{ github.event.inputs.run_e2e }}"
+          echo "  Run E2E: ${{ inputs.run_e2e }}"
           echo "  Stamp (UTC): $STAMP"
           echo "  Tag: $NEW_TAG"
           if [ -n "$LATEST_TAG" ]; then
@@ -177,27 +218,14 @@ jobs:
           echo "tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
           echo "summary_url=https://github.com/${{ github.repository }}/releases" >> "$GITHUB_OUTPUT"
 
-  e2e:
-    name: E2E
-    needs: create-release
-    if: |
-      inputs.run_e2e &&
-      needs.create-release.result == 'success' &&
-      needs.create-release.outputs.tag != ''
-    uses: ./.github/workflows/e2e.yml
-    with:
-      ref: ${{ github.sha }}
-      run_web: true
-      run_marketing: true
-    secrets: inherit
-
   deploy:
     name: Deploy ${{ needs.create-release.outputs.tag }}
-    needs: [create-release, e2e]
+    needs: [gate, e2e, create-release]
     if: |
+      needs.gate.result == 'success' &&
+      (needs.e2e.result == 'success' || needs.e2e.result == 'skipped') &&
       needs.create-release.result == 'success' &&
-      needs.create-release.outputs.tag != '' &&
-      (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
+      needs.create-release.outputs.tag != ''
     uses: ./.github/workflows/deploy.yml
     with:
       tag: ${{ needs.create-release.outputs.tag }}

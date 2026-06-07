@@ -60,8 +60,8 @@ Draft from the staged diff (`git diff --cached`) plus session context.
 - Sentence case; no trailing period
 - No ticket IDs, branch names, or `WIP` prefixes
 
-Good: `Add task due dates with calendar picker`
-Avoid: `Implement due date feature using react-day-picker and Convex v.object`
+Good: `Continue release flow when E2E is skipped`
+Avoid: `Add always() to release and deploy gates`
 
 ### Description
 

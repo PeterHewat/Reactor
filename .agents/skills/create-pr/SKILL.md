@@ -27,6 +27,9 @@ Examples: [examples.md](examples.md).
   `main` via squash merge.
 - Do not run `bun run verify` or `bun run check` — the user is expected to have
   verified already before opening a PR.
+- Never include "Made with Cursor" (or similar Cursor attribution) in the PR body.
+  Cursor may inject it when agents run `gh pr create`; always re-apply the
+  approved description after create (see [Push and open PR](#push-and-open-pr)).
 
 ## 1. Preflight
 
@@ -178,7 +181,16 @@ gh pr create \
 <approved description>
 EOF
 )"
+
+gh pr edit --body "$(cat <<'EOF'
+<approved description>
+EOF
+)"
 ```
+
+Cursor may append `Made with [Cursor](https://cursor.com)` to the body passed to
+`gh pr create` (PR Attribution). Re-run `gh pr edit` with the approved
+description only so the published PR matches what the user approved.
 
 Assign the PR author with `--assignee @me` (authenticated `gh` user). Use an
 explicit login only when the user asks to assign someone else.

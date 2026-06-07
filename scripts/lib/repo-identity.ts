@@ -39,16 +39,33 @@ export function parseGitHubRemote(raw: string): GitHubRepo | null {
 }
 
 /**
- * Converts a repository slug to a display product name (`my-app` → `My App`).
+ * Converts a repository slug to a display product name.
+ *
+ * - `my-app` → `My App` (kebab/snake segments are title-cased)
+ * - `FooBAR`, `FooBAR` → preserved when the slug already mixes upper and lower case
+ * - `reactor` → `Reactor`
  *
  * @param slug - Repository name segment from the GitHub URL
  */
 export function slugToProductName(slug: string): string {
-  return slug
-    .split(/[-_]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
+  const trimmed = slug.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  if (/[-_]/.test(trimmed)) {
+    return trimmed
+      .split(/[-_]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  if (/[a-z]/.test(trimmed) && /[A-Z]/.test(trimmed)) {
+    return trimmed;
+  }
+
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
 /**

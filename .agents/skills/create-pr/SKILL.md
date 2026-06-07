@@ -173,11 +173,15 @@ git push -u origin HEAD
 gh pr create \
   --title "<approved title>" \
   --label "<approved label>" \
+  --assignee @me \
   --body "$(cat <<'EOF'
 <approved description>
 EOF
 )"
 ```
+
+Assign the PR author with `--assignee @me` (authenticated `gh` user). Use an
+explicit login only when the user asks to assign someone else.
 
 Use the same title, body, and label as approved. Label must exist in the repo
 (run [sync-labels.yml](../../../.github/workflows/sync-labels.yml) if missing).

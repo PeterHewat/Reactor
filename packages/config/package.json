@@ -7,7 +7,10 @@
   "exports": {
     "./aliases": "./aliases.ts",
     "./product": "./product.ts",
-    "./env-placeholders": "./env-placeholders.ts"
+    "./env-placeholders": "./env-placeholders.ts",
+    "./validate-domain": "./validate-domain.ts",
+    "./hostnames": "./hostnames.ts",
+    "./e2e-clerk": "./e2e-clerk.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -15,9 +15,9 @@ release_timestamp_utc() {
 latest_release_tag() {
   local pre_release="$1"
   if [ "$pre_release" = "true" ]; then
-    git tag -l "dev-*" --sort=-creatordate | grep -E "^dev-${RELEASE_STAMP_PATTERN}$" | head -n1
+    git tag -l "dev-*" --sort=-creatordate | grep -E "^dev-${RELEASE_STAMP_PATTERN}$" | head -n1 || true
   else
-    git tag -l "prod-*" --sort=-creatordate | grep -E "^prod-${RELEASE_STAMP_PATTERN}$" | head -n1
+    git tag -l "prod-*" --sort=-creatordate | grep -E "^prod-${RELEASE_STAMP_PATTERN}$" | head -n1 || true
   fi
 }
 

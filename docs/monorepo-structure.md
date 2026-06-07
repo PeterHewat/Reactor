@@ -97,11 +97,11 @@ Deploy tags: `dev-2026-06-07-18-55-37` / `prod-2026-06-07-18-55-37` (one tag per
 
 ## Generated code (not committed)
 
-| Output                                        | Generator                 | Command                                                                |
-| --------------------------------------------- | ------------------------- | ---------------------------------------------------------------------- |
-| `convex/_generated/`                          | Convex                    | `bun run dev:convex` or `bun scripts/generate-convex.ts`               |
-| `apps/web/src/routeTree.gen.ts`               | TanStack Router           | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`)     |
-| `.agents/skills/convex*/`, `skills-lock.json` | Convex `ai-files install` | `bun scripts/setup.ts` (best effort) or `bunx convex ai-files install` |
+| Output                                        | Generator                 | Command                                                            |
+| --------------------------------------------- | ------------------------- | ------------------------------------------------------------------ |
+| `convex/_generated/`                          | Convex                    | `bun run dev:convex` or `bun scripts/generate-convex.ts`           |
+| `apps/web/src/routeTree.gen.ts`               | TanStack Router           | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`) |
+| `.agents/skills/convex*/`, `skills-lock.json` | Convex `ai-files install` | `bun run setup` (best effort) or `bunx convex ai-files install`    |
 
 Repo-owned agent skills (e.g. `.agents/skills/create-pr/`) are committed; only Convex-installed `convex*` skills are gitignored.
 

@@ -63,7 +63,7 @@ function buildChecks(root: string): Check[] {
       typeof Bun !== "undefined"
         ? `bun ${Bun.version} (want ${readBunVersion() ?? ">=1.3.14"})`
         : "not running under Bun",
-    remediation: "Install Bun from https://bun.sh and re-run `bun scripts/setup.ts`",
+    remediation: "Install Bun from https://bun.sh and re-run `bun run setup`",
   });
 
   const wantedNode = readNodeVersion();
@@ -86,7 +86,7 @@ function buildChecks(root: string): Check[] {
     name: "apps/web/.env.local",
     ok: fileExists(root, "apps/web/.env.local"),
     detail: fileExists(root, "apps/web/.env.local") ? "present" : "missing",
-    remediation: "bun scripts/setup.ts  # or: cp apps/web/.env.example apps/web/.env.local",
+    remediation: "bun run setup  # or: cp apps/web/.env.example apps/web/.env.local",
   });
 
   const rootEnv = readEnvFile(root, ".env.local");

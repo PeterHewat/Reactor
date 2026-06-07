@@ -71,10 +71,10 @@ Prettier (`.prettierrc.json`, `.prettierignore`) is the source of truth for ever
 
 ## Generated / installed artifacts (gitignored)
 
-| Path                                                  | Restore with                                                          |
-| ----------------------------------------------------- | --------------------------------------------------------------------- |
-| `convex/_generated/`, `apps/web/src/routeTree.gen.ts` | `bun run codegen` (or `bun scripts/generate.ts`)                      |
-| `.agents/skills/convex*/`, `skills-lock.json`         | `bunx convex ai-files install` (optional; via `bun scripts/setup.ts`) |
+| Path                                                  | Restore with                                                   |
+| ----------------------------------------------------- | -------------------------------------------------------------- |
+| `convex/_generated/`, `apps/web/src/routeTree.gen.ts` | `bun run codegen` (or `bun scripts/generate.ts`)               |
+| `.agents/skills/convex*/`, `skills-lock.json`         | `bunx convex ai-files install` (optional; via `bun run setup`) |
 
 ## Verify gate
 

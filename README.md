@@ -18,7 +18,8 @@
 
 | Resource                                                 | Purpose                                                 |
 | -------------------------------------------------------- | ------------------------------------------------------- |
-| [docs/getting-started.md](docs/getting-started.md)       | **Start here** — local setup through production         |
+| [docs/getting-started.md](docs/getting-started.md)       | **Start here** — interactive `setup.ts` wizard          |
+| [docs/setup-automation.md](docs/setup-automation.md)     | What setup automates vs manual; dashboard URLs          |
 | [docs/development.md](docs/development.md)               | Day-to-day commands, E2E, Convex tests                  |
 | [docs/environments.md](docs/environments.md)             | Convex, Clerk, Vercel, domains, GitHub `production` env |
 | [docs/ci-cd.md](docs/ci-cd.md)                           | Workflows, secrets, releases, PR labels                 |

@@ -4,13 +4,20 @@
  * Setup and readiness — safe to re-run anytime.
  *
  * @example
- * bun scripts/setup.ts
+ * bun run setup
  */
 import { copyFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { applyIdentity, resolveGitHubRepo } from "./lib/apply-identity";
+import { applyReadmeIdentity } from "./lib/readme-identity";
+import { bootstrapCiSecrets } from "./lib/bootstrap-ci";
+import { bootstrapClerkConvex } from "./lib/bootstrap-clerk-convex";
+import { bootstrapProduction } from "./lib/bootstrap-production";
+import { bootstrapVercel } from "./lib/bootstrap-vercel";
 import { isConvexLinked } from "./lib/convex-link";
+import { runIdentityWizard } from "./lib/prompt-identity";
 import { runReadiness } from "./lib/readiness";
+import { readSetupConfig } from "./lib/setup-config";
 
 const root = resolve(import.meta.dir, "..");
 
@@ -65,12 +72,21 @@ async function runAgentSkills(): Promise<number> {
 }
 
 async function main(): Promise<void> {
+  const interactive = Boolean(process.stdin.isTTY);
+
   console.log("Reactor setup\n");
 
   copyTemplateIfMissing("apps/web/.env.example", "apps/web/.env.local");
 
   const github = resolveGitHubRepo(root);
-  if (github) {
+
+  const setupConfig = interactive ? await runIdentityWizard(root, github) : readSetupConfig(root);
+
+  if (!setupConfig && !interactive) {
+    console.log("○ No .reactor/setup.json — run setup interactively once to configure identity");
+  }
+
+  if (github && setupConfig) {
     const identity = applyIdentity(root, github);
     console.log(
       `✓ Repository: ${github.repoUrl} → product name "${identity.productName}"${identity.rebranded ? "" : " (upstream template)"}`,
@@ -78,14 +94,25 @@ async function main(): Promise<void> {
     if (identity.changes.length > 0) {
       console.log(`✓ Updated: ${identity.changes.join(", ")}`);
     }
-  } else {
+  } else if (github && !setupConfig) {
+    const identity = applyIdentity(root, github);
+    console.log(
+      `✓ Repository: ${github.repoUrl} → product name "${identity.productName}"${identity.rebranded ? "" : " (upstream template)"}`,
+    );
+  } else if (!setupConfig) {
     console.log("○ No GitHub remote — product name stays at template default until you add origin");
+  } else if (applyReadmeIdentity(root, setupConfig.productName)) {
+    console.log("✓ Updated README.md");
+  }
+
+  if (setupConfig) {
+    await bootstrapClerkConvex(root, setupConfig, interactive);
   }
 
   const generateCode = await runGenerate();
   if (generateCode !== 0 && isConvexLinked(root)) {
     console.error(
-      "\nSetup incomplete — `bun scripts/generate.ts` failed while Convex is linked. Fix errors above, then re-run `bun scripts/setup.ts`.",
+      "\nSetup incomplete — `bun scripts/generate.ts` failed while Convex is linked. Fix errors above, then re-run `bun run setup`.",
     );
     process.exit(generateCode);
   }
@@ -100,10 +127,14 @@ async function main(): Promise<void> {
   console.log("\nReadiness");
   const readinessCode = runReadiness(root);
   if (readinessCode !== 0) {
-    console.error(
-      "\nSetup incomplete — fix blocking items above, then re-run `bun scripts/setup.ts`.",
-    );
+    console.error("\nSetup incomplete — fix blocking items above, then re-run `bun run setup`.");
     process.exit(readinessCode);
+  }
+
+  if (setupConfig && interactive) {
+    await bootstrapCiSecrets(root, setupConfig);
+    await bootstrapVercel(root, setupConfig, github);
+    await bootstrapProduction(root, setupConfig);
   }
 
   console.log("\n✓ Setup complete — continue with docs/getting-started.md");

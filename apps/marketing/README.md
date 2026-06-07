@@ -40,7 +40,7 @@ Astro outputs static assets to `dist/`. This template uses **Vercel** with `verc
 2. Add `VERCEL_MARKETING_PROJECT_ID` (and other Vercel secrets) to repository secrets for `dev-*` deploys; mirror prod values in the **`production`** environment for `prod-*` deploys
 3. Run the Release workflow (or Deploy with tag `dev-2026-06-07-18-55-37`) — see [docs/ci-cd.md](../../docs/ci-cd.md)
 
-See [docs/environments.md](../../docs/environments.md#vercel-configure-once) for domains and [ci-cd.md](../../docs/ci-cd.md#production-environment-secrets) for tokens and project IDs.
+See [docs/environments.md](../../docs/environments.md#domains-and-dns) for domains/DNS and [ci-cd.md](../../docs/ci-cd.md#production-environment-secrets) for tokens and project IDs.
 
 ## Notes
 

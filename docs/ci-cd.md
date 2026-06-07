@@ -24,13 +24,13 @@
 
 ## Deployment tiers
 
-| Lane            | Convex / Clerk    | Web domain (example) | Marketing (example)  | When                                                  |
-| --------------- | ----------------- | -------------------- | -------------------- | ----------------------------------------------------- |
-| **Local + E2E** | Dev / Development | `localhost:5173`     | `localhost:4321`     | Dev, Playwright, Release E2E                          |
-| **Pre-release** | Dev / Development | `dev.domain.tld`     | `dev.www.domain.tld` | Tags `dev-*`; Release with **Pre-release** checked    |
-| **Production**  | Prod / Production | `domain.tld`         | `www.domain.tld`     | Tags `prod-*`; Release with **Pre-release** unchecked |
+| Lane            | Convex / Clerk    | Web domain (example) | Marketing (example)   | When                                                  |
+| --------------- | ----------------- | -------------------- | --------------------- | ----------------------------------------------------- |
+| **Local + E2E** | Dev / Development | `localhost:5173`     | `localhost:4321`      | Dev, Playwright, Release E2E                          |
+| **Pre-release** | Dev / Development | `dev.example.com`    | `dev.www.example.com` | Tags `dev-*`; Release with **Pre-release** checked    |
+| **Production**  | Prod / Production | `example.com`        | `www.example.com`     | Tags `prod-*`; Release with **Pre-release** unchecked |
 
-Platform setup: **[environments.md](./environments.md)**.
+Platform setup and DNS: **[environments.md](./environments.md)**.
 
 ## GitHub Environments
 
@@ -94,55 +94,57 @@ The **E2E** workflow runs **UI-only** (`home`, `routing`) when Clerk/Convex secr
 
 ## Repository secrets
 
-Configure in **Settings → Secrets and variables → Actions**. Used by PR CI and E2E — **development** stack values only.
+Configure in **Settings → Secrets and variables → Actions**. Used by PR CI, E2E, and `dev-*` deploys — **development** stack only.
 
-| Secret                        | Description                                     | Where to find it                                                                                                                   |
-| ----------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `CONVEX_DEPLOY_KEY`           | Deploy key for **CI/E2E codegen** (dev/preview) | Convex preview deploy key or dev deployment — **not** the production key ([environments.md](./environments.md#repository-secrets)) |
-| `VITE_CONVEX_URL`             | Convex **dev** URL (E2E)                        | Convex Dashboard → dev deployment → Settings → URL                                                                                 |
-| `VITE_CLERK_PUBLISHABLE_KEY`  | Clerk **development** publishable key (E2E)     | Clerk Dashboard → API Keys (Development)                                                                                           |
-| `CLERK_SECRET_KEY`            | Clerk **development** secret (Playwright only)  | Clerk Dashboard → API Keys (Development)                                                                                           |
-| `E2E_CLERK_USER_EMAIL`        | Dev test user for Playwright `clerk.signIn`     | Create in Clerk (Email + Password enabled); see [development.md](./development.md#e2e-tests-playwright)                            |
-| `VERCEL_TOKEN`                | Vercel API token (pre-release deploy)           | Account Settings → Tokens                                                                                                          |
-| `VERCEL_ORG_ID`               | Vercel team/user ID                             | Dashboard or `.vercel/project.json`                                                                                                |
-| `VERCEL_WEB_PROJECT_ID`       | Web project ID                                  | Vercel project settings                                                                                                            |
-| `VERCEL_MARKETING_PROJECT_ID` | Marketing project ID                            | Vercel project settings                                                                                                            |
+`bun run setup` can set these via `gh secret set` when you confirm after readiness (see [getting-started.md](./getting-started.md)).
+
+| Secret                        | Purpose                                | Setup / source                                                                        |
+| ----------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
+| `CONVEX_DEPLOY_KEY`           | CI/E2E codegen + `dev-*` Convex deploy | Setup mints via `npx convex deployment token create github-ci`                        |
+| `VITE_CONVEX_URL`             | E2E + web pre-release build            | From `apps/web/.env.local` / `bun run dev:convex`                                     |
+| `VITE_CLERK_PUBLISHABLE_KEY`  | E2E + web pre-release build            | [Clerk API keys](https://dashboard.clerk.com/last-active?path=api-keys) (Development) |
+| `CLERK_SECRET_KEY`            | Playwright only                        | Same (Development secret)                                                             |
+| `E2E_CLERK_USER_EMAIL`        | Playwright `clerk.signIn`              | [development.md](./development.md#e2e-tests-playwright)                               |
+| `VERCEL_TOKEN`                | Pre-release Vercel deploy              | Setup Vercel step or [vercel.com/account/tokens](https://vercel.com/account/tokens)   |
+| `VERCEL_ORG_ID`               | Team/user scope for deploy             | Setup Vercel step or Vercel project settings                                          |
+| `VERCEL_WEB_PROJECT_ID`       | `apps/web` project                     | Setup Vercel step or [vercel.com/new](https://vercel.com/new)                         |
+| `VERCEL_MARKETING_PROJECT_ID` | `apps/marketing` project               | Setup Vercel step                                                                     |
 
 ### `production` environment secrets
 
-Configure in **Settings → Environments → production → Environment secrets**. Used for `prod-*` tags. Same secret **names**, **production** values:
+Configure in **Settings → Environments → production → Environment secrets**. Used for `prod-*` tags. Same secret **names**, **production** values. **`bun run setup`** can populate these when you confirm the **Production** step (after dev + Vercel); manual fallback:
 
-| Secret                        | Description                                 | Where to find it                                          |
-| ----------------------------- | ------------------------------------------- | --------------------------------------------------------- |
-| `CONVEX_DEPLOY_KEY`           | Convex **production** deploy key            | Convex Dashboard → Production → Settings → Deploy Key     |
-| `VITE_CONVEX_URL`             | Convex **prod** URL (web production deploy) | Convex Dashboard → production deployment → Settings → URL |
-| `VITE_CLERK_PUBLISHABLE_KEY`  | Clerk **production** publishable key        | Clerk Dashboard → API Keys (Production)                   |
-| `VERCEL_TOKEN`                | Vercel API token                            | Account Settings → Tokens                                 |
-| `VERCEL_ORG_ID`               | Team or user ID                             | `.vercel/project.json` or dashboard                       |
-| `VERCEL_WEB_PROJECT_ID`       | Project ID for `apps/web`                   | Vercel project settings                                   |
-| `VERCEL_MARKETING_PROJECT_ID` | Project ID for `apps/marketing`             | Vercel project settings                                   |
+| Secret                        | Purpose            | Where to find it                                                                     |
+| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------ |
+| `CONVEX_DEPLOY_KEY`           | Convex prod deploy | [Convex](https://dashboard.convex.dev) → Production → Settings → Deploy Key          |
+| `VITE_CONVEX_URL`             | Web prod build     | Convex Production deployment URL                                                     |
+| `VITE_CLERK_PUBLISHABLE_KEY`  | Web prod build     | [Clerk API keys](https://dashboard.clerk.com/last-active?path=api-keys) (Production) |
+| `VERCEL_TOKEN`                | Prod Vercel deploy | [vercel.com/account/tokens](https://vercel.com/account/tokens)                       |
+| `VERCEL_ORG_ID`               | Team/user scope    | Same as repository or `.reactor/setup.json` → `vercel.orgId`                         |
+| `VERCEL_WEB_PROJECT_ID`       | Web project        | Same projects as dev; prod keys differ for `VITE_*` only                             |
+| `VERCEL_MARKETING_PROJECT_ID` | Marketing project  | Same as repository                                                                   |
 
-See [environments.md](./environments.md) for Convex, Clerk, Vercel, and domain setup.
+Domains, DNS, and Vercel hostname assignment: [environments.md](./environments.md#domains-and-dns).
 
 ### Vercel (web + marketing)
 
-Create **two** Vercel projects from this monorepo (Import Git Repository → set **Root Directory** to `apps/web` and `apps/marketing`). Each app has a `vercel.json` with monorepo install/build commands. Custom domains and env vars: [environments.md](./environments.md#vercel-configure-once).
+Two projects from this monorepo (`apps/web`, `apps/marketing`). Prefer **`bun run setup`** (Vercel step) or follow [environments.md](./environments.md#vercel-web--marketing).
 
-**Web project (Vercel dashboard):** set `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY` under **Production** (production deployment URLs and keys — mirror GitHub `production` environment).
+**Web project:** `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY` on Vercel (setup sets all targets on dev values; update **Production** env in Vercel when you add prod Clerk/Convex keys).
 
-**Release deploys:** [release.yml](../.github/workflows/release.yml) — one `workflow_dispatch` run creates a single tag, optionally runs E2E **before** deploy (dev secrets only), then ships the full stack (Convex → web and marketing in parallel).
+**Release deploys:** [release.yml](../.github/workflows/release.yml) — optional E2E, then Convex → web + marketing in parallel.
 
-**Vercel + GitHub Actions:** Deploy workflows run `vercel build` on the GitHub runner (full monorepo checkout), then `vercel deploy --prebuilt` — Vercel does not rebuild remotely. Disable automatic Vercel Git deployments: `git.deploymentEnabled: false` in each `vercel.json` ([Vercel docs](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments)).
+**Vercel + GitHub Actions:** `vercel build` on the runner, then `vercel deploy --prebuilt`. Automatic Git deploys off: `git.deploymentEnabled: false` in each `vercel.json` ([Vercel docs](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments)).
 
-Deploy steps: [.github/actions/deploy-convex](../.github/actions/deploy-convex), [deploy-web-vercel](../.github/actions/deploy-web-vercel), [deploy-marketing-vercel](../.github/actions/deploy-marketing-vercel).
+Deploy actions: [deploy-convex](../.github/actions/deploy-convex), [deploy-web-vercel](../.github/actions/deploy-web-vercel), [deploy-marketing-vercel](../.github/actions/deploy-marketing-vercel).
 
 Tune CSP in `apps/web/vercel.json` for your Clerk domain ([prompts/security-review.md](../prompts/security-review.md)).
 
 ### Getting the Convex deploy key
 
-**Production (deploy only):** Convex Dashboard → **Production** → Settings → Deploy Key → add as `CONVEX_DEPLOY_KEY` in GitHub **`production`** environment.
+**Production:** Convex Dashboard → **Production** → Settings → Deploy Key → GitHub **`production`** environment.
 
-**CI / E2E (codegen):** use a dev or [preview](https://docs.convex.dev/production/hosting/preview-deployments) deploy key as repository `CONVEX_DEPLOY_KEY`. Do not duplicate the production key at repository level.
+**CI / E2E / `dev-*`:** dev or [preview](https://docs.convex.dev/production/hosting/preview-deployments) key as repository `CONVEX_DEPLOY_KEY`. Setup mints one interactively; do not duplicate the production key at repository level.
 
 > Never commit secrets. Use GitHub repository or environment secrets ([environments.md](./environments.md)).
 

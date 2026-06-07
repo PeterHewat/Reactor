@@ -8,7 +8,7 @@ Report vulnerabilities privately via GitHub Security Advisories or the contact i
 
 - Never commit `.env`, `.env.local`, API keys, or deploy tokens.
 - Use `.env.example` files as templates only.
-- Store CI secrets in GitHub Actions repository secrets ([docs/ci-cd.md](docs/ci-cd.md#github-actions-secrets)).
+- Store CI secrets in GitHub **repository** secrets; production deploy credentials in the **`production`** environment ([docs/ci-cd.md](docs/ci-cd.md#github-environments), [docs/environments.md](docs/environments.md)).
 
 ## Dependency updates
 

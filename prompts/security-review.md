@@ -43,7 +43,7 @@ When reviewing or changing CSP:
 - Add your Clerk instance domains to `script-src`, `connect-src`, and `frame-src` ([Clerk CSP docs](https://clerk.com/docs/security/clerk-csp))
 - Ensure `connect-src` / `wss:` include your Convex deployment URL
 - Confirm no secrets in client bundles (`loadEnv` / `requireWebEnv` only)
-- Verify on a deployed preview: DevTools → Network → document response headers
+- Verify on a deployed environment: DevTools → Network → document response headers
 - Do not mirror production CSP in local Vite dev without a separate dev policy (HMR needs relaxed `script-src`)
 
 Provide specific recommendations:

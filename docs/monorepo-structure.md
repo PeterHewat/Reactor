@@ -1,6 +1,6 @@
 # Monorepo structure
 
-**Surfaces:** `apps/web` (React, Vercel `web-v*`), `apps/marketing` (Astro, `marketing-v*`), `convex/` (Convex `convex-v*`), Clerk for auth. CI/deploy: [ci-cd.md](./ci-cd.md).
+**Surfaces:** `apps/web` (React), `apps/marketing` (Astro), `convex/` (Convex), Clerk for auth. CI/deploy: [ci-cd.md](./ci-cd.md).
 
 ## Layout
 
@@ -73,12 +73,15 @@ This template does **not** use Turborepo, Nx, or similar orchestrators. Tasks ru
 
 ## Typecheck vs build
 
-| Script           | Command                                | Purpose                                                                                           |
-| ---------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `typecheck`      | `tsc -p tsconfig.json --noEmit`        | Solution-wide check, no emit (`skipLibCheck: true` in base — see comment in `tsconfig.base.json`) |
-| `typecheck:refs` | `tsc -b`                               | Verify project references only                                                                    |
-| `build`          | `tsc -b`                               | Emit `.d.ts` for composite packages (`emitDeclarationOnly`) — **not** Vite/Astro bundles          |
-| `build:all`      | `build` + `bun run --filter '*' build` | Solution `tsc -b`, then each workspace `build` (skips packages without a script)                  |
+| Script           | Command                                                  | Purpose                                                                                           |
+| ---------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `codegen`        | `bun scripts/generate.ts` + `assert-convex-generated.ts` | Restore gitignored generated files before typecheck/test                                          |
+| `check`          | `codegen` → `lint` → `typecheck`                         | Default quality gate (CI checks job, agents after workspace edits)                                |
+| `verify`         | `check` → `test`                                         | Full local/PR-equivalent gate                                                                     |
+| `typecheck`      | `tsc -p tsconfig.json --noEmit`                          | Solution-wide check, no emit (`skipLibCheck: true` in base — see comment in `tsconfig.base.json`) |
+| `typecheck:refs` | `tsc -b`                                                 | Verify project references only                                                                    |
+| `build`          | `tsc -b`                                                 | Emit `.d.ts` for composite packages (`emitDeclarationOnly`) — **not** Vite/Astro bundles          |
+| `build:all`      | `build` + `bun run --filter '*' build`                   | Solution `tsc -b`, then each workspace `build` (skips packages without a script)                  |
 
 Convex has no local bundle artifact — `@repo/convex` `build` is `tsc --noEmit`; production upload is `convex deploy` / CI, not root `build`.
 
@@ -90,7 +93,7 @@ App production builds: `bun run --filter @repo/web build`, `bun run --filter @re
 
 ## Release tags
 
-Deploy workflows use tags: `web-v*`, `marketing-v*`, `convex-v*`. See [ci-cd.md](./ci-cd.md).
+Deploy tags: `dev-2026-06-07-18-55-37` / `prod-2026-06-07-18-55-37` (one tag per release — full stack). See [ci-cd.md](./ci-cd.md).
 
 ## Generated code (not committed)
 
@@ -100,12 +103,12 @@ Deploy workflows use tags: `web-v*`, `marketing-v*`, `convex-v*`. See [ci-cd.md]
 | `apps/web/src/routeTree.gen.ts`       | TanStack Router           | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`)     |
 | `.agents/skills/`, `skills-lock.json` | Convex `ai-files install` | `bun scripts/setup.ts` (best effort) or `bunx convex ai-files install` |
 
-Run **`bun run dev:convex`** before the first `typecheck` / `test` (also enforced via `pretypecheck` / `pretest` + `scripts/assert-convex-generated.ts`). There are **no committed** Convex stubs — missing `_generated` fails with remediation text.
+Run **`bun run dev:convex`** or **`bun run codegen`** before the first `typecheck` / `test`. Use **`bun run check`** (or **`bun run verify`**) so codegen runs exactly once. There are **no committed** Convex stubs — missing `_generated` fails with remediation text.
 
 - `bun scripts/generate.ts` — routes always; Convex only when linked (root `.env.local` or `CONVEX_DEPLOY_KEY`)
 - Gitignored in `.gitignore`
 - ESLint ignores `convex/_generated/`; Prettier ignores both paths (see `.prettierignore`)
-- **CI:** jobs that need Convex require `CONVEX_DEPLOY_KEY` and run `bun scripts/generate-convex.ts` (see [ci-cd.md](./ci-cd.md))
+- **CI:** jobs that need Convex require repository `CONVEX_DEPLOY_KEY` and run `bun scripts/generate-convex.ts` (see [ci-cd.md](./ci-cd.md#ci-behavior)). Production deploy key lives in GitHub **`production`** environment only ([environments.md](./environments.md)).
 
 ## Starter growth thresholds
 

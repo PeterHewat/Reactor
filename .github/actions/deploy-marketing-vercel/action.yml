@@ -1,0 +1,41 @@
+name: Deploy Marketing to Vercel
+description: Build and deploy apps/marketing to Vercel (production or preview).
+
+inputs:
+  vercel_token:
+    description: Vercel API token
+    required: true
+  vercel_org_id:
+    description: Vercel org/team ID
+    required: true
+  vercel_project_id:
+    description: Vercel project ID for apps/marketing
+    required: true
+  vercel_pull_environment:
+    description: Vercel pull environment (production or preview)
+    required: true
+  vercel_prod_flag:
+    description: Pass --prod to vercel build/deploy (true for production)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Deploy to Vercel (marketing)
+      shell: bash
+      working-directory: apps/marketing
+      env:
+        VERCEL_TOKEN: ${{ inputs.vercel_token }}
+        VERCEL_ORG_ID: ${{ inputs.vercel_org_id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel_project_id }}
+        VERCEL_PULL_ENV: ${{ inputs.vercel_pull_environment }}
+        VERCEL_PROD_FLAG: ${{ inputs.vercel_prod_flag }}
+      run: |
+        set -euo pipefail
+        PROD_ARGS=()
+        if [ "$VERCEL_PROD_FLAG" = "true" ]; then
+          PROD_ARGS=(--prod)
+        fi
+        bunx vercel pull --yes --environment="$VERCEL_PULL_ENV" --token="$VERCEL_TOKEN"
+        bunx vercel build "${PROD_ARGS[@]}" --token="$VERCEL_TOKEN"
+        bunx vercel deploy --prebuilt "${PROD_ARGS[@]}" --token="$VERCEL_TOKEN"

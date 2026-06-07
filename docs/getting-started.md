@@ -52,7 +52,12 @@ Re-run `bun scripts/setup.ts` when `/tasks` works — it should exit 0 before yo
 
 ### 5. GitHub Actions secrets
 
-Before opening pull requests that touch the web app or Convex backend, add at least **`CONVEX_DEPLOY_KEY`** in GitHub (**Settings → Secrets and variables → Actions**). See [GitHub Actions secrets](./ci-cd.md#github-actions-secrets) for the full list (Clerk, Vercel, E2E, and so on).
+Before opening pull requests that touch the web app or Convex backend:
+
+1. Add **`CONVEX_DEPLOY_KEY`** (dev or preview key for CI codegen) under **Settings → Secrets and variables → Actions**.
+2. Create the **`production`** environment and add prod deploy secrets before your first `prod-*` release — [environments.md](./environments.md#github-environments).
+
+Repository vs production scope: [ci-cd.md](./ci-cd.md#repository-secrets).
 
 ---
 
@@ -60,7 +65,8 @@ Before opening pull requests that touch the web app or Convex backend, add at le
 
 When the sample app works locally and CI secrets are configured:
 
+- [Platform setup (Convex, Clerk, Vercel, domains)](./environments.md)
 - [Branch protection](./ci-cd.md#branch-protection)
-- [Vercel (web + marketing)](./ci-cd.md#vercel-web--marketing)
+- [GitHub `production` environment](./ci-cd.md#github-environments)
 - [Releases](./ci-cd.md#workflows)
 - [Replace the tasks demo](./spec/README.md) with your own specs

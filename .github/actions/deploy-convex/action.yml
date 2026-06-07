@@ -1,0 +1,22 @@
+name: Deploy Convex
+description: Deploy Convex backend (production or development deployment via deploy key).
+
+inputs:
+  convex_deploy_key:
+    description: Convex deploy key for the target deployment
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Deploy Convex
+      shell: bash
+      env:
+        CONVEX_DEPLOY_KEY: ${{ inputs.convex_deploy_key }}
+      run: |
+        set -euo pipefail
+        if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
+          echo "::error::CONVEX_DEPLOY_KEY is required."
+          exit 1
+        fi
+        bunx convex deploy --cmd 'bun run build'

@@ -79,7 +79,7 @@ jobs:
             gitleaks detect --source . --redact --verbose
           fi
 
-      - name: Format, lint, and typecheck
+      - name: Format and check
         if: |
           steps.detect.outputs.any == 'true' ||
           steps.detect.outputs.docs_only == 'true'
@@ -92,12 +92,11 @@ jobs:
           if [ "${ANY_CHANGED}" != "true" ]; then
             exit 0
           fi
-          bun run lint
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
-            echo "::error::CONVEX_DEPLOY_KEY is required for typecheck. See docs/ci-cd.md#github-actions-secrets"
+            echo "::error::CONVEX_DEPLOY_KEY is required for check (codegen + typecheck). See docs/ci-cd.md#repository-secrets"
             exit 1
           fi
-          bun run typecheck
+          bun run check
 
   web:
     name: Web build & test
@@ -115,7 +114,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
-            echo "::error::CONVEX_DEPLOY_KEY is required for web build and tests. See docs/ci-cd.md#github-actions-secrets"
+            echo "::error::CONVEX_DEPLOY_KEY is required for web build and tests. See docs/ci-cd.md#repository-secrets"
             exit 1
           fi
           bun scripts/generate-routes.ts
@@ -167,7 +166,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
-            echo "::error::CONVEX_DEPLOY_KEY is required for Convex tests. See docs/ci-cd.md#github-actions-secrets"
+            echo "::error::CONVEX_DEPLOY_KEY is required for Convex tests. See docs/ci-cd.md#repository-secrets"
             exit 1
           fi
           bun scripts/generate-convex.ts

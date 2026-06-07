@@ -6,8 +6,8 @@ Repo root ([package.json](../package.json)):
 
 ```bash
 # Quality gate (see AGENTS.md § Verify gate)
-bun run lint && bun run typecheck   # default after code edits (~5s)
-bun run test                        # full suite at task completion
+bun run check                       # codegen + lint + typecheck after workspace code edits
+bun run verify                      # check + full test suite at task completion
 bun run --filter @repo/web test     # scoped tests (mirror CI path detection)
 
 # Dev
@@ -22,10 +22,13 @@ bun run lint                  # ESLint (repo root)
 bun run format                # Prettier check
 bun run format:fix            # Prettier write
 
-# Test / typecheck (codegen runs first when Convex is linked)
-bun run typecheck             # tsc solution-wide, no emit
+# Codegen / check / test
+bun run codegen               # generate routes + Convex (when linked), assert artifacts
+bun run check                 # codegen + lint + typecheck (CI and default agent gate)
+bun run verify                # check + all workspace tests
+bun run typecheck             # tsc solution-wide, no emit (artifacts must already exist)
 bun run typecheck:refs        # tsc -b (project references only)
-bun run test                  # all workspaces with a test script
+bun run test                  # all workspaces with a test script (run check or codegen first)
 bun run test:web              # @repo/web, ui-web, utils unit tests
 bun run test:packages         # @repo/config, env-core, ui-web, utils
 bun run test:integration      # @repo/utils integration tests only
@@ -149,7 +152,7 @@ bun run --filter @repo/web e2e
 
 `tasks.e2e.ts` uses [`@clerk/testing`](https://clerk.com/docs/guides/development/testing/playwright/overview) against your **dev** Convex deployment (`VITE_CONVEX_URL` from `bun run dev:convex` — never production). It runs only when Clerk/Convex E2E env is set; otherwise Playwright runs **UI-only** (`home.e2e.ts`, `routing.e2e.ts`).
 
-Playwright does **not** run on pull requests. In CI: Actions → **E2E** → **Run workflow** ([ci-cd.md](./ci-cd.md#e2e-playwright)); UI-only runs without secrets; full suite needs secrets in [ci-cd.md](./ci-cd.md#github-actions-secrets) and `CONVEX_DEPLOY_KEY`.
+Playwright does **not** run on pull requests. In CI: Actions → **E2E** → **Run workflow** ([ci-cd.md](./ci-cd.md#e2e-tests-playwright)); UI-only runs without secrets; full suite needs [repository secrets](./ci-cd.md#repository-secrets) including `CONVEX_DEPLOY_KEY`.
 
 PR CI runs `test:coverage` in path-based jobs (`@repo/web` + `@repo/ui-web` enforce thresholds when `apps/web` changes; `@repo/config`, `@repo/env-core`, `@repo/marketing`, `@repo/convex` when those paths change).
 

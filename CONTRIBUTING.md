@@ -1,6 +1,6 @@
 # Contributing
 
-Conventions for humans and agents working in this repo. For onboarding, see [docs/getting-started.md](docs/getting-started.md). For CI, releases, and manual E2E/preview workflows, see [docs/ci-cd.md](docs/ci-cd.md).
+Conventions for humans and agents working in this repo. For onboarding, see [docs/getting-started.md](docs/getting-started.md). For CI, releases, and E2E, see [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Git hooks (Husky)
 
@@ -38,14 +38,14 @@ To update outside ranges, edit versions in `package.json`, then run `bun update`
 - Do not mix `^6.0.3` in workspaces unless you intentionally want minor bumps
 - Bump TypeScript deliberately: edit `~6.0.3` in root and workspace packages together, then `bun install`
 
-## E2E and previews
+## E2E
 
-Pull requests run **unit tests** only (lint, typecheck, build). **Playwright E2E** and **preview deploys** are manual: Actions → pick branch with **Use workflow from** → [E2E](.github/workflows/e2e.yml) or [Preview](.github/workflows/preview.yml). See [docs/ci-cd.md](docs/ci-cd.md#manual-workflows).
+Pull requests run **unit tests** only (lint, typecheck, build). **Playwright E2E** is manual or runs from **Release** before deploy (always against the dev stack). See [docs/ci-cd.md](docs/ci-cd.md#manual-workflows).
 
 ## Agent rules
 
 Follow [AGENTS.md](AGENTS.md) and [docs/spec/](docs/spec/) for feature work.
 
 - After editing a few files: `bunx prettier --write <path> …`
-- Fast verify (code files touched): `bun run lint && bun run typecheck` after formatting touched paths; scoped tests per package path; full `bun run test` per AGENTS.md § Verify gate (see file-type rules there)
+- Fast verify (code files touched): `bun run check` after formatting touched paths (`bun run lint` for `scripts/**` only); scoped tests per package path; full `bun run verify` per AGENTS.md § Verify gate (see file-type rules there)
 - Docs-only minimum: `bunx prettier --write` on every touched path (see AGENTS.md § Verify gate)

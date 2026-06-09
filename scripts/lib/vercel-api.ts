@@ -86,20 +86,160 @@ export function isVercelCustomEnvironmentLimitError(err: VercelApiError): boolea
   return message.includes("cannot create more than 0 custom environments");
 }
 
-export function formatVercelApiError(err: VercelApiError): string {
+export type VercelApiErrorDetails = {
+  message: string;
+  action?: string;
+  link?: string;
+  code?: string;
+};
+
+/**
+ * Parses structured fields from a Vercel API error body.
+ *
+ * @param err - Failed Vercel API response
+ */
+export function parseVercelApiErrorDetails(err: VercelApiError): VercelApiErrorDetails {
   try {
-    const parsed = JSON.parse(err.body) as { error?: { message?: string } };
-    const message = parsed.error?.message?.trim();
-    if (message) {
-      return message;
+    const parsed = JSON.parse(err.body) as {
+      error?: { message?: string; action?: string; link?: string; code?: string };
+    };
+    const error = parsed.error;
+    if (error?.message) {
+      return {
+        message: error.message.trim(),
+        action: error.action,
+        link: error.link,
+        code: error.code,
+      };
     }
   } catch {
-    // use message or raw body below
+    // fall through
   }
   if (err.message && !err.message.startsWith("Vercel API ")) {
-    return err.message;
+    return { message: err.message };
   }
-  return err.body.slice(0, 200);
+  return { message: err.body.slice(0, 200) };
+}
+
+export function formatVercelApiError(err: VercelApiError): string {
+  return parseVercelApiErrorDetails(err).message;
+}
+
+/**
+ * Whether Vercel rejected a Git operation because GitHub is not a login connection.
+ *
+ * @param err - Failed Vercel API response
+ */
+export function isVercelGitLoginConnectionError(err: VercelApiError): boolean {
+  const details = parseVercelApiErrorDetails(err);
+  return (
+    details.action === "Add a Login Connection" ||
+    details.message.toLowerCase().includes("login connection")
+  );
+}
+
+/**
+ * Whether Vercel rejected a Git operation because the GitHub app is not installed.
+ *
+ * @param err - Failed Vercel API response
+ */
+export function isVercelInstallGitHubAppError(err: VercelApiError): boolean {
+  const details = parseVercelApiErrorDetails(err);
+  return details.action === "Install GitHub App" || details.code === "repo_not_found";
+}
+
+/**
+ * Whether a Vercel API error is related to missing GitHub integration.
+ *
+ * @param err - Failed Vercel API response
+ */
+export function isVercelGitIntegrationError(err: VercelApiError): boolean {
+  return isVercelGitLoginConnectionError(err) || isVercelInstallGitHubAppError(err);
+}
+
+export type VercelGitNamespace = {
+  id?: string | number;
+  slug: string;
+  provider: string;
+  installationId?: number;
+};
+
+export type VercelGitRepoSearchItem = {
+  slug?: string;
+  name?: string;
+  owner?: string;
+  org?: string;
+};
+
+type VercelGitRepoSearchResponse = {
+  repos?: VercelGitRepoSearchItem[];
+};
+
+/**
+ * Lists GitHub (or other) namespaces visible to the Vercel account.
+ * This endpoint is user-scoped — do not pass `teamId` (Vercel returns 400).
+ *
+ * @param token - Vercel API token
+ * @param provider - Git provider (default GitHub)
+ */
+export async function listVercelGitNamespaces(
+  token: string,
+  provider: "github" = "github",
+): Promise<VercelGitNamespace[]> {
+  const namespaces = await vercelRequest<VercelGitNamespace[]>(
+    token,
+    `/v1/integrations/git-namespaces?provider=${provider}`,
+  );
+  return namespaces ?? [];
+}
+
+/**
+ * Searches Git repositories visible to the Vercel GitHub integration.
+ * User-scoped like `git-namespaces` — do not pass `teamId`.
+ *
+ * @param token - Vercel API token
+ * @param options - Search query and optional namespace id from `git-namespaces`
+ */
+export async function searchVercelGitRepos(
+  token: string,
+  options: { query: string; namespaceId?: string | number; provider?: "github" },
+): Promise<VercelGitRepoSearchItem[]> {
+  const params = new URLSearchParams({
+    provider: options.provider ?? "github",
+    query: options.query,
+  });
+  if (options.namespaceId !== undefined) {
+    params.set("namespaceId", String(options.namespaceId));
+  }
+  const raw = await vercelRequest<VercelGitRepoSearchResponse | VercelGitRepoSearchItem[]>(
+    token,
+    `/v1/integrations/search-repo?${params}`,
+  );
+  if (Array.isArray(raw)) {
+    return raw;
+  }
+  return raw.repos ?? [];
+}
+
+/**
+ * Links an existing Vercel project to a GitHub repository.
+ *
+ * @param token - Vercel API token
+ * @param teamId - Optional team scope
+ * @param projectId - Project ID
+ * @param repo - `owner/name` repository path
+ */
+export async function linkVercelProjectGit(
+  token: string,
+  teamId: string | undefined,
+  projectId: string,
+  repo: string,
+): Promise<void> {
+  await vercelRequest(token, `/v9/projects/${projectId}/link`, {
+    method: "POST",
+    teamId,
+    body: { type: "github", repo },
+  });
 }
 
 /**

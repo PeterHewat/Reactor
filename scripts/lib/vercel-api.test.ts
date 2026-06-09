@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
   isVercelCustomEnvironmentLimitError,
+  isVercelGitIntegrationError,
+  isVercelGitLoginConnectionError,
+  isVercelInstallGitHubAppError,
   mergeVercelProjectEnvironments,
+  parseVercelApiErrorDetails,
   resolveVercelEnvironmentId,
   VERCEL_PRE_RELEASE_ENV_SLUG,
   VercelApiError,
@@ -48,6 +52,47 @@ describe("resolveVercelEnvironmentId", () => {
 
   test("returns production environment id", () => {
     expect(resolveVercelEnvironmentId(project, "production")).toBe("env_prod");
+  });
+});
+
+describe("parseVercelApiErrorDetails", () => {
+  test("extracts action and link from Git login connection errors", () => {
+    const err = new VercelApiError(
+      "failed",
+      400,
+      JSON.stringify({
+        error: {
+          code: "bad_request",
+          message:
+            "Failed to link PeterHewat/Reactor. You need to add a Login Connection to your GitHub account first.",
+          action: "Add a Login Connection",
+          link: "https://vercel.com/account/login-connections",
+        },
+      }),
+    );
+    const details = parseVercelApiErrorDetails(err);
+    expect(details.action).toBe("Add a Login Connection");
+    expect(details.link).toBe("https://vercel.com/account/login-connections");
+    expect(isVercelGitLoginConnectionError(err)).toBe(true);
+    expect(isVercelGitIntegrationError(err)).toBe(true);
+    expect(isVercelInstallGitHubAppError(err)).toBe(false);
+  });
+
+  test("detects Install GitHub App errors", () => {
+    const err = new VercelApiError(
+      "failed",
+      400,
+      JSON.stringify({
+        error: {
+          code: "repo_not_found",
+          message: "To link a GitHub repository, you need to install the GitHub integration first.",
+          action: "Install GitHub App",
+          link: "https://github.com/apps/vercel",
+        },
+      }),
+    );
+    expect(isVercelInstallGitHubAppError(err)).toBe(true);
+    expect(isVercelGitIntegrationError(err)).toBe(true);
   });
 });
 

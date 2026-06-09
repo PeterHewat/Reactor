@@ -9,6 +9,8 @@ export const CONVEX_DASHBOARD = "https://dashboard.convex.dev";
 export const VERCEL_DASHBOARD = "https://vercel.com/dashboard";
 export const VERCEL_NEW_PROJECT = "https://vercel.com/new";
 export const VERCEL_TOKENS = "https://vercel.com/account/tokens";
+export const VERCEL_LOGIN_CONNECTIONS = "https://vercel.com/account/login-connections";
+export const VERCEL_GITHUB_APP = "https://github.com/apps/vercel";
 
 /**
  * GitHub Actions secrets settings URL for a repository.

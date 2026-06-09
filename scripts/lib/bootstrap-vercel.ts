@@ -14,6 +14,12 @@ import {
   type VercelSetupMeta,
 } from "./setup-config";
 import {
+  ensureVercelGitHubReady,
+  isRecoverableVercelGitError,
+  linkVercelProjectToGitHub,
+  logVercelGitIntegrationWarning,
+} from "./vercel-git";
+import {
   createVercelProject,
   ensureVercelProjectDomain,
   findVercelProjectByName,
@@ -66,6 +72,7 @@ async function promptVercelToken(): Promise<string | null> {
  * @param github - Linked GitHub repo, if any
  * @param existingId - Previously saved project ID
  * @param root - Repository root
+ * @param gitReady - Whether Vercel GitHub integration is connected for this repo
  */
 async function ensureVercelProject(
   token: string,
@@ -75,6 +82,7 @@ async function ensureVercelProject(
   github: GitHubRepo | null,
   existingId: string | undefined,
   root: string,
+  gitReady: boolean,
 ): Promise<VercelProjectDetails> {
   if (existingId) {
     const byName = await findVercelProjectByName(token, teamId, projectName);
@@ -90,39 +98,77 @@ async function ensureVercelProject(
   }
 
   const commands = readVercelJsonCommands(root, spec.appDir);
+  const baseInput = {
+    name: projectName,
+    rootDirectory: spec.appDir,
+    framework: spec.framework,
+    ...commands,
+  };
+  const repoPath = github ? `${github.org}/${github.repo}` : null;
+
+  if (github && gitReady && repoPath) {
+    try {
+      const created = await createVercelProject(token, teamId, {
+        ...baseInput,
+        gitRepository: { type: "github", repo: repoPath },
+      });
+      console.log(`✓ Created Vercel project "${projectName}" (${created.id})`);
+      return created;
+    } catch (err) {
+      if (!isRecoverableVercelGitError(err)) {
+        return promptManualVercelProjectImport(spec, projectName, github, err);
+      }
+      console.warn(`○ Create with Git link failed — creating project then linking`);
+      logVercelGitIntegrationWarning(err);
+    }
+  }
 
   try {
-    const created = await createVercelProject(token, teamId, {
-      name: projectName,
-      rootDirectory: spec.appDir,
-      framework: spec.framework,
-      ...commands,
-      ...(github
-        ? { gitRepository: { type: "github", repo: `${github.org}/${github.repo}` } }
-        : {}),
-    });
+    const created = await createVercelProject(token, teamId, baseInput);
     console.log(`✓ Created Vercel project "${projectName}" (${created.id})`);
+    if (github && gitReady) {
+      await linkVercelProjectToGitHub(token, teamId, created.id, github);
+    } else if (github && !gitReady) {
+      console.warn(`○ Skipped Git link — connect GitHub to Vercel, then re-run setup`);
+    }
     return created;
   } catch (err) {
     if (err instanceof VercelApiError) {
-      console.warn(`○ Could not create "${projectName}" via API (${err.status}) — import manually`);
-      console.warn(`  ${formatVercelApiError(err)}`);
-      printManualAction(`Import Vercel project "${projectName}" from GitHub`, [
-        `Import repository: ${VERCEL_NEW_PROJECT}`,
-        "Choose **Import Git Repository** (not Create Empty Project)",
-        github ? `Select repository ${github.org}/${github.repo}` : "Select your GitHub repository",
-        `Set project name to **${projectName}**`,
-        `Set root directory to **${spec.appDir}**`,
-        "Git link is required — merges to `main` deploy staging; production ships via GitHub Actions Release",
-        `Paste the project ID (prj_…) below when done`,
-      ]);
-      const manual = await promptLine(`${spec.suffix} project ID (prj_…)`, {
-        required: true,
-      });
-      return { id: manual.trim(), name: projectName };
+      return promptManualVercelProjectImport(spec, projectName, github, err);
     }
     throw err;
   }
+}
+
+/**
+ * Falls back to manual Vercel import when API project creation fails.
+ *
+ * @param spec - App spec (web or marketing)
+ * @param projectName - Vercel project name
+ * @param github - Linked GitHub repo, if any
+ * @param err - API error that triggered the fallback
+ */
+async function promptManualVercelProjectImport(
+  spec: VercelAppSpec,
+  projectName: string,
+  github: GitHubRepo | null,
+  err: VercelApiError,
+): Promise<VercelProjectDetails> {
+  console.warn(`○ Could not create "${projectName}" via API (${err.status}) — import manually`);
+  console.warn(`  ${formatVercelApiError(err)}`);
+  printManualAction(`Import Vercel project "${projectName}" from GitHub`, [
+    `Import repository: ${VERCEL_NEW_PROJECT}`,
+    "Choose **Import Git Repository** (not Create Empty Project)",
+    github ? `Select repository ${github.org}/${github.repo}` : "Select your GitHub repository",
+    `Set project name to **${projectName}**`,
+    `Set root directory to **${spec.appDir}**`,
+    "Git link is required — merges to `main` deploy staging; production ships via GitHub Actions Release",
+    `Paste the project ID (prj_…) below when done`,
+  ]);
+  const manual = await promptLine(`${spec.suffix} project ID (prj_…)`, {
+    required: true,
+  });
+  return { id: manual.trim(), name: projectName };
 }
 
 /**
@@ -386,6 +432,7 @@ export async function bootstrapVercel(
   }
 
   const teamId = auth.teamId;
+  const gitReady = github ? await ensureVercelGitHubReady(token, github) : false;
   const names = vercelProjectNames(productNameToSlug(setup.productName));
   const specs = vercelAppSpecs();
 
@@ -400,6 +447,7 @@ export async function bootstrapVercel(
     github,
     setup.vercel?.projectIdWeb,
     root,
+    gitReady,
   );
   const marketingProject = await ensureVercelProject(
     token,
@@ -409,6 +457,7 @@ export async function bootstrapVercel(
     github,
     setup.vercel?.projectIdMarketing,
     root,
+    gitReady,
   );
 
   await syncWebVercelEnv(token, teamId, webProject.id, root);

@@ -35,3 +35,31 @@ export async function setConvexEnvVar(
   );
   return false;
 }
+
+/**
+ * Reads a Convex deployment environment variable via the CLI.
+ *
+ * @param root - Repository root
+ * @param name - Variable name
+ * @param prod - When true, targets the production deployment
+ */
+export async function getConvexEnvVar(
+  root: string,
+  name: string,
+  prod = false,
+): Promise<string | null> {
+  const args = ["bunx", "convex", "env", "get", name];
+  if (prod) {
+    args.push("--prod");
+  }
+  const proc = Bun.spawn(args, {
+    cwd: root,
+    stdout: "pipe",
+    stderr: "ignore",
+  });
+  if ((await proc.exited) !== 0) {
+    return null;
+  }
+  const text = (await new Response(proc.stdout).text()).trim();
+  return text || null;
+}

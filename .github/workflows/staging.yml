@@ -1,0 +1,42 @@
+# Staging — runs on every push to main (after merge).
+# Convex dev deploy + full Playwright E2E. Vercel web/marketing deploy via Git integration.
+#
+# Release workflow requires a successful Staging run for the same commit.
+
+name: Staging
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-main
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy-convex:
+    name: Convex (dev)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-bun
+      - name: Deploy Convex (development)
+        uses: ./.github/actions/deploy-convex
+        with:
+          convex_deploy_key: ${{ secrets.CONVEX_DEPLOY_KEY }}
+
+  e2e:
+    name: E2E
+    needs: deploy-convex
+    uses: ./.github/workflows/e2e.yml
+    with:
+      run_web: true
+      run_marketing: true
+      require_full_web_e2e: true
+    secrets: inherit

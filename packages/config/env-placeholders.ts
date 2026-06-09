@@ -1,6 +1,6 @@
 /** Matches template placeholder values in env files (not real deployments or keys). */
 const PLACEHOLDER_PATTERN =
-  /your-project|your-project-name|your-key|your-clerk|ci-placeholder|YOUR_ORG|YOUR_REPO|your-org|your-repo|pk_test_your|sk_test_your/i;
+  /your-project|your-project-name|your-key|your-clerk|your-apex-domain|ci-placeholder|YOUR_ORG|YOUR_REPO|your-org|your-repo|pk_test_your|sk_test_your|e2e\.test@example\.com/i;
 
 /**
  * Normalizes the right-hand side of a dotenv `KEY=value` line (quotes, inline `#` comments).
@@ -42,7 +42,7 @@ export function isPlaceholderEnvValue(value: string | undefined): boolean {
  * @param value - Value from `.env.local` (e.g. `dev:happy-animal-123`)
  */
 export function isRealConvexDeployment(value: string | undefined): boolean {
-  if (isPlaceholderEnvValue(value)) {
+  if (value === undefined || isPlaceholderEnvValue(value)) {
     return false;
   }
   const trimmed = parseDotenvAssignmentValue(value);

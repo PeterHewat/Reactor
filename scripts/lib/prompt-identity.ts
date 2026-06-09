@@ -1,10 +1,12 @@
 /* eslint-disable no-console -- CLI wizard */
 import { deriveHostnames } from "../../packages/config/hostnames";
 import { isValidApexDomain, normalizeApexDomainInput } from "../../packages/config/validate-domain";
+import { fetchGitHubRepoDescription } from "./github-repo-meta";
 import { shouldOfferLicenseRemoval } from "./license-identity";
-import { promptConfirm, promptLine } from "./prompt";
-import { productNameFromRepo, type GitHubRepo } from "./repo-identity";
 import { writeProductName } from "./product-name";
+import { readProductTagline, writeProductTagline } from "./product-tagline";
+import { promptLine } from "./prompt";
+import { productNameFromRepo, type GitHubRepo } from "./repo-identity";
 import {
   buildSetupConfig,
   readSetupConfig,
@@ -20,15 +22,34 @@ import {
 export function printHostnameTable(apexDomain: string): void {
   const hostnames = deriveHostnames(apexDomain);
   console.log("\nHostnames");
-  console.log(`  Web pre-release:       ${hostnames.webPreRelease}`);
+  console.log(`  Web staging:           ${hostnames.webPreRelease}`);
   console.log(`  Web production:        ${hostnames.webProduction}`);
-  console.log(`  Marketing pre-release: ${hostnames.marketingPreRelease}`);
+  console.log(`  Marketing staging:     ${hostnames.marketingPreRelease}`);
   console.log(`  Marketing production:  ${hostnames.marketingProduction}`);
 }
 
 /**
+ * Persists identity config and applies product name / tagline files.
+ *
+ * @param root - Repository root
+ * @param config - Setup config to write
+ * @param apexDomain - Apex domain for hostname table
+ */
+function persistIdentityConfig(root: string, config: SetupConfig, apexDomain: string): void {
+  writeSetupConfig(root, config);
+  if (writeProductName(root, config.productName)) {
+    console.log(`✓ Updated packages/config/product.ts → "${config.productName}"`);
+  }
+  if (writeProductTagline(root, config.productTagLine)) {
+    console.log(`✓ Updated packages/config/product.ts tagline → "${config.productTagLine}"`);
+  }
+  console.log(`✓ Wrote .reactor/setup.json`);
+  printHostnameTable(apexDomain);
+}
+
+/**
  * Runs interactive identity prompts and persists setup config + product name.
- * Re-runs always show previous answers as defaults (Enter to keep).
+ * Re-runs skip prompts when `.reactor/setup.json` already has a valid apex domain.
  *
  * @param root - Repository root
  * @param github - Parsed GitHub remote, if any
@@ -39,10 +60,35 @@ export async function runIdentityWizard(
 ): Promise<SetupConfig> {
   const existing = readSetupConfig(root);
 
+  if (existing?.productName && existing.productTagLine && isValidApexDomain(existing.apexDomain)) {
+    console.log("\nIdentity");
+    console.log(`✓ ${existing.productName} @ ${existing.apexDomain} (from .reactor/setup.json)`);
+    const refreshed = buildSetupConfig(
+      existing.productName,
+      existing.productTagLine,
+      existing.apexDomain,
+      github,
+      existing,
+      existing.removeMitLicense,
+    );
+    if (JSON.stringify(refreshed) !== JSON.stringify(existing)) {
+      writeSetupConfig(root, refreshed);
+    }
+    return refreshed;
+  }
+
   console.log("\nIdentity");
   const defaultName =
     existing?.productName ?? (github ? productNameFromRepo(github) : undefined) ?? "Reactor";
   const productName = await promptLine("Product name", { defaultValue: defaultName });
+
+  const taglineFromFile = readProductTagline(root);
+  const taglineFromGitHub = github ? await fetchGitHubRepoDescription(github) : null;
+  const defaultTagline =
+    existing?.productTagLine ?? taglineFromGitHub ?? taglineFromFile ?? "Modern Monorepo Starter";
+  const productTagLine = await promptLine("Product tagline (PRODUCT_TAGLINE)", {
+    defaultValue: defaultTagline,
+  });
 
   const apexDefault =
     existing?.apexDomain && isValidApexDomain(existing.apexDomain)
@@ -51,30 +97,29 @@ export async function runIdentityWizard(
 
   let apexDomain = "";
   while (!isValidApexDomain(apexDomain)) {
-    apexDomain = await promptLine("Apex domain (e.g. example.com)", {
+    apexDomain = await promptLine("Apex domain", {
       defaultValue: apexDefault,
-      required: apexDefault === undefined,
+      required: true,
     });
     apexDomain = normalizeApexDomainInput(apexDomain);
     if (!isValidApexDomain(apexDomain)) {
-      console.log("  Enter a valid apex domain (e.g. example.com) — not www, not localhost.");
+      console.log("  Enter a valid apex domain — not www, not localhost.");
       apexDomain = "";
     }
   }
 
-  let removeMitLicense = existing?.removeMitLicense;
-  if (shouldOfferLicenseRemoval(github)) {
-    removeMitLicense = await promptConfirm("Remove MIT licence?", {
-      defaultYes: existing?.removeMitLicense ?? true,
-    });
-  }
+  const removeMitLicense = shouldOfferLicenseRemoval(github)
+    ? (existing?.removeMitLicense ?? true)
+    : existing?.removeMitLicense;
 
-  const config = buildSetupConfig(productName, apexDomain, github, existing, removeMitLicense);
-  writeSetupConfig(root, config);
-  if (writeProductName(root, productName)) {
-    console.log(`✓ Updated packages/config/product.ts → "${productName}"`);
-  }
-  console.log(`✓ Wrote .reactor/setup.json`);
-  printHostnameTable(apexDomain);
+  const config = buildSetupConfig(
+    productName,
+    productTagLine,
+    apexDomain,
+    github,
+    existing,
+    removeMitLicense,
+  );
+  persistIdentityConfig(root, config, apexDomain);
   return config;
 }

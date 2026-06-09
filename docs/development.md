@@ -61,13 +61,22 @@ bun run setup          # interactive wizard + readiness (re-run anytime; Enter k
 
 ## Prerequisites
 
-Install on your PATH:
+### Local tooling (PATH)
 
 - [Git](https://git-scm.com/download/)
 - [Bun](https://bun.sh/) — match `.bun-version` (>= 1.3.14)
 - [Node.js](https://nodejs.org/) — **24** (`.node-version`; `engines.node` is `>=24.0.0`)
+- [GitHub CLI](https://cli.github.com/) (`gh`) — `gh auth login` before `bun run setup` (repository secrets and Vercel deploy keys)
 
-CI and local scripts use the same major version. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
+### Accounts (free tiers; signup in the wizard if needed)
+
+- [GitHub](https://github.com/) — template repo + `gh auth login`
+- [Convex](https://convex.dev/) — browser login during the Convex setup step
+- [Clerk](https://clerk.com/) — create an app during the Clerk setup step
+- [Vercel](https://vercel.com/) — account before the Vercel step (API token)
+- **Apex domain you control** (e.g. `example.com`) — DNS records come later from Vercel hints
+
+CI and local scripts use the same Node/Bun major versions. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
 
 ## Tailwind and UI
 

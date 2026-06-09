@@ -8,7 +8,7 @@ What `bun run setup` automates, what stays manual, and dashboard URLs for fallba
 
 - **Interactive** (local TTY): prompts run each time; previous answers from [`.reactor/setup.json`](../.reactor/setup.json) are defaults (Enter keeps them).
 - **Non-TTY** (CI, piped stdin): skip prompts; use existing `.reactor/setup.json` and env only.
-- Dashboard URLs are printed as clickable links; setup asks **Open link? [y/N]** before opening the browser (skipped in non-TTY runs).
+- Dashboard URLs appear as clickable links in setup output and **ACTION REQUIRED** steps — open them directly in your terminal or browser.
 
 Step-by-step summary: [getting-started.md](./getting-started.md#2-setup-wizard-bun-scriptssetupts).
 
@@ -19,13 +19,35 @@ Step-by-step summary: [getting-started.md](./getting-started.md#2-setup-wizard-b
 ```json
 {
   "productName": "My App",
+  "productTagLine": "Short marketing tagline",
   "apexDomain": "example.com",
-  "github": { "org": "acme", "repo": "my-app" },
+  "github": {
+    "org": "acme",
+    "repo": "my-app",
+    "syncedSecrets": {
+      "repo": true,
+      "production": true,
+      "vercel": true
+    }
+  },
+  "vercel": {
+    "synced": true,
+    "orgId": "team_…",
+    "projectIdWeb": "prj_…",
+    "projectIdMarketing": "prj_…",
+    "projectNameWeb": "my-app-web",
+    "projectNameMarketing": "my-app-marketing"
+  },
   "removeMitLicense": true
 }
 ```
 
-Also writes `packages/config/product.ts` (`PRODUCT_NAME`), rebrands `README.md` when forking from the template, and when `removeMitLicense` is true replaces MIT [`LICENSE`](../LICENSE) from [`.reactor/LICENSE.proprietary.template`](../.reactor/LICENSE.proprietary.template) (skipped on the upstream `PeterHewat/Reactor` remote).
+- `github.syncedSecrets.repo` — repository secrets for PR CI / E2E (dev Convex + Clerk).
+- `github.syncedSecrets.vercel` — repository secrets for Vercel deploy workflows (`VERCEL_TOKEN`, project IDs).
+- `github.syncedSecrets.production` — GitHub **production** environment secrets for `release-*` releases.
+- `vercel.synced` — Vercel projects, env vars, and domains configured (not a GitHub sync step).
+
+Also writes `packages/config/product.ts` (`PRODUCT_NAME`, `PRODUCT_TAGLINE`), rebrands `README.md` when forking from the template, and when `removeMitLicense` is true replaces MIT [`LICENSE`](../LICENSE) from [`.reactor/LICENSE.proprietary.template`](../.reactor/LICENSE.proprietary.template) (skipped on the upstream `PeterHewat/Reactor` remote).
 
 ### Secrets (never in `.reactor/`)
 
@@ -45,26 +67,25 @@ Also writes `packages/config/product.ts` (`PRODUCT_NAME`), rebrands `README.md` 
 | Area                     | Today                                                                                                     |
 | ------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Account signup / billing | Convex, Clerk, Vercel, GitHub dashboards                                                                  |
-| Convex first link        | User runs `bun run dev:convex` (OAuth); wizard continues when linked                                      |
+| Convex first link        | Setup runs `convex dev --once` (OAuth in the same terminal); sets Clerk issuer and re-pushes              |
 | Clerk app creation       | Dashboard (Platform API optional future)                                                                  |
-| Clerk allowed origins    | Printed checklist; user adds in dashboard                                                                 |
+| Clerk allowed origins    | Automated via Backend API when `CLERK_SECRET_KEY` is set; manual PATCH fallback on failure                |
 | DNS at registrar         | Hints from Vercel step; user creates records                                                              |
 | E2E test user            | Wizard defaults `e2e.test@{apex}`; creates user via Clerk API when `sk_test_` is set; syncs email to `gh` |
 | Org GitHub policies      | Branch protection, required reviewers — outside setup                                                     |
 
 ### Feasibility summary
 
-| Category    | Examples                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------- |
-| **Script**  | `PRODUCT_NAME`, `.env.local`, `convex env set`, deploy keys, `gh secret set`, Vercel env via API  |
-| **Guided**  | Clerk app + paste keys, `dev:convex` link, Vercel import, DNS, E2E user                           |
-| **Manual**  | Account signup, registrar DNS, Clerk auth methods, `prod-*` release approval, org GitHub policies |
-| **Blocked** | Clerk app creation without [Platform API](https://clerk.com/docs/reference/platform-api) (`ak_…`) |
+| Category    | Examples                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------- |
+| **Script**  | `PRODUCT_NAME`, `.env.local`, `convex env set`, deploy keys, `gh secret set`, Vercel env via API     |
+| **Guided**  | Clerk app + paste keys, inline Convex link, Vercel import, DNS, E2E user                             |
+| **Manual**  | Account signup, registrar DNS, Clerk auth methods, `release-*` release approval, org GitHub policies |
+| **Blocked** | Clerk app creation without [Platform API](https://clerk.com/docs/reference/platform-api) (`ak_…`)    |
 
 ### Optional future (out of scope today)
 
 - Clerk app creation via Platform API.
-- Clerk allowed-origins via Backend API (checklist only today).
 
 ---
 
@@ -74,10 +95,10 @@ Placeholders: `{org}`, `{repo}`, `{apex}`, `{vercel-team}`, `{vercel-web-project
 
 **Derived hostnames** from apex `example.com`:
 
-| Surface   | Pre-release           | Production        |
-| --------- | --------------------- | ----------------- |
-| Web       | `dev.example.com`     | `example.com`     |
-| Marketing | `dev.www.example.com` | `www.example.com` |
+| Surface   | Staging (merge to `main`) | Production (Release) |
+| --------- | ------------------------- | -------------------- |
+| Web       | `preview.example.com`     | `example.com`        |
+| Marketing | `preview.www.example.com` | `www.example.com`    |
 
 ### Clerk
 
@@ -88,8 +109,8 @@ Placeholders: `{org}`, `{repo}`, `{apex}`, `{vercel-team}`, `{vercel-web-project
 | API keys (Development)        | [API keys](https://dashboard.clerk.com/last-active?path=api-keys)           |
 | API keys (Production)         | Same path; switch instance to Production                                    |
 | JWT templates → Convex preset | [JWT templates](https://dashboard.clerk.com/last-active?path=jwt-templates) |
-| Allowed origins (Development) | [Domains](https://dashboard.clerk.com/last-active?path=domains)             |
-| Allowed origins (Production)  | Same; Production instance                                                   |
+| Allowed origins (Development) | `PATCH /v1/instance` with `sk_test_…` (setup does this automatically)       |
+| Allowed origins (Production)  | Same with `sk_live_…` on the Production step                                |
 | Integrations → Convex         | [Integrations](https://dashboard.clerk.com/last-active?path=integrations)   |
 
 After the app exists, setup prompts for `VITE_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`, then derives `CLERK_JWT_ISSUER_DOMAIN` from the Clerk Frontend API URL.
@@ -123,12 +144,12 @@ npx convex deployment token create github-ci --save-env
 | Marketing project settings | Same pattern (root dir `apps/marketing`)                         |
 | Monorepo link (CLI alpha)  | `vercel link --repo`                                             |
 
-| Project   | Hostname         | Vercel environment |
-| --------- | ---------------- | ------------------ |
-| Web       | `{apex}`         | Production         |
-| Web       | `dev.{apex}`     | Preview            |
-| Marketing | `www.{apex}`     | Production         |
-| Marketing | `dev.www.{apex}` | Preview            |
+| Project   | Hostname             | Vercel environment            |
+| --------- | -------------------- | ----------------------------- |
+| Web       | `{apex}`             | Production (Release workflow) |
+| Web       | `preview.{apex}`     | Preview — git branch `main`   |
+| Marketing | `www.{apex}`         | Production (Release workflow) |
+| Marketing | `preview.www.{apex}` | Preview — git branch `main`   |
 
 ### GitHub
 
@@ -150,10 +171,11 @@ flowchart TD
   identity --> scaffold[Copy .env.local if missing]
   scaffold --> clerk[Clerk: URL + paste keys]
   clerk --> convex{Convex linked?}
-  convex -->|no| convexGuide[Print dev:convex + Convex dashboard URL]
+  convex -->|no| convexLink[convex dev --once OAuth link]
   convex -->|yes| convexEnv[convex env set + write VITE_CONVEX_URL]
-  convexGuide --> codegen
-  convexEnv --> codegen[generate.ts + agent skills]
+  convexLink --> convexEnv
+  convexEnv --> convexPush[convex dev --once push auth]
+  convexPush --> codegen[generate.ts + agent skills]
   codegen --> readiness[readiness report]
   readiness --> ci{Push GitHub secrets?}
   ci -->|yes| ghSecrets[gh secret set from local env]

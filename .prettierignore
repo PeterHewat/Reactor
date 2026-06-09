@@ -13,6 +13,7 @@ apps/web/src/routeTree.gen.ts
 .convex/
 .agents/skills/convex/
 .agents/skills/convex-*/
+.agents/skills/clerk-*/
 skills-lock.json
 *.min.js
 *.min.css

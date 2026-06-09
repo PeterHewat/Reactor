@@ -54,7 +54,7 @@ const en = {
     setupBody:
       "Wire Convex and Clerk to run the tasks demo. Follow the steps below, then use bun run dev:full.",
     stepConvex:
-      "Set CLERK_JWT_ISSUER_DOMAIN in Convex (Clerk JWT template Issuer), then bun run dev:convex and VITE_CONVEX_URL",
+      "Run bun run setup to link Convex, set CLERK_JWT_ISSUER_DOMAIN, and sync VITE_CONVEX_URL",
     stepClerk:
       "Clerk: JWT templates → Convex preset (copy Issuer); API keys → React → VITE_CLERK_PUBLISHABLE_KEY",
     stepEnv: "See docs/getting-started.md §2–3 in this repository",

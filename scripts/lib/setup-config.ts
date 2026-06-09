@@ -2,28 +2,37 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { GitHubRepo } from "./repo-identity";
 
+/** GitHub secret sync steps performed by setup (`gh secret set`). */
+export type GitHubSyncedSecrets = {
+  /** Repository secrets for PR CI and E2E (dev Convex + Clerk). */
+  repo?: boolean;
+  /** GitHub `production` environment secrets for `release-*` tags. */
+  production?: boolean;
+  /** Repository secrets for Vercel deploy workflows (`VERCEL_TOKEN`, project IDs). */
+  vercel?: boolean;
+};
+
 export type VercelSetupMeta = {
+  /** Vercel projects, env vars, and domains configured via setup. */
+  synced?: boolean;
   orgId: string;
-  webProjectId: string;
-  marketingProjectId: string;
-  webProjectName: string;
-  marketingProjectName: string;
+  projectIdWeb: string;
+  projectIdMarketing: string;
+  projectNameWeb: string;
+  projectNameMarketing: string;
 };
 
 export type SetupConfig = {
   productName: string;
+  productTagLine: string;
   apexDomain: string;
-  github: { org: string; repo: string } | null;
+  github: {
+    org: string;
+    repo: string;
+    syncedSecrets?: GitHubSyncedSecrets;
+  } | null;
   /** When true, setup replaces MIT `LICENSE` with the proprietary stub. */
   removeMitLicense?: boolean;
-  /** Set after dev repository secrets were pushed via setup + `gh`. */
-  githubSecretsSynced?: boolean;
-  /** Set after Vercel projects/domains were configured via setup. */
-  vercelSynced?: boolean;
-  /** Set after VERCEL_* repository secrets were pushed via setup + `gh`. */
-  vercelGithubSecretsSynced?: boolean;
-  /** Set after production environment secrets were pushed via setup + `gh`. */
-  productionGithubSecretsSynced?: boolean;
   vercel?: VercelSetupMeta;
 };
 
@@ -75,11 +84,13 @@ export function writeSetupConfig(root: string, config: SetupConfig): void {
  * Builds a new setup config object.
  *
  * @param productName - Display product name
+ * @param productTagLine - Marketing tagline
  * @param apexDomain - Apex domain
  * @param github - Parsed GitHub remote, if any
  */
 export function buildSetupConfig(
   productName: string,
+  productTagLine: string,
   apexDomain: string,
   github: GitHubRepo | null,
   existing?: SetupConfig | null,
@@ -87,15 +98,38 @@ export function buildSetupConfig(
 ): SetupConfig {
   return {
     productName,
+    productTagLine,
     apexDomain,
-    github: github ? { org: github.org, repo: github.repo } : null,
+    github: github
+      ? {
+          org: github.org,
+          repo: github.repo,
+          syncedSecrets: existing?.github?.syncedSecrets,
+        }
+      : null,
     removeMitLicense,
-    githubSecretsSynced: existing?.githubSecretsSynced,
-    vercelSynced: existing?.vercelSynced,
-    vercelGithubSecretsSynced: existing?.vercelGithubSecretsSynced,
-    productionGithubSecretsSynced: existing?.productionGithubSecretsSynced,
     vercel: existing?.vercel,
   };
+}
+
+/**
+ * Marks one GitHub secret sync step as completed in setup config.
+ *
+ * @param root - Repository root
+ * @param key - Which sync step completed
+ */
+function markGitHubSecretSynced(root: string, key: keyof GitHubSyncedSecrets): void {
+  const config = readSetupConfig(root);
+  if (!config?.github) {
+    return;
+  }
+  writeSetupConfig(root, {
+    ...config,
+    github: {
+      ...config.github,
+      syncedSecrets: { ...config.github.syncedSecrets, [key]: true },
+    },
+  });
 }
 
 /**
@@ -104,11 +138,7 @@ export function buildSetupConfig(
  * @param root - Repository root
  */
 export function markGithubSecretsSynced(root: string): void {
-  const config = readSetupConfig(root);
-  if (!config) {
-    return;
-  }
-  writeSetupConfig(root, { ...config, githubSecretsSynced: true });
+  markGitHubSecretSynced(root, "repo");
 }
 
 /**
@@ -122,20 +152,16 @@ export function markVercelSynced(root: string, vercel: VercelSetupMeta): void {
   if (!config) {
     return;
   }
-  writeSetupConfig(root, { ...config, vercelSynced: true, vercel });
+  writeSetupConfig(root, { ...config, vercel: { ...vercel, synced: true } });
 }
 
 /**
- * Records that Vercel deploy secrets were synced to GitHub.
+ * Records that Vercel deploy secrets were synced to GitHub repository secrets.
  *
  * @param root - Repository root
  */
 export function markVercelGithubSecretsSynced(root: string): void {
-  const config = readSetupConfig(root);
-  if (!config) {
-    return;
-  }
-  writeSetupConfig(root, { ...config, vercelGithubSecretsSynced: true });
+  markGitHubSecretSynced(root, "vercel");
 }
 
 /**
@@ -144,9 +170,5 @@ export function markVercelGithubSecretsSynced(root: string): void {
  * @param root - Repository root
  */
 export function markProductionGithubSecretsSynced(root: string): void {
-  const config = readSetupConfig(root);
-  if (!config) {
-    return;
-  }
-  writeSetupConfig(root, { ...config, productionGithubSecretsSynced: true });
+  markGitHubSecretSynced(root, "production");
 }

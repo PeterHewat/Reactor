@@ -93,17 +93,17 @@ App production builds: `bun run --filter @repo/web build`, `bun run --filter @re
 
 ## Release tags
 
-Deploy tags: `dev-2026-06-07-18-55-37` / `prod-2026-06-07-18-55-37` (one tag per release — full stack). See [ci-cd.md](./ci-cd.md).
+Staging: merge to `main`. Production tags: `release-2026-06-07-18-55-37` (one tag per release — full stack). See [ci-cd.md](./ci-cd.md).
 
 ## Generated code (not committed)
 
-| Output                                        | Generator                 | Command                                                            |
-| --------------------------------------------- | ------------------------- | ------------------------------------------------------------------ |
-| `convex/_generated/`                          | Convex                    | `bun run dev:convex` or `bun scripts/generate-convex.ts`           |
-| `apps/web/src/routeTree.gen.ts`               | TanStack Router           | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`) |
-| `.agents/skills/convex*/`, `skills-lock.json` | Convex `ai-files install` | `bun run setup` (best effort) or `bunx convex ai-files install`    |
+| Output                                                                   | Generator                     | Command                                                                                                                                                         |
+| ------------------------------------------------------------------------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `convex/_generated/`                                                     | Convex                        | `bun run dev:convex` or `bun scripts/generate-convex.ts`                                                                                                        |
+| `apps/web/src/routeTree.gen.ts`                                          | TanStack Router               | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`)                                                                                              |
+| `.agents/skills/convex*/`, `.agents/skills/clerk-*/`, `skills-lock.json` | `bun run setup` (best effort) | `bunx convex ai-files install`; Clerk: `bunx skills add clerk/skills -y -a cursor --skill clerk-react-patterns --skill clerk-testing --skill clerk-backend-api` |
 
-Repo-owned agent skills (e.g. `.agents/skills/create-pr/`) are committed; only Convex-installed `convex*` skills are gitignored.
+Repo-owned agent skills (e.g. `.agents/skills/create-pr/`) are committed; Convex `convex*` and Clerk `clerk-*` install targets are gitignored.
 
 Run **`bun run dev:convex`** or **`bun run codegen`** before the first `typecheck` / `test`. Use **`bun run check`** (or **`bun run verify`**) so codegen runs exactly once. There are **no committed** Convex stubs — missing `_generated` fails with remediation text.
 

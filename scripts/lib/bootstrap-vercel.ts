@@ -1,12 +1,12 @@
 /* eslint-disable no-console -- CLI wizard */
-import { deriveHostnames } from "../../packages/config/hostnames";
 import { isPlaceholderEnvValue } from "../../packages/config/env-placeholders";
-import type { GitHubRepo } from "./repo-identity";
+import { deriveHostnames } from "../../packages/config/hostnames";
 import { readEnvFile } from "./env-file";
 import { ghSecretSet, isGhAuthenticated } from "./gh-secrets";
-import { offerOpenUrl } from "./open-url";
+import { printManualAction } from "./manual-action";
 import { VERCEL_DASHBOARD, VERCEL_NEW_PROJECT, VERCEL_TOKENS } from "./platform-urls";
 import { maskSecret, promptConfirm, promptLine } from "./prompt";
+import { productNameToSlug, type GitHubRepo } from "./repo-identity";
 import {
   markVercelGithubSecretsSynced,
   markVercelSynced,
@@ -14,15 +14,19 @@ import {
   type VercelSetupMeta,
 } from "./setup-config";
 import {
-  addVercelProjectDomain,
   createVercelProject,
+  ensureVercelProjectDomain,
   findVercelProjectByName,
+  formatVercelApiError,
   getVercelAuthContext,
   getVercelDomainConfig,
+  loadVercelProjectDetails,
   upsertVercelProjectEnv,
-  vercelOrgId,
+  VERCEL_STAGING_GIT_BRANCH,
   VercelApiError,
-  type VercelProject,
+  vercelOrgId,
+  type VercelDeploymentTarget,
+  type VercelProjectDetails,
 } from "./vercel-api";
 import {
   readVercelJsonCommands,
@@ -39,7 +43,11 @@ const ENV_TARGETS = ["production", "preview", "development"] as const;
  */
 async function promptVercelToken(): Promise<string | null> {
   const fromEnv = process.env.VERCEL_TOKEN?.trim();
-  const token = await promptLine("VERCEL_TOKEN (Account → Tokens)", {
+  printManualAction("Create a Vercel API token", [
+    `Account → Tokens (any label): ${VERCEL_TOKENS}`,
+    "Paste the token value when prompted below — VERCEL_TOKEN is the GitHub secret name, not the Vercel label",
+  ]);
+  const token = await promptLine("Paste your Vercel API token", {
     defaultValue: fromEnv,
     displayDefault: fromEnv ? maskSecret(fromEnv) : undefined,
     required: !fromEnv,
@@ -67,24 +75,21 @@ async function ensureVercelProject(
   github: GitHubRepo | null,
   existingId: string | undefined,
   root: string,
-): Promise<VercelProject> {
+): Promise<VercelProjectDetails> {
   if (existingId) {
     const byName = await findVercelProjectByName(token, teamId, projectName);
     if (byName?.id === existingId) {
-      return byName;
+      return loadVercelProjectDetails(token, teamId, byName);
     }
   }
 
   const existing = await findVercelProjectByName(token, teamId, projectName);
   if (existing) {
     console.log(`✓ Vercel project "${projectName}" already exists`);
-    return existing;
+    return loadVercelProjectDetails(token, teamId, existing);
   }
 
   const commands = readVercelJsonCommands(root, spec.appDir);
-  const gitRepository = github
-    ? { type: "github" as const, repo: `${github.org}/${github.repo}` }
-    : undefined;
 
   try {
     const created = await createVercelProject(token, teamId, {
@@ -92,22 +97,29 @@ async function ensureVercelProject(
       rootDirectory: spec.appDir,
       framework: spec.framework,
       ...commands,
-      gitRepository,
+      ...(github
+        ? { gitRepository: { type: "github", repo: `${github.org}/${github.repo}` } }
+        : {}),
     });
     console.log(`✓ Created Vercel project "${projectName}" (${created.id})`);
     return created;
   } catch (err) {
     if (err instanceof VercelApiError) {
-      console.warn(`○ Could not create "${projectName}" via API — import manually:`);
-      console.log(`  Root directory: ${spec.appDir}`);
-      if (github) {
-        console.log(`  Repository: ${github.org}/${github.repo}`);
-      }
-      await offerOpenUrl(VERCEL_NEW_PROJECT);
-      const manual = await promptLine(`Paste ${spec.suffix} project ID (prj_…) after creating`, {
+      console.warn(`○ Could not create "${projectName}" via API (${err.status}) — import manually`);
+      console.warn(`  ${formatVercelApiError(err)}`);
+      printManualAction(`Import Vercel project "${projectName}" from GitHub`, [
+        `Import repository: ${VERCEL_NEW_PROJECT}`,
+        "Choose **Import Git Repository** (not Create Empty Project)",
+        github ? `Select repository ${github.org}/${github.repo}` : "Select your GitHub repository",
+        `Set project name to **${projectName}**`,
+        `Set root directory to **${spec.appDir}**`,
+        "Git link is required — merges to `main` deploy staging; production ships via GitHub Actions Release",
+        `Paste the project ID (prj_…) below when done`,
+      ]);
+      const manual = await promptLine(`${spec.suffix} project ID (prj_…)`, {
         required: true,
       });
-      return { id: manual.trim(), name: projectName, rootDirectory: spec.appDir };
+      return { id: manual.trim(), name: projectName };
     }
     throw err;
   }
@@ -143,29 +155,66 @@ async function syncWebVercelEnv(
   }
 }
 
+type VercelDomainSpec = {
+  domain: string;
+  target: VercelDeploymentTarget;
+};
+
 /**
- * Adds custom domains to a project and prints DNS hints.
+ * Post-setup checklist so `main` deploys staging without promoting production domains.
+ */
+function printVercelGitStagingGuide(): void {
+  printManualAction("Configure Vercel Git for staging on main", [
+    `Each project → **Settings → Git** → Production Branch = \`production\` (not \`main\`)`,
+    `Create an empty \`production\` branch once if needed: \`git checkout --orphan production && git commit --allow-empty -m init && git push -u origin production\``,
+    `Merges to \`${VERCEL_STAGING_GIT_BRANCH}\` then deploy **Preview** builds to \`preview.*\` hostnames`,
+    "Production (`apex` / `www`) ships only via **Release** workflow (`vercel deploy --prod` in GitHub Actions)",
+    `Only \`${VERCEL_STAGING_GIT_BRANCH}\` triggers Vercel builds (\`ignoreCommand\` in vercel.json skips PR branches)`,
+  ]);
+}
+
+/**
+ * Adds custom domains to a project on Production or Preview.
  *
  * @param token - Vercel API token
  * @param teamId - Optional team scope
- * @param projectId - Vercel project ID
- * @param domains - Hostnames to attach
+ * @param projectId - Project ID
+ * @param domains - Hostnames and deployment targets
  */
-async function attachDomains(
+async function attachProjectDomains(
   token: string,
   teamId: string | undefined,
-  projectId: string,
-  domains: string[],
-): Promise<void> {
-  for (const domain of domains) {
+  project: VercelProjectDetails,
+  domains: VercelDomainSpec[],
+): Promise<boolean> {
+  const details = await loadVercelProjectDetails(token, teamId, project);
+  let allOk = true;
+  for (const { domain, target } of domains) {
     try {
-      await addVercelProjectDomain(token, teamId, projectId, domain);
-      console.log(`✓ Domain ${domain} → project ${projectId}`);
+      await ensureVercelProjectDomain(token, teamId, details.id, domain, target, details);
+      const envLabel =
+        target === "preview" ? `preview (branch ${VERCEL_STAGING_GIT_BRANCH})` : target;
+      console.log(`✓ Domain ${domain} → ${envLabel} (${details.id})`);
     } catch (err) {
-      const detail = err instanceof VercelApiError ? err.body.slice(0, 120) : String(err);
-      console.log(`○ Could not add ${domain} via API (${detail}) — add in Vercel dashboard`);
+      allOk = false;
+      const detail =
+        err instanceof VercelApiError ? formatVercelApiError(err) : String(err).slice(0, 120);
+      if (target === "preview") {
+        printManualAction(`Assign ${domain} to branch ${VERCEL_STAGING_GIT_BRANCH} in Vercel`, [
+          `${VERCEL_DASHBOARD} → **${project.name}** → **Domains** → Add ${domain}`,
+          `Assign to git branch **${VERCEL_STAGING_GIT_BRANCH}** (or Environments → Preview after Git is connected)`,
+          "Complete the Git staging checklist printed after setup",
+          `API error: ${detail}`,
+        ]);
+      } else {
+        printManualAction(`Add domain ${domain} to Production in Vercel`, [
+          `${VERCEL_DASHBOARD} → **${project.name}** → Domains → Add ${domain}`,
+          `API error: ${detail}`,
+        ]);
+      }
     }
   }
+  return allOk;
 }
 
 /**
@@ -175,28 +224,61 @@ async function attachDomains(
  * @param teamId - Optional team scope
  * @param hostnames - Hostnames to look up
  */
+function isApexHostname(host: string, apex: string): boolean {
+  return host === apex;
+}
+
+/**
+ * Prints one DNS hint line for a hostname.
+ *
+ * @param host - Hostname
+ * @param apex - Apex domain
+ * @param config - Vercel domain config response
+ */
+function formatDnsHint(
+  host: string,
+  apex: string,
+  config: Awaited<ReturnType<typeof getVercelDomainConfig>>,
+): string {
+  if (isApexHostname(host, apex)) {
+    const ipv4 = config.recommendedIPv4?.find((r) => r.rank === 1)?.value?.[0];
+    if (ipv4) {
+      return `${host} → A → ${ipv4}`;
+    }
+    return `${host} → A → 76.76.21.21 (confirm in Vercel Domains UI)`;
+  }
+  const cname = config.recommendedCNAME?.find((r) => r.rank === 1)?.value;
+  if (cname) {
+    return `${host} → CNAME → ${cname}`;
+  }
+  return `${host} → CNAME → cname.vercel-dns.com (confirm in Vercel Domains UI)`;
+}
+
 async function printDnsHints(
   token: string,
   teamId: string | undefined,
+  apex: string,
   hostnames: string[],
 ): Promise<void> {
   console.log("\nDNS (at your registrar)");
+  const dnsLines: string[] = [];
   for (const host of hostnames) {
     try {
       const config = await getVercelDomainConfig(token, teamId, host);
-      const cname = config.recommendedCNAME?.[0]?.value;
-      if (cname) {
-        console.log(`  ${host} → CNAME → ${cname}`);
-      } else {
-        console.log(`  ${host} → configure in Vercel (${VERCEL_DASHBOARD})`);
-      }
+      dnsLines.push(formatDnsHint(host, apex, config));
     } catch {
-      console.log(`  ${host} → configure in Vercel (${VERCEL_DASHBOARD})`);
+      dnsLines.push(`${host} → see Vercel Domains UI (${VERCEL_DASHBOARD})`);
     }
   }
-  console.log(
-    "\n  Assign pre-release hostnames (dev.*) to Preview and production hostnames to Production in each project's Domains settings.",
-  );
+  for (const line of dnsLines) {
+    console.log(`  ${line}`);
+  }
+  printManualAction("Configure DNS at your registrar", [
+    "Create each DNS record shown above (apex uses A, subdomains use CNAME)",
+    "Production: apex + `www` (Release workflow only). Staging: `preview.*` on branch `main` via Vercel Git",
+    "Environment assignment is under Settings → Environments if a hostname is on the wrong target",
+    "Wait until each domain shows **Valid** before testing Clerk or releases",
+  ]);
 }
 
 /**
@@ -207,31 +289,30 @@ async function printDnsHints(
  * @param meta - Vercel project metadata
  * @param setup - Setup config
  */
-async function maybeSyncVercelGithubSecrets(
+async function syncVercelGithubSecrets(
   root: string,
   token: string,
   meta: VercelSetupMeta,
   setup: SetupConfig,
 ): Promise<void> {
-  const firstSync = !setup.vercelGithubSecretsSynced;
-  const proceed = await promptConfirm("Sync Vercel deploy secrets to GitHub?", {
-    defaultYes: firstSync,
-  });
-  if (!proceed) {
-    console.log("○ Skipped Vercel GitHub secrets — docs/ci-cd.md#repository-secrets");
+  if (setup.github?.syncedSecrets?.vercel) {
+    console.log("✓ Vercel GitHub secrets already synced — skip");
     return;
   }
 
   if (!(await isGhAuthenticated())) {
-    console.log("○ GitHub CLI not authenticated — run: gh auth login");
+    printManualAction("Authenticate GitHub CLI", [
+      "Run `gh auth login` in a terminal",
+      "Re-run `bun run setup` and confirm the Vercel GitHub secrets sync step",
+    ]);
     return;
   }
 
   const pairs: Array<[string, string]> = [
     ["VERCEL_TOKEN", token],
     ["VERCEL_ORG_ID", meta.orgId],
-    ["VERCEL_WEB_PROJECT_ID", meta.webProjectId],
-    ["VERCEL_MARKETING_PROJECT_ID", meta.marketingProjectId],
+    ["VERCEL_WEB_PROJECT_ID", meta.projectIdWeb],
+    ["VERCEL_MARKETING_PROJECT_ID", meta.projectIdMarketing],
   ];
 
   let okCount = 0;
@@ -254,35 +335,42 @@ async function maybeSyncVercelGithubSecrets(
  * @param root - Repository root
  * @param setup - Persisted setup config
  * @param github - Parsed GitHub remote, if any
+ * @returns Vercel API token when setup ran or was skipped with `VERCEL_TOKEN` in env
  */
 export async function bootstrapVercel(
   root: string,
   setup: SetupConfig,
   github: GitHubRepo | null,
-): Promise<void> {
+): Promise<string | null> {
   const hostnames = deriveHostnames(setup.apexDomain);
-  const firstSetup = !setup.vercelSynced;
+  const firstSetup = !setup.vercel?.synced;
+
+  if (!firstSetup) {
+    console.log("\nVercel");
+    console.log("✓ Vercel already configured — skip");
+    return process.env.VERCEL_TOKEN?.trim() ?? null;
+  }
 
   console.log("\nVercel");
   console.log(
-    "  Creates or links two projects (apps/web, apps/marketing), sets web build env vars,",
+    "  Creates or links two Git-connected projects (apps/web, apps/marketing), sets env vars,",
   );
-  console.log("  attaches custom domains, and can sync VERCEL_* secrets to GitHub.");
-  console.log("  API token:");
-  await offerOpenUrl(VERCEL_TOKENS);
+  console.log(
+    "  attaches domains (staging on `main`, production via Release), syncs VERCEL_* to GitHub.",
+  );
 
   const proceed = await promptConfirm("Set up Vercel for web and marketing?", {
     defaultYes: firstSetup,
   });
   if (!proceed) {
     console.log("○ Skipped — docs/environments.md#vercel-web--marketing");
-    return;
+    return null;
   }
 
   const token = await promptVercelToken();
   if (!token) {
     console.log("○ VERCEL_TOKEN required");
-    return;
+    return null;
   }
 
   let auth;
@@ -290,14 +378,15 @@ export async function bootstrapVercel(
     auth = await getVercelAuthContext(token);
     console.log(`✓ Vercel authenticated (org ${vercelOrgId(auth)})`);
   } catch {
-    console.log("○ Invalid Vercel token — create one at:");
-    console.log(`  ${VERCEL_TOKENS}`);
-    return;
+    printManualAction("Create a valid Vercel API token", [
+      `Account → Tokens: ${VERCEL_TOKENS}`,
+      "Re-run `bun run setup` and paste the new token",
+    ]);
+    return null;
   }
 
   const teamId = auth.teamId;
-  const repoSlug = github?.repo ?? setup.productName.toLowerCase().replace(/\s+/g, "-");
-  const names = vercelProjectNames(repoSlug);
+  const names = vercelProjectNames(productNameToSlug(setup.productName));
   const specs = vercelAppSpecs();
 
   const webSpec = specs.find((s) => s.suffix === "web")!;
@@ -309,7 +398,7 @@ export async function bootstrapVercel(
     webSpec,
     names.web,
     github,
-    setup.vercel?.webProjectId,
+    setup.vercel?.projectIdWeb,
     root,
   );
   const marketingProject = await ensureVercelProject(
@@ -318,36 +407,47 @@ export async function bootstrapVercel(
     marketingSpec,
     names.marketing,
     github,
-    setup.vercel?.marketingProjectId,
+    setup.vercel?.projectIdMarketing,
     root,
   );
 
   await syncWebVercelEnv(token, teamId, webProject.id, root);
 
-  await attachDomains(token, teamId, webProject.id, [
-    hostnames.webProduction,
-    hostnames.webPreRelease,
+  const webDomainsOk = await attachProjectDomains(token, teamId, webProject, [
+    { domain: hostnames.webProduction, target: "production" },
+    { domain: hostnames.webPreRelease, target: "preview" },
   ]);
-  await attachDomains(token, teamId, marketingProject.id, [
-    hostnames.marketingProduction,
-    hostnames.marketingPreRelease,
+  const marketingDomainsOk = await attachProjectDomains(token, teamId, marketingProject, [
+    { domain: hostnames.marketingProduction, target: "production" },
+    { domain: hostnames.marketingPreRelease, target: "preview" },
   ]);
 
   const meta: VercelSetupMeta = {
     orgId: vercelOrgId(auth),
-    webProjectId: webProject.id,
-    marketingProjectId: marketingProject.id,
-    webProjectName: webProject.name,
-    marketingProjectName: marketingProject.name,
+    projectIdWeb: webProject.id,
+    projectIdMarketing: marketingProject.id,
+    projectNameWeb: webProject.name,
+    projectNameMarketing: marketingProject.name,
   };
   markVercelSynced(root, meta);
 
-  await printDnsHints(token, teamId, [
+  await printDnsHints(token, teamId, hostnames.apex, [
     hostnames.webProduction,
     hostnames.webPreRelease,
     hostnames.marketingProduction,
     hostnames.marketingPreRelease,
   ]);
 
-  await maybeSyncVercelGithubSecrets(root, token, meta, setup);
+  printVercelGitStagingGuide();
+
+  if (!webDomainsOk || !marketingDomainsOk) {
+    printManualAction("Fix Vercel domain setup (optional to continue)", [
+      `Production: ${hostnames.webProduction}, ${hostnames.marketingProduction}`,
+      `Staging: ${hostnames.webPreRelease}, ${hostnames.marketingPreRelease} on branch ${VERCEL_STAGING_GIT_BRANCH}`,
+      "Resume `bun run setup` after fixing, or continue below to sync VERCEL_* secrets",
+    ]);
+  }
+
+  await syncVercelGithubSecrets(root, token, meta, setup);
+  return token;
 }

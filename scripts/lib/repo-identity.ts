@@ -87,3 +87,17 @@ export function shouldRebrandFromTemplate(github: GitHubRepo): boolean {
 export function productNameFromRepo(github: GitHubRepo): string {
   return slugToProductName(github.repo);
 }
+
+/**
+ * Converts a product display name to a URL-safe slug (e.g. `FooBAR` → `foobar`).
+ *
+ * @param productName - Display product name from setup
+ */
+export function productNameToSlug(productName: string): string {
+  return productName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/^-+|-+$/g, "");
+}

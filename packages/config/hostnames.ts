@@ -19,11 +19,11 @@ export function deriveHostnames(apexDomain: string): DerivedHostnames {
   const apex = normalizeApexDomainInput(apexDomain);
   return {
     apex,
-    webPreRelease: `dev.${apex}`,
+    webPreRelease: `preview.${apex}`,
     webProduction: apex,
-    marketingPreRelease: `dev.www.${apex}`,
+    marketingPreRelease: `preview.www.${apex}`,
     marketingProduction: `www.${apex}`,
-    clerkDevOrigins: ["http://localhost:5173", `https://dev.${apex}`],
+    clerkDevOrigins: ["http://localhost:5173", `https://preview.${apex}`],
     clerkProdOrigins: [`https://${apex}`],
   };
 }

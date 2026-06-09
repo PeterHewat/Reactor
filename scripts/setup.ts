@@ -8,6 +8,7 @@
  */
 import { copyFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { runClerkAgentSkillsIfNeeded, runConvexAgentSkillsIfNeeded } from "./lib/agent-skills";
 import { applyIdentity, resolveGitHubRepo } from "./lib/apply-identity";
 import { applyLicenseFromConfig } from "./lib/license-identity";
 import { applyReadmeIdentity } from "./lib/readme-identity";
@@ -50,21 +51,6 @@ function copyTemplateIfMissing(src: string, dest: string): boolean {
 async function runGenerate(): Promise<number> {
   console.log("\n→ bun scripts/generate.ts");
   const proc = Bun.spawn(["bun", "scripts/generate.ts"], {
-    cwd: root,
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  return (await proc.exited) ?? 1;
-}
-
-/**
- * Installs Convex agent skills for local AI editors (best effort; optional).
- *
- * @returns Process exit code (0 = success)
- */
-async function runAgentSkills(): Promise<number> {
-  console.log("\n→ bunx convex ai-files install");
-  const proc = Bun.spawn(["bunx", "convex", "ai-files", "install"], {
     cwd: root,
     stdout: "inherit",
     stderr: "inherit",
@@ -125,10 +111,17 @@ async function main(): Promise<void> {
     process.exit(generateCode);
   }
 
-  const skillsCode = await runAgentSkills();
-  if (skillsCode !== 0) {
+  const convexSkillsCode = await runConvexAgentSkillsIfNeeded(root);
+  if (convexSkillsCode !== 0) {
     console.warn(
       "○ Convex agent skills not installed (optional). Retry: bunx convex ai-files install",
+    );
+  }
+
+  const clerkSkillsCode = await runClerkAgentSkillsIfNeeded(root);
+  if (clerkSkillsCode !== 0) {
+    console.warn(
+      "○ Clerk agent skills not installed (optional). Retry: bunx skills add clerk/skills -y -a cursor --skill clerk-react-patterns --skill clerk-testing --skill clerk-backend-api",
     );
   }
 
@@ -141,8 +134,8 @@ async function main(): Promise<void> {
 
   if (setupConfig && interactive) {
     await bootstrapCiSecrets(root, setupConfig);
-    await bootstrapVercel(root, setupConfig, github);
-    await bootstrapProduction(root, setupConfig);
+    const vercelToken = await bootstrapVercel(root, setupConfig, github);
+    await bootstrapProduction(root, setupConfig, { vercelToken: vercelToken ?? undefined });
   }
 
   console.log("\n✓ Setup complete — continue with docs/getting-started.md");

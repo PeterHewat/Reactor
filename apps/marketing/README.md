@@ -37,8 +37,8 @@ apps/marketing/
 Astro outputs static assets to `dist/`. This template uses **Vercel** with `vercel.json` (monorepo install/build from repo root).
 
 1. Create a Vercel project with root directory `apps/marketing`
-2. Add `VERCEL_MARKETING_PROJECT_ID` (and other Vercel secrets) to repository secrets for `dev-*` deploys; mirror prod values in the **`production`** environment for `prod-*` deploys
-3. Run the Release workflow (or Deploy with tag `dev-2026-06-07-18-55-37`) — see [docs/ci-cd.md](../../docs/ci-cd.md)
+2. Connect the project to GitHub (staging on `main`); add `VERCEL_*` secrets for production Release deploys
+3. Merge to `main` for staging; run **Release** for production — see [docs/ci-cd.md](../../docs/ci-cd.md)
 
 See [docs/environments.md](../../docs/environments.md#domains-and-dns) for domains/DNS and [ci-cd.md](../../docs/ci-cd.md#production-environment-secrets) for tokens and project IDs.
 

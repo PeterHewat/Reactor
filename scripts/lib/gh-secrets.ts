@@ -1,6 +1,17 @@
 import type { GitHubRepo } from "./repo-identity";
 
 /**
+ * Returns whether the GitHub CLI is installed on PATH.
+ */
+export async function isGhInstalled(): Promise<boolean> {
+  const proc = Bun.spawn(["gh", "--version"], {
+    stdout: "ignore",
+    stderr: "ignore",
+  });
+  return (await proc.exited) === 0;
+}
+
+/**
  * Returns whether the GitHub CLI is authenticated.
  */
 export async function isGhAuthenticated(): Promise<boolean> {

@@ -45,12 +45,12 @@ export function vercelAppSpecs(): VercelAppSpec[] {
 /**
  * Builds default Vercel project names from a repository slug.
  *
- * @param repoSlug - GitHub repository name segment
+ * @param slug - Product slug (from setup product name, e.g. `foobar`)
  */
-export function vercelProjectNames(repoSlug: string): { web: string; marketing: string } {
-  const slug = repoSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+export function vercelProjectNames(slug: string): { web: string; marketing: string } {
+  const normalized = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
   return {
-    web: `${slug}-web`,
-    marketing: `${slug}-marketing`,
+    web: `${normalized}-web`,
+    marketing: `${normalized}-marketing`,
   };
 }

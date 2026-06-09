@@ -51,7 +51,7 @@ const es: TranslationDictionary = {
     setupBody:
       "Configura Convex y Clerk para la demo de tareas. Sigue los pasos y luego bun run dev:full.",
     stepConvex:
-      "Convex: CLERK_JWT_ISSUER_DOMAIN (Issuer de la plantilla JWT Convex), luego bun run dev:convex y VITE_CONVEX_URL",
+      "Ejecuta bun run setup — vincula Convex, define CLERK_JWT_ISSUER_DOMAIN y VITE_CONVEX_URL",
     stepClerk:
       "Clerk: plantillas JWT → preset Convex (copiar Issuer); API keys → React → VITE_CLERK_PUBLISHABLE_KEY",
     stepEnv: "Ver docs/getting-started.md §2–3 en este repositorio",

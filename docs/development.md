@@ -55,19 +55,28 @@ bun run --filter @repo/web build        # Vite production build
 bun run --filter @repo/web e2e          # Playwright (web)
 bun run --filter @repo/marketing e2e    # Playwright (marketing)
 
-# Setup — getting-started.md
-bun scripts/setup.ts          # bootstrap + readiness (re-run anytime)
+# Setup — getting-started.md (identity, Clerk, Convex, GitHub, Vercel, DNS hints)
+bun run setup          # interactive wizard + readiness (re-run anytime; Enter keeps defaults)
 ```
 
 ## Prerequisites
 
-Install on your PATH:
+### Local tooling (PATH)
 
 - [Git](https://git-scm.com/download/)
 - [Bun](https://bun.sh/) — match `.bun-version` (>= 1.3.14)
 - [Node.js](https://nodejs.org/) — **24** (`.node-version`; `engines.node` is `>=24.0.0`)
+- [GitHub CLI](https://cli.github.com/) (`gh`) — `gh auth login` before `bun run setup` (repository secrets and Vercel deploy keys)
 
-CI and local scripts use the same major version. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
+### Accounts (free tiers; signup in the wizard if needed)
+
+- [GitHub](https://github.com/) — template repo + `gh auth login`
+- [Convex](https://convex.dev/) — browser login during the Convex setup step
+- [Clerk](https://clerk.com/) — create an app during the Clerk setup step
+- [Vercel](https://vercel.com/) — account before the Vercel step (API token)
+- **Apex domain you control** (e.g. `example.com`) — DNS records come later from Vercel hints
+
+CI and local scripts use the same Node/Bun major versions. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
 
 ## Tailwind and UI
 
@@ -142,7 +151,7 @@ CI: [ci-cd.md](./ci-cd.md#e2e-tests-playwright).
 
 Web specs: `apps/web/tests/*.e2e.ts` via `playwright.config.ts`. Env vars: comments in [apps/web/.env.example](../apps/web/.env.example); base setup in [getting-started.md](./getting-started.md).
 
-1. In Clerk: enable **Email** and **Password**; create the dev user named in `E2E_CLERK_USER_EMAIL` (or use a `+clerk_test` address per [Clerk testing docs](https://clerk.com/docs/guides/development/testing/overview)).
+1. Run `bun run setup` with a development `CLERK_SECRET_KEY` — it defaults `E2E_CLERK_USER_EMAIL` to `e2e.test@your-apex-domain`, creates the Clerk user via API when missing, and syncs the email to GitHub secrets. In Clerk, enable **Email** and **Password** (Development) before the create step. Playwright signs in with `@clerk/testing` ticket tokens — no password secret in CI.
 2. Run:
 
 ```bash
@@ -156,7 +165,7 @@ Playwright does **not** run on pull requests. In CI: Actions → **E2E** → **R
 
 PR CI runs `test:coverage` in path-based jobs (`@repo/web` + `@repo/ui-web` enforce thresholds when `apps/web` changes; `@repo/config`, `@repo/env-core`, `@repo/marketing`, `@repo/convex` when those paths change).
 
-Re-run `bun scripts/setup.ts` when local setup is complete ([getting-started.md](./getting-started.md)).
+Re-run `bun run setup` when local setup is complete ([getting-started.md](./getting-started.md)).
 
 CSP on deploys: `apps/web/vercel.json` — [prompts/security-review.md](../prompts/security-review.md).
 

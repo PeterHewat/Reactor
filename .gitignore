@@ -74,9 +74,10 @@ apps/web/src/routeTree.gen.ts
 # Convex local backend (from `convex dev --once` without cloud login)
 .convex/
 
-# Convex agent skills (run `npx convex ai-files install`)
+# Agent skills installed by setup (Convex: `bunx convex ai-files install`; Clerk: `bunx skills add clerk/skills`)
 .agents/skills/convex/
 .agents/skills/convex-*/
+.agents/skills/clerk-*/
 skills-lock.json
 
 # Test results

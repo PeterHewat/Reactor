@@ -31,6 +31,7 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
+    "setup": "bun scripts/setup.ts",
     "codegen": "bun scripts/generate.ts && bun scripts/assert-convex-generated.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:refs": "tsc -b",

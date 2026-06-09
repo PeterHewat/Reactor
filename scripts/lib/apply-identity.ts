@@ -8,6 +8,9 @@ import {
   TEMPLATE_PRODUCT_NAME,
   type GitHubRepo,
 } from "./repo-identity";
+import { applyLicenseFromConfig } from "./license-identity";
+import { applyReadmeIdentity } from "./readme-identity";
+import { readSetupConfig } from "./setup-config";
 
 export type IdentityResult = {
   github: GitHubRepo;
@@ -51,12 +54,13 @@ export function resolveGitHubRepo(root: string): GitHubRepo | null {
  * @param github - Parsed GitHub repository
  */
 export function applyIdentity(root: string, github: GitHubRepo): IdentityResult {
-  const productName = productNameFromRepo(github);
+  const setupConfig = readSetupConfig(root);
+  const productName = setupConfig?.productName ?? productNameFromRepo(github);
   const rebranded = shouldRebrandFromTemplate(github);
   const changes: string[] = [];
 
   const productPath = resolve(root, "packages/config/product.ts");
-  if (existsSync(productPath)) {
+  if (existsSync(productPath) && !setupConfig) {
     const raw = readFileSync(productPath, "utf8");
     const current = raw.match(/export const PRODUCT_NAME = "([^"]*)";/)?.[1];
     const shouldUpdateProduct =
@@ -86,6 +90,14 @@ export function applyIdentity(root: string, github: GitHubRepo): IdentityResult 
         changes.push("package.json (name)");
       }
     }
+  }
+
+  if (applyReadmeIdentity(root, productName)) {
+    changes.push("README.md");
+  }
+
+  if (setupConfig && applyLicenseFromConfig(root, setupConfig, github)) {
+    changes.push("LICENSE", "package.json (license)");
   }
 
   return { github, productName, rebranded, changes };

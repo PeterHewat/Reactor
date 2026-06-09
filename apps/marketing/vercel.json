@@ -1,8 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "git": {
-    "deploymentEnabled": false
-  },
+  "ignoreCommand": "bash ../../scripts/vercel-should-build.sh",
   "installCommand": "cd ../.. && bun install --frozen-lockfile",
   "buildCommand": "cd ../.. && bun run --filter @repo/marketing build",
   "outputDirectory": "dist",

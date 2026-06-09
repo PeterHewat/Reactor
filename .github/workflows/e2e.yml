@@ -1,6 +1,6 @@
 name: E2E
 
-# Manual Playwright or reusable from release.yml. See docs/ci-cd.md#e2e-tests-playwright
+# Manual Playwright or reusable from staging.yml (main) / release gate. See docs/ci-cd.md#e2e-tests-playwright
 
 on:
   workflow_dispatch:

@@ -63,7 +63,7 @@ function buildChecks(root: string): Check[] {
       typeof Bun !== "undefined"
         ? `bun ${Bun.version} (want ${readBunVersion() ?? ">=1.3.14"})`
         : "not running under Bun",
-    remediation: "Install Bun from https://bun.sh and re-run `bun scripts/setup.ts`",
+    remediation: "Install Bun from https://bun.sh and re-run `bun run setup`",
   });
 
   const wantedNode = readNodeVersion();
@@ -86,7 +86,7 @@ function buildChecks(root: string): Check[] {
     name: "apps/web/.env.local",
     ok: fileExists(root, "apps/web/.env.local"),
     detail: fileExists(root, "apps/web/.env.local") ? "present" : "missing",
-    remediation: "bun scripts/setup.ts  # or: cp apps/web/.env.example apps/web/.env.local",
+    remediation: "bun run setup  # or: cp apps/web/.env.example apps/web/.env.local",
   });
 
   const rootEnv = readEnvFile(root, ".env.local");
@@ -99,8 +99,8 @@ function buildChecks(root: string): Check[] {
     detail: convexLinked
       ? "linked"
       : fileExists(root, ".env.local")
-        ? "present but not linked — run dev:convex"
-        : "missing",
+        ? "present but not linked — expected until you run dev:convex"
+        : "not linked yet — expected until you run dev:convex",
     remediation: "bun run dev:convex — docs/getting-started.md",
     deferUntilConvex: true,
   });
@@ -139,6 +139,17 @@ function buildChecks(root: string): Check[] {
     optional: true,
   });
 
+  checks.push({
+    name: "Clerk agent skills",
+    ok: fileExists(root, ".agents/skills/clerk-react-patterns/SKILL.md"),
+    detail: fileExists(root, ".agents/skills/clerk-react-patterns/SKILL.md")
+      ? "clerk-react-patterns present"
+      : "missing",
+    remediation:
+      "bunx skills add clerk/skills -y -a cursor --skill clerk-react-patterns --skill clerk-testing --skill clerk-backend-api",
+    optional: true,
+  });
+
   const webEnv = readEnvFile(root, "apps/web/.env.local");
   const convexUrl = webEnv.VITE_CONVEX_URL;
   const clerkKey = webEnv.VITE_CLERK_PUBLISHABLE_KEY;
@@ -149,8 +160,10 @@ function buildChecks(root: string): Check[] {
     ok: backendConfigured,
     detail: backendConfigured
       ? "VITE_CONVEX_URL and VITE_CLERK_PUBLISHABLE_KEY set"
-      : "placeholders or missing in apps/web/.env.local",
-    remediation: "docs/getting-started.md#3-convex",
+      : convexLinked
+        ? "placeholders or missing in apps/web/.env.local"
+        : "VITE_CONVEX_URL pending — resume `bun run setup` to link Convex and sync env",
+    remediation: "bun run setup — docs/getting-started.md",
     deferUntilConvex: true,
   });
 

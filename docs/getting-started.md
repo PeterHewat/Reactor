@@ -4,7 +4,7 @@ Starter for a product web app (React + Vite), marketing site (Astro), and Convex
 
 The template includes a small signed-in CRUD todo list (`/tasks`) to prove Clerk, Convex, and the web app work together. Use it as your setup check; replace it with your own product when you are ready.
 
-[Prerequisites](./development.md#prerequisites): Git, Bun, Node.
+[Prerequisites](./development.md#prerequisites): Git, Bun, Node, `gh`, plus GitHub, Convex, Clerk, and Vercel accounts and an apex domain you control.
 
 ## Local development
 
@@ -13,31 +13,28 @@ The template includes a small signed-in CRUD todo list (`/tasks`) to prove Clerk
 Use [**this template**](https://github.com/PeterHewat/Reactor/generate) on GitHub (not **Fork**), clone your repo, then:
 
 ```bash
-bun install
-bun scripts/setup.ts
+bun install && bun run setup
 ```
 
-`setup` is safe to **re-run anytime**. It copies [apps/web/.env.example](../apps/web/.env.example) to [apps/web/.env.local](../apps/web/.env.local) when missing, sets `PRODUCT_NAME` from `git remote` when possible, runs codegen, optionally installs Convex agent skills, then prints a readiness report. **Exit 0** means blocking checks passed; **exit 1** lists what to fix next ([getting-started](./getting-started.md) steps below).
+### 2. Setup wizard (`bun run setup`)
 
-### 2. Clerk and the web app
+Safe to **re-run anytime** (resume after interruptions). Each run re-asks questions with your previous answers as defaults (press **Enter** to keep).
 
-1. [Create a Clerk application](https://dashboard.clerk.com).
-2. Open [apps/web/.env.local](../apps/web/.env.local) and replace each placeholder using the comments for guidance. E2E variables are optional until [Playwright](./development.md#e2e-tests-playwright).
+| Step           | What it does                                                                                                                                                                                               |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Identity**   | Product name + tagline + apex domain (e.g. `example.com`) + optional MIT removal → [`.reactor/setup.json`](../.reactor/setup.json), [packages/config/product.ts](../packages/config/product.ts), `LICENSE` |
+| **Clerk**      | [Create app](https://dashboard.clerk.com/apps) → Development keys → E2E user `e2e.test@{apex}` (API) → [allowed origins](./environments.md#clerk)                                                          |
+| **Convex**     | Runs `convex dev --once` (browser login if needed) → sets `CLERK_JWT_ISSUER_DOMAIN` → syncs `VITE_CONVEX_URL`. Daily dev: `bun run dev:convex`.                                                            |
+| **Codegen**    | Routes + Convex `_generated/` + optional Convex/Clerk agent skills + readiness report (**exit 0** = ready for PRs)                                                                                         |
+| **GitHub**     | Sync dev CI secrets via `gh` (default **yes** first time) — run `gh auth login` before setup                                                                                                               |
+| **Vercel**     | Two projects, web env vars, domains, **DNS hints**, `VERCEL_*` → `gh` (default **yes** first time)                                                                                                         |
+| **Production** | Defer until release: GitHub **`production`** environment for `release-*` (live Clerk/Convex keys, prod deploy key)                                                                                         |
 
-### 3. Convex
+Dashboard URLs are printed as clickable links in setup steps — open them directly in your terminal or browser.
 
-1. In the [Convex dashboard](https://dashboard.convex.dev), open your **Development** deployment → **Settings** → **Environment variables** and add **`CLERK_JWT_ISSUER_DOMAIN`**. In Clerk: **Sessions** → **JWT templates** → **Convex** preset → copy the **Issuer** URL (e.g. `https://your-app.clerk.accounts.dev`).
-2. Link the project and start the dev backend:
+Details and fallbacks: [setup-automation.md](./setup-automation.md). **DNS and registrar records:** [environments.md](./environments.md#dns-at-your-registrar).
 
-```bash
-bun run dev:convex
-```
-
-Follow the CLI prompts on first run. Set `VITE_CONVEX_URL` in [apps/web/.env.local](../apps/web/.env.local) to your deployment URL (shown in the terminal or the Convex dashboard) if it is still a placeholder.
-
-Re-run `bun scripts/setup.ts` to refresh Convex codegen and see which checks still need attention.
-
-### 4. Run and verify the sample app
+### 3. Run and verify the sample app
 
 ```bash
 bun run dev:full
@@ -48,25 +45,20 @@ bun run dev:full
 
 Day-to-day commands: [development.md](./development.md#commands).
 
-Re-run `bun scripts/setup.ts` when `/tasks` works — it should exit 0 before you open pull requests.
+### 4. If setup fails
 
-### 5. GitHub Actions secrets
+Resume `bun run setup`, or see [setup-automation.md](./setup-automation.md) for manual steps and dashboard URLs.
 
-Before opening pull requests that touch the web app or Convex backend:
+### 5. Before your first release
 
-1. Add **`CONVEX_DEPLOY_KEY`** (dev or preview key for CI codegen) under **Settings → Secrets and variables → Actions**.
-2. Create the **`production`** environment and add prod deploy secrets before your first `prod-*` release — [environments.md](./environments.md#github-environments).
-
-Repository vs production scope: [ci-cd.md](./ci-cd.md#repository-secrets).
+1. Green PR CI on `main` ([branch protection](./ci-cd.md#branch-protection)).
+2. Merge to `main` — **Staging** deploys Convex dev + E2E; Vercel Git updates `preview.*` ([environments.md](./environments.md)).
+3. Answer **yes** on the setup **Production** step (or add secrets manually) before running **Release** — [ci-cd.md](./ci-cd.md#production-environment-secrets).
 
 ---
 
 ## Next
 
-When the sample app works locally and CI secrets are configured:
-
-- [Platform setup (Convex, Clerk, Vercel, domains)](./environments.md)
-- [Branch protection](./ci-cd.md#branch-protection)
-- [GitHub `production` environment](./ci-cd.md#github-environments)
-- [Releases](./ci-cd.md#workflows)
+- [Platform setup (domains, DNS, Clerk origins)](./environments.md)
+- [Releases](./ci-cd.md#manual-workflows)
 - [Replace the tasks demo](./spec/README.md) with your own specs

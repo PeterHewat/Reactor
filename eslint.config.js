@@ -59,5 +59,8 @@ export default defineConfig(
     "**/coverage/**",
     "**/.astro/**",
     "convex/_generated/**",
+    ".agents/skills/convex/**",
+    ".agents/skills/convex-*/**",
+    ".agents/skills/clerk-*/**",
   ]),
 );

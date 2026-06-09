@@ -5,43 +5,44 @@
 | Workflow                                                | Purpose                                                                                                |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | [ci.yml](../.github/workflows/ci.yml)                   | Lint, test, and build on pull requests to `main` (not re-run on merge)                                 |
-| [release.yml](../.github/workflows/release.yml)         | Create GitHub release + deploy **new** tags                                                            |
-| [deploy.yml](../.github/workflows/deploy.yml)           | **Deploy** — redeploy/rollback a tag to **production** or **pre-release** (also called from Release)   |
-| [e2e.yml](../.github/workflows/e2e.yml)                 | Manual full Playwright (web and/or marketing); optional gate on Release                                |
+| [staging.yml](../.github/workflows/staging.yml)         | On push to `main`: Convex dev deploy + full Playwright E2E                                             |
+| [release.yml](../.github/workflows/release.yml)         | Production release: verify CI + Staging, tag `release-*`, deploy full stack                            |
+| [deploy.yml](../.github/workflows/deploy.yml)           | **Deploy** — redeploy/rollback a `release-*` tag (also called from Release)                            |
+| [e2e.yml](../.github/workflows/e2e.yml)                 | Manual Playwright (web and/or marketing); reusable from Staging                                        |
 | [sync-labels.yml](../.github/workflows/sync-labels.yml) | One-time or occasional: sync issue/PR labels ([source of truth](../.github/workflows/sync-labels.yml)) |
 
-**New release:** Actions → **Release** → **Pre-release** checkbox (unchecked = production), optional E2E. One tag per run: `dev-2026-06-07-18-55-37` or `prod-2026-06-07-18-55-37`. Deploys Convex, web, and marketing. GitHub release gets `--prerelease` when the box is checked.
+**Staging:** merge to `main` → [staging.yml](../.github/workflows/staging.yml) (Convex dev + E2E) + Vercel Git deploys web/marketing to `preview.*`.
 
-**Rollback / redeploy:** Actions → **Deploy** → tag (e.g. `dev-2026-06-07-18-55-37`).
+**Production release:** Actions → **Release** (from `main`). Creates `release-2026-06-07-18-55-37`, deploys Convex prod + Vercel production. Requires green **Staging** on the same commit.
 
-**CI vs deploy:** [ci.yml](../.github/workflows/ci.yml) runs on **pull requests to `main` only** — merging does not start another run. [deploy.yml](../.github/workflows/deploy.yml) only builds and ships. [Release](../.github/workflows/release.yml) verifies green CI on the release commit or required checks on the merged PR before tagging.
+**Rollback / redeploy:** Actions → **Deploy** → `release-*` tag.
 
-**Web deploy codegen:** Web deploys run `bun scripts/generate-routes.ts` and `bun scripts/generate-convex.ts` before `vercel build`. `dev-*` tags use repository secrets; `prod-*` tags use the GitHub **`production`** environment.
+**CI vs staging vs release:** [ci.yml](../.github/workflows/ci.yml) runs on **pull requests only**. [staging.yml](../.github/workflows/staging.yml) runs on **merge to `main`**. [Release](../.github/workflows/release.yml) verifies PR CI and Staging E2E before tagging.
 
-**PR CI:** Lint, unit tests, and builds on pull requests. **Playwright E2E** is manual or runs from **Release** ([below](#manual-workflows)).
+**Production Vercel codegen:** [deploy.yml](../.github/workflows/deploy.yml) runs `bun scripts/generate-routes.ts` and `bun scripts/generate-convex.ts` before `vercel build` (GitHub **`production`** environment secrets).
 
 **No Turborepo/Nx:** Path-based jobs and [setup-bun](../.github/actions/setup-bun/action.yml) (`bun install --ignore-scripts` in CI; lifecycle scripts run only where needed). See [ADR-003](./adr/003-bun-native-monorepo-tasks-and-ci.md).
 
 ## Deployment tiers
 
-| Lane            | Convex / Clerk    | Web domain (example) | Marketing (example)  | When                                                  |
-| --------------- | ----------------- | -------------------- | -------------------- | ----------------------------------------------------- |
-| **Local + E2E** | Dev / Development | `localhost:5173`     | `localhost:4321`     | Dev, Playwright, Release E2E                          |
-| **Pre-release** | Dev / Development | `dev.domain.tld`     | `dev.www.domain.tld` | Tags `dev-*`; Release with **Pre-release** checked    |
-| **Production**  | Prod / Production | `domain.tld`         | `www.domain.tld`     | Tags `prod-*`; Release with **Pre-release** unchecked |
+| Lane            | Convex / Clerk    | Web domain (example)  | Marketing (example)       | When                                      |
+| --------------- | ----------------- | --------------------- | ------------------------- | ----------------------------------------- |
+| **Local + E2E** | Dev / Development | `localhost:5173`      | `localhost:4321`          | Dev, Playwright                           |
+| **Staging**     | Dev / Development | `preview.example.com` | `preview.www.example.com` | Merge to `main` (Vercel Git + Staging CI) |
+| **Production**  | Prod / Production | `example.com`         | `www.example.com`         | Release → `release-*` tag                 |
 
-Platform setup: **[environments.md](./environments.md)**.
+Platform setup and DNS: **[environments.md](./environments.md)**.
 
 ## GitHub Environments
 
-[deploy.yml](../.github/workflows/deploy.yml) sets `environment: production` only for `prod-*` tags. `dev-*` deploy jobs use **repository secrets** (no GitHub environment).
+[deploy.yml](../.github/workflows/deploy.yml) uses the GitHub **`production`** environment for all jobs. [staging.yml](../.github/workflows/staging.yml) uses **repository secrets** (dev stack).
 
-| Scope                | Secrets                            | Deploy behavior                                                   |
-| -------------------- | ---------------------------------- | ----------------------------------------------------------------- |
-| **Repository**       | Dev stack (see below)              | `dev-*` — Convex dev; Vercel **preview** deploy (Preview domains) |
-| **`production` env** | Prod stack (same secret **names**) | `prod-*` — Convex prod; Vercel **`--prod`** (Production domains)  |
+| Scope                | Secrets                            | Deploy behavior                                                     |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------------- |
+| **Repository**       | Dev stack (see below)              | PR CI, Staging on `main` (Convex dev + E2E); Vercel Git staging     |
+| **`production` env** | Prod stack (same secret **names**) | `release-*` — Convex prod; Vercel **`--prod`** (Production domains) |
 
-Create **`production`** under **Settings → Environments** and add prod credentials there. Repository secrets power CI, E2E, and `dev-*` deploys. Full checklist: [environments.md](./environments.md#github-environments).
+Create **`production`** under **Settings → Environments** and add prod credentials there. Full checklist: [environments.md](./environments.md#github-environments).
 
 ## CI behavior
 
@@ -82,67 +83,68 @@ Direct pushes to `main` (if allowed) will **not** run [ci.yml](../.github/workfl
 
 ## E2E tests (Playwright)
 
-Playwright does **not** run on pull requests. Run locally or via the manual workflow ([below](#manual-workflows)).
+Playwright does **not** run on pull requests. It runs on every **merge to `main`** via [staging.yml](../.github/workflows/staging.yml) (full suite when secrets are set).
 
 - **Local:** `bun run e2e:install` then `bun run --filter @repo/web e2e` (and/or `@repo/marketing`). See [development.md](./development.md#e2e-tests-playwright).
-- **CI:** Actions → **E2E** → **Run workflow** ([e2e.yml](../.github/workflows/e2e.yml)). Choose the branch with **Use workflow from**. Toggle `run_web` / `run_marketing`.
-- **Release:** enabled by default before deploy ([release.yml](../.github/workflows/release.yml)); always uses **dev** repository secrets, including before `prod-*` deploys.
+- **Staging:** [staging.yml](../.github/workflows/staging.yml) after Convex dev deploy — `require_full_web_e2e: true`.
+- **Manual:** Actions → **E2E** → **Run workflow** ([e2e.yml](../.github/workflows/e2e.yml)).
+- **Release:** verifies a successful **Staging** run on the same commit (no E2E re-run).
 
-The **E2E** workflow runs **UI-only** (`home`, `routing`) when Clerk/Convex secrets are missing; with secrets it runs the full suite including `tasks.e2e.ts`. Locally, `bun run --filter @repo/web e2e` does the same (UI-only without `.env.local` secrets).
-
-**E2E targets dev:** `tasks.e2e.ts` uses `VITE_CONVEX_URL` (Convex **dev** deployment) and Clerk **development** keys — never production.
+The **E2E** workflow runs **UI-only** (`home`, `routing`) when Clerk/Convex secrets are missing; Staging requires the full suite. **E2E targets dev:** `tasks.e2e.ts` uses `VITE_CONVEX_URL` (Convex **dev** deployment) and Clerk **development** keys — never production.
 
 ## Repository secrets
 
-Configure in **Settings → Secrets and variables → Actions**. Used by PR CI and E2E — **development** stack values only.
+Configure in **Settings → Secrets and variables → Actions**. Used by PR CI, Staging (Convex + E2E on `main`) — **development** stack only.
 
-| Secret                        | Description                                     | Where to find it                                                                                                                   |
-| ----------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `CONVEX_DEPLOY_KEY`           | Deploy key for **CI/E2E codegen** (dev/preview) | Convex preview deploy key or dev deployment — **not** the production key ([environments.md](./environments.md#repository-secrets)) |
-| `VITE_CONVEX_URL`             | Convex **dev** URL (E2E)                        | Convex Dashboard → dev deployment → Settings → URL                                                                                 |
-| `VITE_CLERK_PUBLISHABLE_KEY`  | Clerk **development** publishable key (E2E)     | Clerk Dashboard → API Keys (Development)                                                                                           |
-| `CLERK_SECRET_KEY`            | Clerk **development** secret (Playwright only)  | Clerk Dashboard → API Keys (Development)                                                                                           |
-| `E2E_CLERK_USER_EMAIL`        | Dev test user for Playwright `clerk.signIn`     | Create in Clerk (Email + Password enabled); see [development.md](./development.md#e2e-tests-playwright)                            |
-| `VERCEL_TOKEN`                | Vercel API token (pre-release deploy)           | Account Settings → Tokens                                                                                                          |
-| `VERCEL_ORG_ID`               | Vercel team/user ID                             | Dashboard or `.vercel/project.json`                                                                                                |
-| `VERCEL_WEB_PROJECT_ID`       | Web project ID                                  | Vercel project settings                                                                                                            |
-| `VERCEL_MARKETING_PROJECT_ID` | Marketing project ID                            | Vercel project settings                                                                                                            |
+`bun run setup` can set these via `gh secret set` when you confirm after readiness (see [getting-started.md](./getting-started.md)).
+
+| Secret                        | Purpose                                | Setup / source                                                                        |
+| ----------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
+| `CONVEX_DEPLOY_KEY`           | CI/E2E codegen + Staging Convex deploy | Setup mints via `npx convex deployment token create github-ci`                        |
+| `VITE_CONVEX_URL`             | E2E + Vercel preview env vars          | From `apps/web/.env.local` / `bun run dev:convex`                                     |
+| `VITE_CLERK_PUBLISHABLE_KEY`  | E2E + Vercel preview env vars          | [Clerk API keys](https://dashboard.clerk.com/last-active?path=api-keys) (Development) |
+| `CLERK_SECRET_KEY`            | Playwright only                        | Same (Development secret)                                                             |
+| `E2E_CLERK_USER_EMAIL`        | Playwright `clerk.signIn`              | [development.md](./development.md#e2e-tests-playwright)                               |
+| `VERCEL_TOKEN`                | Production Release deploy              | Setup Vercel step or [vercel.com/account/tokens](https://vercel.com/account/tokens)   |
+| `VERCEL_ORG_ID`               | Team/user scope for deploy             | Setup Vercel step or Vercel project settings                                          |
+| `VERCEL_WEB_PROJECT_ID`       | `apps/web` project                     | Setup Vercel step or [vercel.com/new](https://vercel.com/new)                         |
+| `VERCEL_MARKETING_PROJECT_ID` | `apps/marketing` project               | Setup Vercel step                                                                     |
 
 ### `production` environment secrets
 
-Configure in **Settings → Environments → production → Environment secrets**. Used for `prod-*` tags. Same secret **names**, **production** values:
+Configure in **Settings → Environments → production → Environment secrets**. Used for `release-*` tags. Same secret **names**, **production** values. **`bun run setup`** can populate these when you confirm the **Production** step (after dev + Vercel); manual fallback:
 
-| Secret                        | Description                                 | Where to find it                                          |
-| ----------------------------- | ------------------------------------------- | --------------------------------------------------------- |
-| `CONVEX_DEPLOY_KEY`           | Convex **production** deploy key            | Convex Dashboard → Production → Settings → Deploy Key     |
-| `VITE_CONVEX_URL`             | Convex **prod** URL (web production deploy) | Convex Dashboard → production deployment → Settings → URL |
-| `VITE_CLERK_PUBLISHABLE_KEY`  | Clerk **production** publishable key        | Clerk Dashboard → API Keys (Production)                   |
-| `VERCEL_TOKEN`                | Vercel API token                            | Account Settings → Tokens                                 |
-| `VERCEL_ORG_ID`               | Team or user ID                             | `.vercel/project.json` or dashboard                       |
-| `VERCEL_WEB_PROJECT_ID`       | Project ID for `apps/web`                   | Vercel project settings                                   |
-| `VERCEL_MARKETING_PROJECT_ID` | Project ID for `apps/marketing`             | Vercel project settings                                   |
+| Secret                        | Purpose            | Where to find it                                                                     |
+| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------ |
+| `CONVEX_DEPLOY_KEY`           | Convex prod deploy | [Convex](https://dashboard.convex.dev) → Production → Settings → Deploy Key          |
+| `VITE_CONVEX_URL`             | Web prod build     | Convex Production deployment URL                                                     |
+| `VITE_CLERK_PUBLISHABLE_KEY`  | Web prod build     | [Clerk API keys](https://dashboard.clerk.com/last-active?path=api-keys) (Production) |
+| `VERCEL_TOKEN`                | Prod Vercel deploy | [vercel.com/account/tokens](https://vercel.com/account/tokens)                       |
+| `VERCEL_ORG_ID`               | Team/user scope    | Same as repository or `.reactor/setup.json` → `vercel.orgId`                         |
+| `VERCEL_WEB_PROJECT_ID`       | Web project        | Same projects as dev; prod keys differ for `VITE_*` only                             |
+| `VERCEL_MARKETING_PROJECT_ID` | Marketing project  | Same as repository                                                                   |
 
-See [environments.md](./environments.md) for Convex, Clerk, Vercel, and domain setup.
+Domains, DNS, and Vercel hostname assignment: [environments.md](./environments.md#domains-and-dns).
 
 ### Vercel (web + marketing)
 
-Create **two** Vercel projects from this monorepo (Import Git Repository → set **Root Directory** to `apps/web` and `apps/marketing`). Each app has a `vercel.json` with monorepo install/build commands. Custom domains and env vars: [environments.md](./environments.md#vercel-configure-once).
+Two projects from this monorepo (`apps/web`, `apps/marketing`). Prefer **`bun run setup`** (Vercel step) or follow [environments.md](./environments.md#vercel-web--marketing).
 
-**Web project (Vercel dashboard):** set `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY` under **Production** (production deployment URLs and keys — mirror GitHub `production` environment).
+**Web project:** `VITE_CONVEX_URL` and `VITE_CLERK_PUBLISHABLE_KEY` on Vercel (setup sets all targets on dev values; update **Production** env in Vercel when you add prod Clerk/Convex keys).
 
-**Release deploys:** [release.yml](../.github/workflows/release.yml) — one `workflow_dispatch` run creates a single tag, optionally runs E2E **before** deploy (dev secrets only), then ships the full stack (Convex → web and marketing in parallel).
+**Release deploys:** [release.yml](../.github/workflows/release.yml) — verify Staging, then Convex → web + marketing in parallel.
 
-**Vercel + GitHub Actions:** Deploy workflows run `vercel build` on the GitHub runner (full monorepo checkout), then `vercel deploy --prebuilt` — Vercel does not rebuild remotely. Disable automatic Vercel Git deployments: `git.deploymentEnabled: false` in each `vercel.json` ([Vercel docs](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments)).
+**Vercel:** Staging on merge via **Git integration** (`ignoreCommand` builds `main` only). Production via GitHub Actions `vercel deploy --prebuilt --prod` on `release-*` tags.
 
-Deploy steps: [.github/actions/deploy-convex](../.github/actions/deploy-convex), [deploy-web-vercel](../.github/actions/deploy-web-vercel), [deploy-marketing-vercel](../.github/actions/deploy-marketing-vercel).
+Deploy actions: [deploy-convex](../.github/actions/deploy-convex), [deploy-web-vercel](../.github/actions/deploy-web-vercel), [deploy-marketing-vercel](../.github/actions/deploy-marketing-vercel).
 
 Tune CSP in `apps/web/vercel.json` for your Clerk domain ([prompts/security-review.md](../prompts/security-review.md)).
 
 ### Getting the Convex deploy key
 
-**Production (deploy only):** Convex Dashboard → **Production** → Settings → Deploy Key → add as `CONVEX_DEPLOY_KEY` in GitHub **`production`** environment.
+**Production:** Convex Dashboard → **Production** → Settings → Deploy Key → GitHub **`production`** environment.
 
-**CI / E2E (codegen):** use a dev or [preview](https://docs.convex.dev/production/hosting/preview-deployments) deploy key as repository `CONVEX_DEPLOY_KEY`. Do not duplicate the production key at repository level.
+**CI / Staging / E2E:** dev deploy key as repository `CONVEX_DEPLOY_KEY`. Setup mints one interactively; do not duplicate the production key at repository level.
 
 > Never commit secrets. Use GitHub repository or environment secrets ([environments.md](./environments.md)).
 
@@ -150,28 +152,29 @@ Tune CSP in `apps/web/vercel.json` for your Clerk domain ([prompts/security-revi
 
 Heavy workflows run only from **Actions** → **Run workflow**. Choose the **branch** with GitHub’s **Use workflow from** dropdown when running E2E on a specific ref.
 
+### Staging
+
+**Workflow:** [staging.yml](../.github/workflows/staging.yml) — automatic on **push to `main`**
+
+Convex dev deploy, then full Playwright E2E. Vercel deploys web/marketing via Git (not part of this workflow).
+
 ### Release
 
-**Workflow:** [release.yml](../.github/workflows/release.yml) → **Release** (from `main` only)
+**Workflow:** [release.yml](../.github/workflows/release.yml) → **Release** (from `main` only, no inputs)
 
-| Input         | Purpose                                                                                   |
-| ------------- | ----------------------------------------------------------------------------------------- |
-| `pre_release` | **Pre-release** checkbox (default on) — dev stack; unchecked = production release         |
-| `run_e2e`     | Run Playwright **before** deploy via [e2e.yml](../.github/workflows/e2e.yml) (default on) |
-
-Tags: `dev-2026-06-07-18-55-37` (development) or `prod-2026-06-07-18-55-37` (production). One GitHub release with repo-wide notes. E2E always uses **dev** repository secrets — never production credentials. Deploy order: **Convex**, then **web** and **marketing** in parallel.
+Verifies PR CI + successful Staging on the commit, creates `release-2026-06-07-18-55-37`, deploys production stack. Deploy order: **Convex**, then **web** and **marketing** in parallel.
 
 ### Deploy
 
-**Workflow:** [deploy.yml](../.github/workflows/deploy.yml) → **Deploy** — redeploy or rollback (lane encoded in tag)
+**Workflow:** [deploy.yml](../.github/workflows/deploy.yml) → **Deploy** — redeploy or rollback a production tag
 
-| Input | Purpose                                                                             |
-| ----- | ----------------------------------------------------------------------------------- |
-| `tag` | e.g. `dev-2026-06-07-18-55-37` or `prod-2026-06-07-18-55-37` (redeploys full stack) |
+| Input | Purpose                                         |
+| ----- | ----------------------------------------------- |
+| `tag` | e.g. `release-2026-06-07-18-55-37` (full stack) |
 
 ### E2E (Playwright)
 
-**Workflow:** [e2e.yml](../.github/workflows/e2e.yml) → **E2E** (manual) or automatically from **Release** when `run_e2e` is enabled
+**Workflow:** [e2e.yml](../.github/workflows/e2e.yml) → **E2E** (manual) or from **Staging** on every merge to `main`
 
 | Input           | Purpose                                                                                                                        |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------ |

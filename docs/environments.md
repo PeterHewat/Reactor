@@ -1,98 +1,111 @@
 # Environments and platform setup
 
-How **development**, **pre-release**, and **production** map across Convex, Clerk, Vercel, domains, and GitHub Actions. CI/CD workflow details live in [ci-cd.md](./ci-cd.md).
+How **development**, **staging**, and **production** map across Convex, Clerk, Vercel, domains, and GitHub Actions. CI/CD workflow details live in [ci-cd.md](./ci-cd.md).
+
+**Recommended path:** run `bun run setup` after [getting-started.md](./getting-started.md) — it walks identity, Clerk, Convex, GitHub secrets, and Vercel with dashboard URLs and CLI commands. Manual steps below are fallbacks.
 
 ## Overview
 
-| Tier            | Purpose                           | Convex / Clerk                    | Vercel domains (example)                                 |
-| --------------- | --------------------------------- | --------------------------------- | -------------------------------------------------------- |
-| **Development** | Local, PR CI, Playwright E2E      | Dev deployment, Clerk Development | `localhost:5173`, `localhost:4321`                       |
-| **Pre-release** | Staging on fixed URLs before prod | Same as development               | `dev.domain.tld` (web), `dev.www.domain.tld` (marketing) |
-| **Production**  | Customer-facing                   | Prod deployment, Clerk Production | `domain.tld` (web), `www.domain.tld` (marketing)         |
+| Tier            | Purpose                | Convex / Clerk                    | Vercel domains (example)                                           |
+| --------------- | ---------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| **Development** | Local, PR CI           | Dev deployment, Clerk Development | `localhost:5173`, `localhost:4321`                                 |
+| **Staging**     | Pre-prod on fixed URLs | Same as development               | `preview.example.com` (web), `preview.www.example.com` (marketing) |
+| **Production**  | Customer-facing        | Prod deployment, Clerk Production | `example.com` (web), `www.example.com` (marketing)                 |
 
-Replace `domain.tld` with your apex domain. Pre-release and local share the **dev** Convex database and Clerk test users — never production data.
+Replace `example.com` with your apex domain from [`.reactor/setup.json`](../.reactor/setup.json). Staging and local share the **dev** Convex database and Clerk test users — never production data.
 
-## Tags and GitHub releases
+## Deploy triggers
 
-One **GitHub release** per workflow run. Lane is encoded in the tag (and matches the pre-release checkbox):
+| Event                | What ships | Stack                                                            |
+| -------------------- | ---------- | ---------------------------------------------------------------- |
+| **Merge to `main`**  | Staging    | Convex dev (GitHub Actions) + web/marketing (Vercel Git) + E2E   |
+| **Release workflow** | Production | `release-*` tag → Convex prod + Vercel `--prod` (GitHub Actions) |
 
-| Lane        | Tag example                | GitHub release  |
-| ----------- | -------------------------- | --------------- |
-| Development | `dev-2026-06-07-18-55-37`  | **Pre-release** |
-| Production  | `prod-2026-06-07-18-55-37` | Full release    |
-
-Each tag points at a commit on `main` and deploys **Convex, web, and marketing** together. Release notes are repo-wide (merged PRs since the previous tag in the same lane).
-
-**Deploy** reads the tag only — `dev-*` uses **repository secrets**; `prod-*` uses the GitHub **`production`** environment.
+There is no `preview-*` release tag. Staging always reflects the latest merge to `main`.
 
 ## Domains and DNS
 
-| Surface       | Pre-release          | Production       |
-| ------------- | -------------------- | ---------------- |
-| **Web app**   | `dev.domain.tld`     | `domain.tld`     |
-| **Marketing** | `dev.www.domain.tld` | `www.domain.tld` |
+For apex domain `example.com`, Reactor uses four public hostnames:
 
-### Vercel (configure once)
+| Surface       | Staging (Preview)         | Production        | Vercel project             |
+| ------------- | ------------------------- | ----------------- | -------------------------- |
+| **Web app**   | `preview.example.com`     | `example.com`     | `{product-slug}-web`       |
+| **Marketing** | `preview.www.example.com` | `www.example.com` | `{product-slug}-marketing` |
 
-1. Two projects: `apps/web`, `apps/marketing` ([ci-cd.md](./ci-cd.md#vercel-web--marketing)).
-2. **Production** domains (`domain.tld`, `www.domain.tld`): assign to **Production** in each project. CI uses `vercel deploy --prebuilt --prod`.
-3. **Pre-release** domains (`dev.domain.tld`, `dev.www.domain.tld`): assign to **Preview** in each project. CI uses a preview deploy (no `--prod`); Vercel routes the latest preview deployment to those domains — no per-run alias in Actions.
+### DNS (at your registrar)
 
-Add DNS CNAMEs once; no hostname secrets in GitHub.
+| Hostname                  | Record type | Typical value                                         |
+| ------------------------- | ----------- | ----------------------------------------------------- |
+| `example.com`             | **A**       | Vercel apex IP (from setup / Vercel Domains UI)       |
+| `www.example.com`         | **CNAME**   | `cname.vercel-dns.com` (or value shown in Vercel)     |
+| `preview.example.com`     | **CNAME**   | `cname.vercel-dns.com` (or value from setup / Vercel) |
+| `preview.www.example.com` | **CNAME**   | `cname.vercel-dns.com` (or value from setup / Vercel) |
+
+**Checklist:**
+
+1. Add each hostname in the correct Vercel project ([web](#vercel-web--marketing) vs marketing).
+2. Create the DNS record at your registrar. TTL `300` or automatic is fine.
+3. Wait for propagation. Vercel shows **Valid** when DNS is correct.
+4. Confirm:
+   - `example.com` and `www.example.com` → **Production** (updated only by Release workflow)
+   - `preview.example.com` and `preview.www.example.com` → git branch **`main`** (Vercel Preview deploys on merge)
+
+### Vercel (web + marketing)
+
+**Automated (`bun run setup`):** creates or finds Git-linked `{product-slug}-web` and `{product-slug}-marketing`, sets web `VITE_*` env vars, attaches domains, optional `gh secret set` for `VERCEL_*`.
+
+**Git staging model:**
+
+1. Connect each project to your GitHub repo (root `apps/web`, `apps/marketing`).
+2. **Production Branch** = `production` (not `main`) — create an empty `production` branch once if needed.
+3. Merges to **`main`** deploy **Preview** builds to `preview.*` hostnames.
+4. **Release** workflow deploys production domains via `vercel deploy --prod` in GitHub Actions.
+5. `ignoreCommand` in each `vercel.json` builds on **`main` only** (skips PR branch deploys).
+
+| Hostname assignment                              | How it updates                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------- |
+| `example.com`, `www.example.com`                 | **Release** → `release-*` tag → GitHub Actions `vercel deploy --prod` |
+| `preview.example.com`, `preview.www.example.com` | **Merge to `main`** → Vercel Git Preview deploy (branch `main`)       |
+
+Monorepo build settings live in each app's `vercel.json`. Production never auto-deploys from `main` when Production Branch is `production`.
+
+**Not production:** `preview.*` uses Development Clerk keys and dev Convex. `example.com` / `www` use Production keys and prod Convex.
 
 ### Clerk
 
-| Instance        | Allowed origins (examples)                        |
-| --------------- | ------------------------------------------------- |
-| **Development** | `http://localhost:5173`, `https://dev.domain.tld` |
-| **Production**  | `https://domain.tld`                              |
+| Instance        | Allowed origins (for `example.com`)                    |
+| --------------- | ------------------------------------------------------ |
+| **Development** | `http://localhost:5173`, `https://preview.example.com` |
+| **Production**  | `https://example.com`                                  |
 
 ### Convex
 
-| Deployment      | Used when                                                              |
-| --------------- | ---------------------------------------------------------------------- |
-| **Development** | Local, E2E, `dev-*` tags (`CONVEX_DEPLOY_KEY` repository secret)       |
-| **Production**  | `prod-*` tags (`CONVEX_DEPLOY_KEY` in GitHub `production` environment) |
+| Deployment      | Used when                                                             |
+| --------------- | --------------------------------------------------------------------- |
+| **Development** | Local, PR CI, merge to `main` (`CONVEX_DEPLOY_KEY` repository secret) |
+| **Production**  | `release-*` releases (`CONVEX_DEPLOY_KEY` in GitHub `production` env) |
 
-Set `CLERK_JWT_ISSUER_DOMAIN` on **both** Convex deployments.
+### GitHub environments
 
-## GitHub Environments
+| Scope                | Secrets    | Used for                                                     |
+| -------------------- | ---------- | ------------------------------------------------------------ |
+| **Repository**       | Dev stack  | PR CI, Staging (Convex + E2E on `main`), Vercel Git env vars |
+| **`production` env** | Prod stack | `release-*` Release deploys only                             |
 
-Create one GitHub environment: **`production`** (prod credentials only).
+Details: [ci-cd.md](./ci-cd.md#repository-secrets).
 
-| Scope                | Secrets                                                                | Used when                  |
-| -------------------- | ---------------------------------------------------------------------- | -------------------------- |
-| **Repository**       | Dev stack — CI, E2E, `dev-*` deploys (see below)                       | Local, PR CI, E2E, `dev-*` |
-| **`production` env** | Prod `CONVEX_DEPLOY_KEY`, `VITE_*`, `VERCEL_*` (same secret **names**) | `prod-*` tags only         |
+## First-time checklist
 
-### Repository secrets
+1. `bun run setup` through Clerk, Convex, Vercel, GitHub secrets.
+2. Vercel: Production Branch = `production`; `preview.*` on branch `main`.
+3. DNS valid for all four hostnames.
+4. Merge a PR to `main` → **Staging** workflow green (Convex + E2E); Vercel deploys staging URLs.
+5. **Release** workflow → `release-*` tag → production.
 
-CI, E2E, and pre-release deploy (`dev-*` tags):
+---
 
-| Secret                                                 | Purpose                                              |
-| ------------------------------------------------------ | ---------------------------------------------------- |
-| `CONVEX_DEPLOY_KEY`                                    | Dev deployment — CI codegen, E2E, pre-release Convex |
-| `VITE_CONVEX_URL`                                      | Dev Convex URL                                       |
-| `VITE_CLERK_PUBLISHABLE_KEY`                           | Clerk development publishable key                    |
-| `CLERK_SECRET_KEY`                                     | Playwright                                           |
-| `E2E_CLERK_USER_EMAIL`                                 | Playwright test user                                 |
-| `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_*_PROJECT_ID` | Pre-release Vercel deploys                           |
+## Next
 
-### `production` environment secrets
-
-Same **names**, production values (see [ci-cd.md](./ci-cd.md#production-environment-secrets)).
-
-## Release flow
-
-1. Merge to `main` with green PR CI.
-2. **Release** → **Pre-release** checked (default) → tag `dev-…`, GitHub prerelease, deploy full stack to dev + Preview domains.
-3. Verify on `dev.domain.tld` / `dev.www.domain.tld`.
-4. **Release** again with **Pre-release unchecked** → tag `prod-…`, full GitHub release, deploy full stack to prod.
-
-Or **Deploy** an existing tag to redeploy without retagging.
-
-## Related
-
-- [getting-started.md](./getting-started.md)
 - [ci-cd.md](./ci-cd.md)
+- [getting-started.md](./getting-started.md)
 - [development.md](./development.md#e2e-tests-playwright)

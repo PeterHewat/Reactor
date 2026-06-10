@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "convex": "^1.40.0"
+    "convex": "^1.41.0"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",

@@ -70,7 +70,6 @@
     "yaml": "^2.9.0",
     "@tootallnate/once": "^2.0.1",
     "smol-toml": "^1.6.1",
-    "ajv": "^8.20.0",
     "tar": "^7.5.16",
     "srvx": "^0.11.16",
     "path-to-regexp": "^8.4.2",

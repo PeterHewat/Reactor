@@ -54,6 +54,20 @@ export function issuerFromPublishableKey(publishableKey: string): string | null 
 }
 
 /**
+ * Extracts the Frontend API slug (`mature-dove-78`) from a Clerk publishable key.
+ *
+ * @param publishableKey - Clerk publishable key (`pk_test_…` / `pk_live_…`)
+ */
+export function frontendApiSlugFromPublishableKey(publishableKey: string): string | null {
+  const issuer = issuerFromPublishableKey(publishableKey);
+  if (!issuer) {
+    return null;
+  }
+  const match = issuer.match(/https?:\/\/([^.]+)\.clerk\.accounts\./);
+  return match?.[1] ?? null;
+}
+
+/**
  * Resolves Clerk JWT issuer from secret key (API) or publishable key (local decode).
  *
  * @param publishableKey - Clerk publishable key

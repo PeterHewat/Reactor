@@ -23,13 +23,14 @@ import {
   isGhAuthenticated,
   refreshGhActionsScopes,
 } from "./gh-secrets";
-import { pullClerkProductionEnv } from "./clerk-cli";
+import { deployClerkProduction, pullClerkProductionEnv, readLinkedClerkAppId } from "./clerk-cli";
 import { canAutomateClerk, canAutomateGh, type SetupCliContext } from "./setup-cli";
 import { printManualAction } from "./manual-action";
 import {
-  CLERK_API_KEYS,
+  CLERK_CREATE_APP,
   CONVEX_DASHBOARD,
   VERCEL_TOKENS,
+  clerkAppDashboardUrl,
   githubEnvironmentsUrl,
 } from "./platform-urls";
 import { maskSecret, promptConfirm, promptLine, promptSecret } from "./prompt";
@@ -41,6 +42,118 @@ export type BootstrapProductionOptions = {
   vercelToken?: string;
   cliContext?: SetupCliContext;
 };
+
+type ClerkProductionKeyPair = {
+  publishableKey: string;
+  secretKey: string;
+};
+
+/**
+ * Resolves Clerk Production keys via CLI pull, deploy, or interactive paste.
+ *
+ * @param root - Repository root
+ * @param options - Setup options including Clerk CLI context
+ */
+async function resolveClerkProductionKeys(
+  root: string,
+  options?: BootstrapProductionOptions,
+): Promise<ClerkProductionKeyPair | null> {
+  console.log("\nClerk production keys");
+
+  const clerkCliReady = Boolean(options?.cliContext && canAutomateClerk(options.cliContext));
+  if (clerkCliReady) {
+    const pulled = await pullClerkProductionEnv(options!.cliContext!.clerk, root);
+    if (pulled) {
+      console.log(`✓ Using Clerk production keys (pk ${maskSecret(pulled.publishableKey)})`);
+      return pulled;
+    }
+  }
+
+  printManualAction(
+    "Provision Clerk Production first",
+    [
+      "New Clerk apps show **Development** only until you deploy Production once",
+      clerkCliReady
+        ? "Setup can run `bunx clerk deploy` for you on the next prompt"
+        : "Run `bunx clerk login` and `bunx clerk deploy` from the repo root",
+      "Or in the Clerk dashboard: your application → **Deploy** / **Deploy to production**",
+      "After that, the API keys page lists **Production** in the instance dropdown",
+    ],
+    { immediate: true },
+  );
+
+  if (clerkCliReady) {
+    const deployNow = await promptConfirm(
+      "Run `bunx clerk deploy` now? (interactive wizard — required before Production keys exist)",
+      { defaultYes: true },
+    );
+    if (deployNow) {
+      const pulled = await deployClerkProduction(options!.cliContext!.clerk, root);
+      if (pulled) {
+        console.log(`✓ Using Clerk production keys (pk ${maskSecret(pulled.publishableKey)})`);
+        return pulled;
+      }
+    }
+  } else {
+    const productionReady = await promptConfirm(
+      "Have you deployed Clerk to Production? (required before live keys exist)",
+      { defaultYes: false },
+    );
+    if (!productionReady) {
+      printManualAction("Deploy Clerk Production, then resume setup", [
+        "Run `bunx clerk login` and `bunx clerk deploy` from the repo root",
+        "Or use the Clerk dashboard **Deploy** action on your application",
+        "Re-run `bun run setup` when the API keys page shows a Production instance",
+      ]);
+      return null;
+    }
+  }
+
+  const linkedAppId =
+    options?.cliContext && canAutomateClerk(options.cliContext)
+      ? await readLinkedClerkAppId(options.cliContext.clerk, root)
+      : undefined;
+  const keysUrl = linkedAppId ? clerkAppDashboardUrl(linkedAppId) : CLERK_CREATE_APP;
+
+  printManualAction(
+    "Paste Clerk Production API keys",
+    [
+      `Open ${keysUrl} (same Clerk account as \`bunx clerk whoami\`)`,
+      "If the apps list is empty, sign in with the CLI account or run `bunx clerk apps list`",
+      "Open your app → **API keys** → switch instance to **Production**",
+      "Copy **Publishable key** (`pk_live_…`)",
+    ],
+    { immediate: true },
+  );
+
+  let publishableKey = "";
+  while (!isClerkPublishableKey(publishableKey) || !publishableKey.startsWith("pk_live_")) {
+    const rawPk = await promptSecret("VITE_CLERK_PUBLISHABLE_KEY (pk_live_…)", {
+      required: true,
+      hint: "Paste pk_live_… from Production → API keys (input hidden)",
+    });
+    publishableKey = normalizeEnvPaste("VITE_CLERK_PUBLISHABLE_KEY", rawPk);
+    if (!publishableKey.startsWith("pk_live_")) {
+      console.log("  Production releases need a live publishable key (pk_live_…).");
+      publishableKey = "";
+    } else {
+      console.log(`✓ Clerk publishable key (${maskSecret(publishableKey)})`);
+    }
+  }
+
+  const clerkSkInput = normalizeEnvPaste(
+    "CLERK_SECRET_KEY",
+    await promptSecret("CLERK_SECRET_KEY (sk_live_…)", {
+      hint: "Same Production page → Secret keys — optional (press Enter to skip)",
+    }),
+  );
+  const secretKey = isClerkSecretKey(clerkSkInput) ? clerkSkInput : "";
+  if (secretKey) {
+    console.log(`✓ Clerk secret key (${maskSecret(secretKey)})`);
+  }
+
+  return { publishableKey, secretKey };
+}
 
 /**
  * Interactive production stack bootstrap for `release-*` GitHub releases.
@@ -62,6 +175,17 @@ export async function bootstrapProduction(
   if (!firstSync) {
     console.log("\nProduction (release-* tags)");
     console.log("✓ Production secrets already synced — skip");
+    return;
+  }
+
+  if (!hasApex) {
+    console.log("\nProduction (release-* tags)");
+    console.log(
+      "○ Skipped — no apex domain in setup (Clerk Production and release hostnames need a domain you own)",
+    );
+    console.log(
+      "  Dev + staging on merge to `main` work without this. Re-run setup with an apex domain before `release-*` deploys.",
+    );
     return;
   }
 
@@ -149,47 +273,11 @@ export async function bootstrapProduction(
   }
   console.log("✓ GitHub production environment ready");
 
-  let clerkPk = "";
-  let clerkSk = "";
-
-  if (options?.cliContext && canAutomateClerk(options.cliContext)) {
-    console.log("\nClerk production keys");
-    const pulled = await pullClerkProductionEnv(options.cliContext.clerk, root);
-    if (pulled) {
-      clerkPk = pulled.publishableKey;
-      clerkSk = pulled.secretKey;
-      console.log(`✓ Using Clerk production keys (pk ${maskSecret(clerkPk)})`);
-    }
+  const clerkKeys = await resolveClerkProductionKeys(root, options);
+  if (!clerkKeys) {
+    return;
   }
-
-  if (!clerkPk) {
-    printManualAction("Copy Clerk Production API keys", [
-      `Production instance API keys: ${CLERK_API_KEYS}`,
-      "Provision production first if needed: `bunx clerk deploy` (then re-run setup)",
-    ]);
-    while (!isClerkPublishableKey(clerkPk) || !clerkPk.startsWith("pk_live_")) {
-      const rawPk = await promptSecret("Clerk publishable key (pk_live_…)", { required: true });
-      clerkPk = normalizeEnvPaste("VITE_CLERK_PUBLISHABLE_KEY", rawPk);
-      if (!clerkPk.startsWith("pk_live_")) {
-        console.log("  Production releases need a live publishable key (pk_live_…).");
-        clerkPk = "";
-      } else {
-        console.log(`✓ Clerk publishable key (${maskSecret(clerkPk)})`);
-      }
-    }
-  }
-
-  if (!clerkSk) {
-    console.log("\n  Clerk secret key (sk_live_…) — paste below (input hidden); Enter to skip");
-    const clerkSkInput = normalizeEnvPaste(
-      "CLERK_SECRET_KEY",
-      await promptSecret("Clerk secret key", {}),
-    );
-    clerkSk = isClerkSecretKey(clerkSkInput) ? clerkSkInput : "";
-    if (clerkSk) {
-      console.log(`✓ Clerk secret key (${maskSecret(clerkSk)})`);
-    }
-  }
+  const { publishableKey: clerkPk, secretKey: clerkSk } = clerkKeys;
 
   let issuerDomain = (await resolveClerkIssuerDomain(clerkPk, clerkSk || undefined)) ?? "";
   if (issuerDomain) {
@@ -267,11 +355,16 @@ export async function bootstrapProduction(
     }
   }
   if (!vercelToken) {
-    printManualAction("Create a Vercel API token", [
-      `Account → Tokens: ${VERCEL_TOKENS}`,
-      "Paste the token when prompted below (updates Vercel production env vars)",
-    ]);
-    vercelToken = await promptSecret("Paste your Vercel API token", {
+    printManualAction(
+      "Vercel API token for production env vars",
+      [
+        `Create a classic token: ${VERCEL_TOKENS}`,
+        "Paste it at the next prompt (updates Vercel Production environment variables)",
+      ],
+      { immediate: true },
+    );
+    vercelToken = await promptSecret("VERCEL_TOKEN", {
+      hint: "Paste your Vercel API token (input hidden), then press Enter",
       displayDefault: vercelTokenFromEnv ? maskSecret(vercelTokenFromEnv) : undefined,
       defaultValue: vercelTokenFromEnv,
     });

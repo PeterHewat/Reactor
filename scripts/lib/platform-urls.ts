@@ -2,7 +2,17 @@ import type { GitHubRepo } from "./repo-identity";
 
 export const CLERK_DASHBOARD = "https://dashboard.clerk.com";
 export const CLERK_CREATE_APP = "https://dashboard.clerk.com/apps";
+/** Prefer {@link clerkAppDashboardUrl} when you have an app id — `last-active` needs a browser session app. */
 export const CLERK_API_KEYS = "https://dashboard.clerk.com/last-active?path=api-keys";
+
+/**
+ * Clerk dashboard URL for one application (`app_…`).
+ *
+ * @param appId - Clerk application ID
+ */
+export function clerkAppDashboardUrl(appId: string): string {
+  return `https://dashboard.clerk.com/apps/${appId}`;
+}
 export const CLERK_DOMAINS = "https://dashboard.clerk.com/last-active?path=domains";
 export const CLERK_JWT_TEMPLATES = "https://dashboard.clerk.com/last-active?path=jwt-templates";
 export const CONVEX_DASHBOARD = "https://dashboard.convex.dev";

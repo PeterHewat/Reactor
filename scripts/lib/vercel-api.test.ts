@@ -8,6 +8,7 @@ import {
   parseVercelApiErrorDetails,
   resolveVercelEnvironmentId,
   VERCEL_PRE_RELEASE_ENV_SLUG,
+  VERCEL_QUIET_GIT_NOTIFICATIONS,
   VercelApiError,
   type VercelProjectDetails,
 } from "./vercel-api";
@@ -114,5 +115,19 @@ describe("mergeVercelProjectEnvironments", () => {
       project.customEnvironments!,
     );
     expect(resolveVercelEnvironmentId(merged, "preview")).toBe("env_prev");
+  });
+});
+
+describe("VERCEL_QUIET_GIT_NOTIFICATIONS", () => {
+  test("disables all GitHub PR noise settings", () => {
+    expect(VERCEL_QUIET_GIT_NOTIFICATIONS.gitComments).toEqual({
+      onCommit: false,
+      onPullRequest: false,
+    });
+    expect(VERCEL_QUIET_GIT_NOTIFICATIONS.gitProviderOptions).toEqual({
+      createDeployments: "disabled",
+      disableRepositoryDispatchEvents: true,
+      gitCommitStatus: false,
+    });
   });
 });

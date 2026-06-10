@@ -136,6 +136,8 @@ Two projects from this monorepo (`apps/web`, `apps/marketing`). Prefer **`bun ru
 
 **Vercel:** Staging on merge via **Git integration** (`ignoreCommand` builds `main` only). Production via GitHub Actions `vercel deploy --prebuilt --prod` on `release-*` tags.
 
+**GitHub PR noise:** `bun run setup` silences Vercel bot comments, `deployment_status` / `repository_dispatch` events, and commit statuses on both projects (feature-branch pushes are skipped by `ignoreCommand`; staging still deploys on `main`). Re-run setup to re-apply if dashboard toggles drift.
+
 Deploy actions: [deploy-convex](../.github/actions/deploy-convex), [deploy-web-vercel](../.github/actions/deploy-web-vercel), [deploy-marketing-vercel](../.github/actions/deploy-marketing-vercel).
 
 Tune CSP in `apps/web/vercel.json` for your Clerk domain ([prompts/security-review.md](../prompts/security-review.md)).

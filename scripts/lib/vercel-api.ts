@@ -53,6 +53,36 @@ export type CreateVercelProjectInput = {
   gitRepository?: { type: "github"; repo: string };
 };
 
+export type VercelGitComments = {
+  onCommit: boolean;
+  onPullRequest: boolean;
+};
+
+export type VercelGitProviderOptions = {
+  /** `disabled` stops GitHub `deployment_status` events (PR activity noise). */
+  createDeployments?: "disabled" | "enabled";
+  disableRepositoryDispatchEvents?: boolean;
+  gitCommitStatus?: boolean;
+};
+
+export type VercelGitNotificationUpdate = {
+  gitComments: VercelGitComments;
+  gitProviderOptions: VercelGitProviderOptions;
+};
+
+/**
+ * Default Git integration noise settings for Reactor: no PR comments, checks, or GitHub deployment events.
+ * Staging still deploys on `main` via Git; feature branches are skipped by `ignoreCommand`.
+ */
+export const VERCEL_QUIET_GIT_NOTIFICATIONS: VercelGitNotificationUpdate = {
+  gitComments: { onCommit: false, onPullRequest: false },
+  gitProviderOptions: {
+    createDeployments: "disabled",
+    disableRepositoryDispatchEvents: true,
+    gitCommitStatus: false,
+  },
+};
+
 /**
  * Error from a failed Vercel REST API call.
  */
@@ -328,6 +358,27 @@ export async function findVercelProjectByName(
 ): Promise<VercelProjectDetails | null> {
   const projects = await listVercelProjects(token, teamId);
   return projects.find((p) => p.name === name) ?? null;
+}
+
+/**
+ * Silences Vercel GitHub bot comments, commit statuses, and deployment events on a project.
+ *
+ * @param token - Vercel API token
+ * @param teamId - Optional team scope
+ * @param projectId - Project ID
+ * @param settings - Git notification toggles (defaults to {@link VERCEL_QUIET_GIT_NOTIFICATIONS})
+ */
+export async function updateVercelProjectGitNotifications(
+  token: string,
+  teamId: string | undefined,
+  projectId: string,
+  settings: VercelGitNotificationUpdate = VERCEL_QUIET_GIT_NOTIFICATIONS,
+): Promise<void> {
+  await vercelRequest(token, `/v9/projects/${projectId}`, {
+    method: "PATCH",
+    teamId,
+    body: settings,
+  });
 }
 
 /**

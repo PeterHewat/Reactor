@@ -27,7 +27,9 @@ import {
 import {
   bootstrapClerkEnvViaCli,
   findClerkAppByName,
+  findClerkAppByPublishableKey,
   linkClerkApp,
+  listClerkApps,
   pullClerkEnv,
 } from "./clerk-cli";
 import { maskSecret, promptLine, promptSecret } from "./prompt";
@@ -181,10 +183,15 @@ async function promptClerkKeys(root: string, setup: SetupConfig): Promise<string
     : webEnv.CLERK_SECRET_KEY;
 
   console.log("\nClerk");
-  printManualAction("Create Clerk app and copy Development keys", [
-    `Create an application (if needed): ${CLERK_CREATE_APP}`,
-    `API keys — select **React**, copy Development keys: ${CLERK_API_KEYS}`,
-  ]);
+  printManualAction(
+    "Clerk development keys",
+    [
+      `Create an application if needed: ${CLERK_CREATE_APP}`,
+      `Open ${CLERK_API_KEYS} — stay on **Development**`,
+      "Select **React**, then copy Publishable key (`pk_test_…`) and Secret key (`sk_test_…`)",
+    ],
+    { immediate: true },
+  );
 
   let publishableKey = "";
   while (!isClerkPublishableKey(publishableKey)) {
@@ -192,6 +199,9 @@ async function promptClerkKeys(root: string, setup: SetupConfig): Promise<string
       defaultValue: existingPk,
       displayDefault: existingPk ? maskSecret(existingPk) : undefined,
       required: !existingPk,
+      hint: existingPk
+        ? "Press Enter to keep the saved key, or paste a new Development publishable key"
+        : "Paste the Development publishable key (input hidden), then press Enter",
     });
     publishableKey = normalizeEnvPaste("VITE_CLERK_PUBLISHABLE_KEY", rawPk);
     if (!isClerkPublishableKey(publishableKey)) {
@@ -200,13 +210,11 @@ async function promptClerkKeys(root: string, setup: SetupConfig): Promise<string
     }
   }
 
-  const rawSk = await promptSecret(
-    "CLERK_SECRET_KEY (sk_test_…) — copy from **Secret keys** on the same page",
-    {
-      defaultValue: existingSk,
-      displayDefault: existingSk ? maskSecret(existingSk) : undefined,
-    },
-  );
+  const rawSk = await promptSecret("CLERK_SECRET_KEY (sk_test_…)", {
+    defaultValue: existingSk,
+    displayDefault: existingSk ? maskSecret(existingSk) : undefined,
+    hint: "Same page → **Secret keys** — optional for local dev (press Enter to skip)",
+  });
   const secretKey = normalizeEnvPaste("CLERK_SECRET_KEY", rawSk);
   const resolvedSecret = isClerkSecretKey(secretKey) ? secretKey : "";
 
@@ -313,30 +321,18 @@ export async function bootstrapClerkConvex(
 
   if (clerkCliReady) {
     const namedApp = await findClerkAppByName(cliContext.clerk, root, setup.productName);
+    const keyedApp = envKeys
+      ? await findClerkAppByPublishableKey(cliContext.clerk, root, envKeys.publishableKey)
+      : undefined;
+    const resolvedApp = namedApp ?? keyedApp;
+    const envKeysMismatch = Boolean(envKeys && namedApp && keyedApp && namedApp.id !== keyedApp.id);
 
-    if (!namedApp) {
-      if (envKeys) {
-        console.log("\nClerk");
-        console.log(
-          `○ ${WEB_ENV} has keys for another Clerk app — no application named "${setup.productName}" in your account`,
-        );
-        console.log("  Creating and linking via Clerk CLI…");
-      }
-      const pulled = await bootstrapClerkEnvViaCli(root, setup, cliContext.clerk);
-      const afterPull = pulled ? readValidClerkKeysFromEnv(root) : null;
-      if (afterPull) {
-        issuerDomain = await applyClerkKeysFromEnv(
-          root,
-          setup,
-          afterPull.publishableKey,
-          afterPull.secretKey,
-        );
-      } else {
-        issuerDomain = await promptClerkKeys(root, setup);
-      }
-    } else if (!envKeys) {
+    if (envKeys && envKeysMismatch && namedApp) {
+      const envIssuer = issuerFromPublishableKey(envKeys.publishableKey);
       console.log("\nClerk");
-      console.log(`✓ Found Clerk app "${namedApp.name}" (${namedApp.id})`);
+      console.log(
+        `○ ${WEB_ENV} keys are for another Clerk app${envIssuer ? ` (${envIssuer})` : ""} — using "${namedApp.name}" (${namedApp.id})`,
+      );
       await linkClerkApp(cliContext.clerk, root, namedApp.id);
       if (await pullClerkEnv(cliContext.clerk, root)) {
         const afterPull = readValidClerkKeysFromEnv(root);
@@ -352,13 +348,72 @@ export async function bootstrapClerkConvex(
       if (!issuerDomain) {
         issuerDomain = await promptClerkKeys(root, setup);
       }
-    } else {
+    } else if (envKeys) {
+      if (resolvedApp) {
+        console.log("\nClerk");
+        if (keyedApp && !namedApp) {
+          const issuer = issuerFromPublishableKey(envKeys.publishableKey);
+          console.log(
+            `✓ Matched Clerk app "${resolvedApp.name}" (${resolvedApp.id}) from ${WEB_ENV}${issuer ? ` (${issuer})` : ""}`,
+          );
+        } else {
+          console.log(`✓ Found Clerk app "${resolvedApp.name}" (${resolvedApp.id})`);
+        }
+        await linkClerkApp(cliContext.clerk, root, resolvedApp.id);
+      } else {
+        const issuer = issuerFromPublishableKey(envKeys.publishableKey);
+        console.log("\nClerk");
+        console.log(
+          `○ Using keys from ${WEB_ENV}${issuer ? ` (${issuer})` : ""} — no matching app in \`clerk apps list\``,
+        );
+        const listed = await listClerkApps(cliContext.clerk, root);
+        if (listed.length > 0) {
+          console.log("  Apps visible to `bunx clerk whoami`:");
+          for (const app of listed) {
+            console.log(`    • ${app.name} (${app.id})`);
+          }
+        }
+        console.log(
+          `  Link manually: ${[...cliContext.clerk.command, "link", "--app", "app_…"].join(" ")}`,
+        );
+      }
       issuerDomain = await applyClerkKeysFromEnv(
         root,
         setup,
         envKeys.publishableKey,
         envKeys.secretKey,
       );
+    } else if (resolvedApp) {
+      console.log("\nClerk");
+      console.log(`✓ Found Clerk app "${resolvedApp.name}" (${resolvedApp.id})`);
+      await linkClerkApp(cliContext.clerk, root, resolvedApp.id);
+      if (await pullClerkEnv(cliContext.clerk, root)) {
+        const afterPull = readValidClerkKeysFromEnv(root);
+        if (afterPull) {
+          issuerDomain = await applyClerkKeysFromEnv(
+            root,
+            setup,
+            afterPull.publishableKey,
+            afterPull.secretKey,
+          );
+        }
+      }
+      if (!issuerDomain) {
+        issuerDomain = await promptClerkKeys(root, setup);
+      }
+    } else {
+      const pulled = await bootstrapClerkEnvViaCli(root, setup, cliContext.clerk);
+      const afterPull = pulled ? readValidClerkKeysFromEnv(root) : null;
+      if (afterPull) {
+        issuerDomain = await applyClerkKeysFromEnv(
+          root,
+          setup,
+          afterPull.publishableKey,
+          afterPull.secretKey,
+        );
+      } else {
+        issuerDomain = await promptClerkKeys(root, setup);
+      }
     }
   } else if (envKeys) {
     issuerDomain = await applyClerkKeysFromEnv(

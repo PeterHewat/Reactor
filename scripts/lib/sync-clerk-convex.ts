@@ -57,7 +57,7 @@ export async function syncClerkConvexFromWebEnv(
     return { issuerConfigured: true, issuerChanged: false };
   }
 
-  const ok = await setConvexEnvVar(root, "CLERK_JWT_ISSUER_DOMAIN", issuerDomain, false);
+  const { ok } = await setConvexEnvVar(root, "CLERK_JWT_ISSUER_DOMAIN", issuerDomain, false);
   if (ok) {
     console.log("✓ Convex CLERK_JWT_ISSUER_DOMAIN set on dev deployment");
   }

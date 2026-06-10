@@ -1,6 +1,21 @@
 /* eslint-disable no-console -- CLI prompts */
-import * as readline from "node:readline/promises";
+import * as readline from "node:readline";
+import * as readlinePromises from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+
+/**
+ * Returns whether secret prompts can use muted TTY input (hide echo + clear line).
+ */
+export function isInteractivePrompt(): boolean {
+  return Boolean(input.isTTY && output.isTTY);
+}
+
+/**
+ * Erases the previous terminal line (prompt + hidden input) from the display.
+ */
+export function erasePreviousPromptLine(): void {
+  output.write("\x1b[1A\r\x1b[2K");
+}
 
 /**
  * Prompts for a single line on stdin.
@@ -12,7 +27,7 @@ export async function promptLine(
   question: string,
   options?: { defaultValue?: string; displayDefault?: string; required?: boolean },
 ): Promise<string> {
-  const rl = readline.createInterface({ input, output });
+  const rl = readlinePromises.createInterface({ input, output });
   try {
     while (true) {
       const shown = options?.displayDefault ?? options?.defaultValue;
@@ -44,7 +59,7 @@ export async function promptConfirm(
 ): Promise<boolean> {
   const defaultYes = options?.defaultYes ?? false;
   const hint = defaultYes ? "[Y/n]" : "[y/N]";
-  const rl = readline.createInterface({ input, output });
+  const rl = readlinePromises.createInterface({ input, output });
   try {
     while (true) {
       const answer = (await rl.question(`${question} ${hint}: `)).trim();
@@ -58,6 +73,58 @@ export async function promptConfirm(
         return false;
       }
       console.log("  Enter y or n (or press Enter for the default).");
+    }
+  } finally {
+    rl.close();
+  }
+}
+
+/**
+ * Prompts for a secret on stdin without echoing input or leaving the value on screen.
+ * Falls back to {@link promptLine} when stdin/stdout are not a TTY (CI, pipes).
+ *
+ * @param question - Prompt label (without trailing colon)
+ * @param options - Default value and whether empty input is allowed
+ */
+export async function promptSecret(
+  question: string,
+  options?: { defaultValue?: string; displayDefault?: string; required?: boolean },
+): Promise<string> {
+  if (!isInteractivePrompt()) {
+    return promptLine(question, options);
+  }
+
+  const rl = readline.createInterface({ input, output, terminal: true });
+  type MutedInterface = readline.Interface & { _writeToOutput: (chunk: string) => void };
+  const muted = rl as MutedInterface;
+  muted._writeToOutput = (chunk: string) => {
+    if (chunk.includes("\n") || chunk.includes("\r")) {
+      output.write(chunk);
+    }
+  };
+
+  try {
+    while (true) {
+      const shown = options?.displayDefault ?? options?.defaultValue;
+      const suffix = shown ? ` [${shown}]` : "";
+      const prompt = `${question}${suffix}: `;
+      if (options?.required && shown === undefined) {
+        console.log("  Paste the value below (input hidden), then press Enter.");
+      }
+      output.write(prompt);
+      const answer = await new Promise<string>((resolve) => {
+        rl.question("", resolve);
+      });
+      erasePreviousPromptLine();
+      const trimmed = answer.trim();
+      if (!trimmed && options?.defaultValue !== undefined) {
+        return options.defaultValue;
+      }
+      if (!trimmed && options?.required) {
+        console.log("  Required — enter a value.");
+        continue;
+      }
+      return trimmed;
     }
   } finally {
     rl.close();

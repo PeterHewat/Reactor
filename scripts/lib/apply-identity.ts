@@ -9,6 +9,7 @@ import {
   type GitHubRepo,
 } from "./repo-identity";
 import { applyLicenseFromConfig } from "./license-identity";
+import { formatProductTs } from "./prettier-file";
 import { applyReadmeIdentity } from "./readme-identity";
 import { readSetupConfig } from "./setup-config";
 
@@ -73,6 +74,7 @@ export function applyIdentity(root: string, github: GitHubRepo): IdentityResult 
       );
       if (next !== raw) {
         writeFileSync(productPath, next);
+        formatProductTs(root);
         changes.push("packages/config/product.ts");
       }
     }

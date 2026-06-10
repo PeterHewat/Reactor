@@ -1,5 +1,6 @@
 /* eslint-disable no-console -- CLI wizard */
 import { deriveHostnames } from "../../packages/config/hostnames";
+import { hasApexDomain } from "../../packages/config/validate-domain";
 import { resolveGitHubRepo } from "./apply-identity";
 import {
   isClerkPublishableKey,
@@ -10,9 +11,20 @@ import {
   resolveClerkIssuerDomain,
 } from "./clerk-instance";
 import { mintConvexDeployKey } from "./convex-deploy-key";
+import { convexUrlFromDeploymentSlug, readConvexUrlFromRootEnv } from "./convex-url";
+import { normalizeEnvPaste } from "./env-paste";
 import { setConvexEnvVar } from "./convex-env";
 import { isConvexLinked } from "./convex-link";
-import { ensureGhProductionEnvironment, ghSecretSetEnv, isGhAuthenticated } from "./gh-secrets";
+import {
+  ensureGhProductionEnvironment,
+  getGhTokenScopes,
+  ghSecretSetEnv,
+  hasGhActionsScopes,
+  isGhAuthenticated,
+  refreshGhActionsScopes,
+} from "./gh-secrets";
+import { pullClerkProductionEnv } from "./clerk-cli";
+import { canAutomateClerk, canAutomateGh, type SetupCliContext } from "./setup-cli";
 import { printManualAction } from "./manual-action";
 import {
   CLERK_API_KEYS,
@@ -20,12 +32,14 @@ import {
   VERCEL_TOKENS,
   githubEnvironmentsUrl,
 } from "./platform-urls";
-import { maskSecret, promptConfirm, promptLine } from "./prompt";
+import { maskSecret, promptConfirm, promptLine, promptSecret } from "./prompt";
 import { markProductionGithubSecretsSynced, type SetupConfig } from "./setup-config";
+import { resolveVercelApiToken } from "./vercel-auth";
 import { upsertVercelProjectEnv } from "./vercel-api";
 
 export type BootstrapProductionOptions = {
   vercelToken?: string;
+  cliContext?: SetupCliContext;
 };
 
 /**
@@ -41,7 +55,8 @@ export async function bootstrapProduction(
   options?: BootstrapProductionOptions,
 ): Promise<void> {
   const github = resolveGitHubRepo(root);
-  const hostnames = deriveHostnames(setup.apexDomain);
+  const hasApex = hasApexDomain(setup.apexDomain);
+  const hostnames = hasApex ? deriveHostnames(setup.apexDomain!) : null;
   const firstSync = !setup.github?.syncedSecrets?.production;
 
   if (!firstSync) {
@@ -78,7 +93,10 @@ export async function bootstrapProduction(
     return;
   }
 
-  if (!(await isGhAuthenticated())) {
+  const ghReady = options?.cliContext
+    ? canAutomateGh(options.cliContext)
+    : await isGhAuthenticated();
+  if (!ghReady) {
     printManualAction("Authenticate GitHub CLI", [
       "Run `gh auth login` in a terminal",
       "Resume `bun run setup` and confirm the Production step",
@@ -95,33 +113,83 @@ export async function bootstrapProduction(
     return;
   }
 
-  if (!(await ensureGhProductionEnvironment(root, github))) {
+  if (!hasGhActionsScopes(await getGhTokenScopes(root))) {
+    console.log(
+      "\n○ GitHub token is missing the `workflow` scope (required to create Actions environments)",
+    );
+    const refreshScopes = await promptConfirm(
+      "Grant repo + workflow scopes via `gh auth refresh`?",
+      { defaultYes: true },
+    );
+    if (refreshScopes) {
+      await refreshGhActionsScopes(root);
+    }
+  }
+
+  let productionEnv = await ensureGhProductionEnvironment(root, github);
+  if (!productionEnv.ok && productionEnv.needsScopeRefresh) {
+    console.log("\n○ GitHub API rejected environment creation — refreshing token scopes");
+    const refreshScopes = await promptConfirm(
+      "Grant repo + workflow scopes via `gh auth refresh`?",
+      { defaultYes: true },
+    );
+    if (refreshScopes && (await refreshGhActionsScopes(root))) {
+      productionEnv = await ensureGhProductionEnvironment(root, github);
+    }
+  }
+
+  if (!productionEnv.ok) {
     printManualAction("Create the GitHub production environment", [
+      productionEnv.message,
+      "If automation failed: `gh auth refresh -h github.com -s repo,workflow`",
       `GitHub → Settings → Environments: ${githubEnvironmentsUrl(github)}`,
       "Create an environment named `production`, then resume setup",
     ]);
     return;
   }
-
-  printManualAction("Copy Clerk Production API keys", [
-    `Switch to Production instance: ${CLERK_API_KEYS}`,
-    "Paste pk_live_… and sk_live_… when prompted below",
-  ]);
+  console.log("✓ GitHub production environment ready");
 
   let clerkPk = "";
-  while (!isClerkPublishableKey(clerkPk) || !clerkPk.startsWith("pk_live_")) {
-    clerkPk = await promptLine("VITE_CLERK_PUBLISHABLE_KEY (pk_live_…)", { required: true });
-    if (!clerkPk.startsWith("pk_live_")) {
-      console.log("  Production releases need a live publishable key (pk_live_…).");
-      clerkPk = "";
+  let clerkSk = "";
+
+  if (options?.cliContext && canAutomateClerk(options.cliContext)) {
+    console.log("\nClerk production keys");
+    const pulled = await pullClerkProductionEnv(options.cliContext.clerk, root);
+    if (pulled) {
+      clerkPk = pulled.publishableKey;
+      clerkSk = pulled.secretKey;
+      console.log(`✓ Using Clerk production keys (pk ${maskSecret(clerkPk)})`);
     }
   }
 
-  const clerkSkInput = await promptLine(
-    "CLERK_SECRET_KEY (sk_live_…) — optional; used to derive issuer",
-    {},
-  );
-  const clerkSk = isClerkSecretKey(clerkSkInput) ? clerkSkInput : "";
+  if (!clerkPk) {
+    printManualAction("Copy Clerk Production API keys", [
+      `Production instance API keys: ${CLERK_API_KEYS}`,
+      "Provision production first if needed: `bunx clerk deploy` (then re-run setup)",
+    ]);
+    while (!isClerkPublishableKey(clerkPk) || !clerkPk.startsWith("pk_live_")) {
+      const rawPk = await promptSecret("Clerk publishable key (pk_live_…)", { required: true });
+      clerkPk = normalizeEnvPaste("VITE_CLERK_PUBLISHABLE_KEY", rawPk);
+      if (!clerkPk.startsWith("pk_live_")) {
+        console.log("  Production releases need a live publishable key (pk_live_…).");
+        clerkPk = "";
+      } else {
+        console.log(`✓ Clerk publishable key (${maskSecret(clerkPk)})`);
+      }
+    }
+  }
+
+  if (!clerkSk) {
+    console.log("\n  Clerk secret key (sk_live_…) — paste below (input hidden); Enter to skip");
+    const clerkSkInput = normalizeEnvPaste(
+      "CLERK_SECRET_KEY",
+      await promptSecret("Clerk secret key", {}),
+    );
+    clerkSk = isClerkSecretKey(clerkSkInput) ? clerkSkInput : "";
+    if (clerkSk) {
+      console.log(`✓ Clerk secret key (${maskSecret(clerkSk)})`);
+    }
+  }
 
   let issuerDomain = (await resolveClerkIssuerDomain(clerkPk, clerkSk || undefined)) ?? "";
   if (issuerDomain) {
@@ -138,24 +206,40 @@ export async function bootstrapProduction(
     issuerDomain = normalizeClerkIssuerDomain(rawIssuer);
   }
 
-  await setConvexEnvVar(root, "CLERK_JWT_ISSUER_DOMAIN", issuerDomain, true);
-
-  printManualAction("Copy Convex Production deployment URL", [
-    `Convex dashboard: ${CONVEX_DASHBOARD}`,
-    "Switch to your **Production** deployment → copy the URL (https://….convex.cloud)",
-  ]);
+  const convexIssuerSet = await setConvexEnvVar(
+    root,
+    "CLERK_JWT_ISSUER_DOMAIN",
+    issuerDomain,
+    true,
+  );
 
   let convexUrl = "";
-  while (!convexUrl.startsWith("https://") || !convexUrl.includes(".convex.cloud")) {
-    convexUrl = await promptLine("VITE_CONVEX_URL (Production deployment URL)", { required: true });
-    if (!convexUrl.includes(".convex.cloud")) {
-      console.log("  Expected a Convex cloud URL (https://….convex.cloud).");
-      convexUrl = "";
+  const referenceConvexUrl = readConvexUrlFromRootEnv(root);
+  const prodSlug = convexIssuerSet.prodDeploymentSlug;
+  if (prodSlug) {
+    convexUrl = convexUrlFromDeploymentSlug(prodSlug, referenceConvexUrl);
+    console.log(`✓ Convex production URL → ${convexUrl}`);
+  }
+
+  if (!convexUrl) {
+    printManualAction("Copy Convex Production deployment URL", [
+      `Convex dashboard: ${CONVEX_DASHBOARD}`,
+      "Switch to your **Production** deployment → copy the URL (https://….convex.cloud)",
+    ]);
+    while (!convexUrl.startsWith("https://") || !convexUrl.includes(".convex.cloud")) {
+      const rawConvexUrl = await promptLine("Production VITE_CONVEX_URL", {
+        required: true,
+      });
+      convexUrl = normalizeEnvPaste("VITE_CONVEX_URL", rawConvexUrl);
+      if (!convexUrl.includes(".convex.cloud")) {
+        console.log("  Expected a Convex cloud URL (https://….convex.cloud).");
+        convexUrl = "";
+      }
     }
   }
 
-  const deployKey = await mintConvexDeployKey(root, "github-prod", "prod");
-  if (!deployKey) {
+  const deployKeyResult = await mintConvexDeployKey(root, "github-prod", "prod");
+  if (!deployKeyResult) {
     printManualAction("Create a Convex Production deploy key", [
       `Convex dashboard: ${CONVEX_DASHBOARD}`,
       "Production deployment → Settings → Deploy keys → create a key for GitHub CI",
@@ -164,15 +248,30 @@ export async function bootstrapProduction(
     return;
   }
 
+  const deployKey = deployKeyResult.key;
+
   const vercel = setup.vercel;
   const vercelTokenFromEnv = process.env.VERCEL_TOKEN?.trim();
   let vercelToken = options?.vercelToken?.trim() ?? vercelTokenFromEnv ?? "";
+  if (!vercelToken) {
+    const resolved = await resolveVercelApiToken(root);
+    if (resolved) {
+      const label =
+        resolved.source === "env"
+          ? "VERCEL_TOKEN env"
+          : resolved.source === "cli_session"
+            ? "`vercel login` session"
+            : "`vercel tokens add`";
+      console.log(`✓ Vercel API token — ${label}`);
+      vercelToken = resolved.token;
+    }
+  }
   if (!vercelToken) {
     printManualAction("Create a Vercel API token", [
       `Account → Tokens: ${VERCEL_TOKENS}`,
       "Paste the token when prompted below (updates Vercel production env vars)",
     ]);
-    vercelToken = await promptLine("Paste your Vercel API token", {
+    vercelToken = await promptSecret("Paste your Vercel API token", {
       displayDefault: vercelTokenFromEnv ? maskSecret(vercelTokenFromEnv) : undefined,
       defaultValue: vercelTokenFromEnv,
     });
@@ -204,28 +303,34 @@ export async function bootstrapProduction(
     console.log("○ Skip Vercel production env — run the Vercel setup step first or set manually");
   }
 
-  if (clerkSk.startsWith("sk_live_")) {
-    console.log("\nClerk allowed origins (Production instance)");
-    const prodOrigin = `https://${hostnames.webProduction}`;
-    const result = await mergeClerkAllowedOrigins(clerkSk, [prodOrigin]);
-    if (result.ok) {
-      if (result.added.length > 0) {
-        console.log(`✓ Clerk production allowed origins updated (+ ${result.added.join(", ")})`);
+  if (hasApex && hostnames) {
+    if (clerkSk.startsWith("sk_live_")) {
+      console.log("\nClerk allowed origins (Production instance)");
+      const prodOrigin = `https://${hostnames.webProduction}`;
+      const result = await mergeClerkAllowedOrigins(clerkSk, [prodOrigin]);
+      if (result.ok) {
+        if (result.added.length > 0) {
+          console.log(`✓ Clerk production allowed origins updated (+ ${result.added.join(", ")})`);
+        } else {
+          console.log(`✓ Clerk production allowed origins already include ${prodOrigin}`);
+        }
       } else {
-        console.log(`✓ Clerk production allowed origins already include ${prodOrigin}`);
+        console.log(`○ Could not update Clerk allowed origins via API: ${result.message}`);
+        printManualAction("Set Clerk production allowed origins via Backend API", [
+          "Use your **Production** instance secret key (sk_live_…)",
+          `PATCH https://api.clerk.com/v1/instance with allowed_origins including ${prodOrigin}`,
+        ]);
       }
     } else {
-      console.log(`○ Could not update Clerk allowed origins via API: ${result.message}`);
       printManualAction("Set Clerk production allowed origins via Backend API", [
-        "Use your **Production** instance secret key (sk_live_…)",
-        `PATCH https://api.clerk.com/v1/instance with allowed_origins including ${prodOrigin}`,
+        "Provide sk_live_… when prompted so setup can PATCH allowed_origins automatically",
+        `Required origin: https://${hostnames.webProduction}`,
       ]);
     }
   } else {
-    printManualAction("Set Clerk production allowed origins via Backend API", [
-      "Provide sk_live_… when prompted so setup can PATCH allowed_origins automatically",
-      `Required origin: https://${hostnames.webProduction}`,
-    ]);
+    console.log(
+      "\n○ Skip Clerk production allowed origins — add an apex domain and re-run setup before release",
+    );
   }
 
   const secrets: Array<[string, string]> = [

@@ -17,6 +17,24 @@ type EnsureClerkE2eUserResult =
   | { status: "failed"; message: string };
 
 /**
+ * Returns whether a Clerk user-create error means the E2E email is already registered.
+ *
+ * @param message - Error text from the Clerk Backend API
+ */
+export function isClerkE2eUserAlreadyExistsMessage(message: string): boolean {
+  return /email address is taken|already exists|already been taken/i.test(message);
+}
+
+/**
+ * Returns whether Clerk rejected user creation because Email + Password is disabled.
+ *
+ * @param message - Error text from the Clerk Backend API
+ */
+export function isClerkEmailPasswordDisabledMessage(message: string): boolean {
+  return /password|strategy|identifier|not enabled|unsupported/i.test(message);
+}
+
+/**
  * Finds a Clerk user by email via the Backend API.
  *
  * @param secretKey - Clerk secret key (`sk_test_` or `sk_live_`)
@@ -103,6 +121,9 @@ export async function ensureClerkE2eUser(
   const password = generateClerkE2ePassword();
   const created = await createClerkUser(secretKey, email, password);
   if (!created.ok) {
+    if (isClerkE2eUserAlreadyExistsMessage(created.message)) {
+      return { status: "exists" };
+    }
     return { status: "failed", message: created.message };
   }
 

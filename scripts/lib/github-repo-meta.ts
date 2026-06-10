@@ -1,4 +1,5 @@
 import type { GitHubRepo } from "./repo-identity";
+import { readSpawnPipe } from "./spawn-io";
 
 /**
  * Fetches the GitHub repository About description via `gh api` (best effort).
@@ -17,7 +18,7 @@ export async function fetchGitHubRepoDescription(github: GitHubRepo): Promise<st
   if (code !== 0) {
     return null;
   }
-  const text = (await new Response(proc.stdout).text()).trim();
+  const text = await readSpawnPipe(proc.stdout);
   if (!text || text === "null") {
     return null;
   }

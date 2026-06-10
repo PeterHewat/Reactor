@@ -3,17 +3,31 @@ import { isConvexLinked } from "./convex-link";
 import { exitWithManualAction, printManualAction } from "./manual-action";
 import { CONVEX_DASHBOARD } from "./platform-urls";
 
+type ConvexDevOnceOptions = {
+  configure?: "existing";
+  projectSlug?: string;
+  stdin?: "inherit" | "ignore";
+};
+
 /**
  * Runs `convex dev --once` (configure, codegen, push) from the repo root.
  *
  * @param root - Repository root
+ * @param options - Optional non-interactive existing-project link flags
  * @returns Process exit code (0 = success)
  */
-async function runConvexDevOnce(root: string): Promise<number> {
-  console.log("\n→ bunx convex dev --once");
-  const proc = Bun.spawn(["bunx", "convex", "dev", "--once"], {
+async function runConvexDevOnce(root: string, options?: ConvexDevOnceOptions): Promise<number> {
+  const args = ["bunx", "convex", "dev", "--once"];
+  if (options?.configure === "existing") {
+    args.push("--configure", "existing");
+  }
+  if (options?.projectSlug) {
+    args.push("--project", options.projectSlug);
+  }
+  console.log(`\n→ ${args.slice(1).join(" ")}`);
+  const proc = Bun.spawn(args, {
     cwd: root,
-    stdin: "inherit",
+    stdin: options?.stdin ?? "inherit",
     stdout: "inherit",
     stderr: "inherit",
   });
@@ -21,24 +35,75 @@ async function runConvexDevOnce(root: string): Promise<number> {
 }
 
 /**
+ * Attempts to link a named existing Convex project without prompting.
+ *
+ * @param root - Repository root
+ * @param projectSlug - Convex project slug (e.g. `reactor`)
+ * @returns Whether linking succeeded
+ */
+export async function tryLinkExistingConvexProject(
+  root: string,
+  projectSlug: string,
+): Promise<boolean> {
+  const slug = projectSlug.trim();
+  if (!slug) {
+    return false;
+  }
+  const code = await runConvexDevOnce(root, {
+    configure: "existing",
+    projectSlug: slug,
+    stdin: "ignore",
+  });
+  return code === 0 && isConvexLinked(root);
+}
+
+export type EnsureConvexLinkedOptions = {
+  /** When true, Convex CLI is logged in — linking is automated via `convex dev --once`. */
+  convexAuthenticated?: boolean;
+  /** Product slug used to prefer an existing Convex project before creating a new one. */
+  projectSlug?: string;
+};
+
+/**
  * Links Convex interactively when the checkout has no deployment yet.
  *
  * @param root - Repository root
+ * @param options - When Convex CLI is already authenticated, skip ACTION REQUIRED copy
  * @returns Whether a deployment is linked after this step
  */
-export async function ensureConvexLinkedInteractive(root: string): Promise<boolean> {
+export async function ensureConvexLinkedInteractive(
+  root: string,
+  options?: EnsureConvexLinkedOptions,
+): Promise<boolean> {
   if (isConvexLinked(root)) {
     return true;
   }
 
   console.log("\nConvex");
-  printManualAction("Link Convex to this repository", [
-    `Convex dashboard: ${CONVEX_DASHBOARD}`,
-    "Setup runs `convex dev --once` next — complete browser login if prompted",
-    "Choose a team and project name when asked (creating a new project is fine)",
-  ]);
+  if (options?.projectSlug) {
+    console.log(`  Checking for existing Convex project "${options.projectSlug}"…`);
+    if (await tryLinkExistingConvexProject(root, options.projectSlug)) {
+      console.log(`✓ Convex linked (existing project ${options.projectSlug})`);
+      return true;
+    }
+    console.log(`○ No existing project "${options.projectSlug}" — choose in the CLI prompt`);
+  }
 
-  await runConvexDevOnce(root);
+  if (options?.convexAuthenticated) {
+    console.log("  Linking via `convex dev --once`…");
+    console.log("  Prefer **choose an existing project** over creating a duplicate.");
+  } else {
+    printManualAction("Link Convex to this repository", [
+      `Convex dashboard: ${CONVEX_DASHBOARD}`,
+      "Setup runs `convex dev --once` next — complete browser login if prompted",
+      "Prefer **choose an existing project** when one matches your product name",
+    ]);
+  }
+
+  const code = await runConvexDevOnce(root, { configure: "existing" });
+  if (code !== 0 || !isConvexLinked(root)) {
+    await runConvexDevOnce(root);
+  }
 
   if (!isConvexLinked(root)) {
     exitWithManualAction("Complete Convex linking", [

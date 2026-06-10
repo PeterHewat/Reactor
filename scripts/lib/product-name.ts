@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { formatProductTs } from "./prettier-file";
 
 /**
  * Writes `PRODUCT_NAME` in `packages/config/product.ts`.
@@ -23,5 +24,6 @@ export function writeProductName(root: string, productName: string): boolean {
     return false;
   }
   writeFileSync(productPath, next);
+  formatProductTs(root);
   return true;
 }

@@ -6,6 +6,7 @@ import {
   isRealConvexDeployment,
   parseDotenvAssignmentValue,
 } from "../../packages/config/env-placeholders";
+import { areClerkAgentSkillsInstalled } from "./agent-skills";
 import { isConvexLinked } from "./convex-link";
 
 type Check = {
@@ -139,14 +140,13 @@ function buildChecks(root: string): Check[] {
     optional: true,
   });
 
+  const clerkSkillsOk = areClerkAgentSkillsInstalled(root);
   checks.push({
     name: "Clerk agent skills",
-    ok: fileExists(root, ".agents/skills/clerk-react-patterns/SKILL.md"),
-    detail: fileExists(root, ".agents/skills/clerk-react-patterns/SKILL.md")
-      ? "clerk-react-patterns present"
-      : "missing",
+    ok: clerkSkillsOk,
+    detail: clerkSkillsOk ? "clerk-react-patterns, clerk-testing, clerk-backend-api" : "missing",
     remediation:
-      "bunx skills add clerk/skills -y -a cursor --skill clerk-react-patterns --skill clerk-testing --skill clerk-backend-api",
+      "bun run setup  # or: bunx skills add clerk/skills -y -a cursor --skill clerk-react-patterns --skill clerk-testing --skill clerk-backend-api",
     optional: true,
   });
 

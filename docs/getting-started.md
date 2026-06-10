@@ -4,7 +4,7 @@ Starter for a product web app (React + Vite), marketing site (Astro), and Convex
 
 The template includes a small signed-in CRUD todo list (`/tasks`) to prove Clerk, Convex, and the web app work together. Use it as your setup check; replace it with your own product when you are ready.
 
-[Prerequisites](./development.md#prerequisites): Git, Bun, Node, `gh`, plus GitHub, Convex, Clerk, and Vercel accounts and an apex domain you control.
+[Prerequisites](./development.md#prerequisites): Git, Bun, Node, `gh`, plus GitHub, Convex, Clerk, and Vercel accounts. An apex domain is optional at first — add one when you are ready for custom hostnames.
 
 ## Local development
 
@@ -20,19 +20,20 @@ bun install && bun run setup
 
 Safe to **re-run anytime** (resume after interruptions). Each run re-asks questions with your previous answers as defaults (press **Enter** to keep).
 
-| Step           | What it does                                                                                                                                                                                               |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Identity**   | Product name + tagline + apex domain (e.g. `example.com`) + optional MIT removal → [`.reactor/setup.json`](../.reactor/setup.json), [packages/config/product.ts](../packages/config/product.ts), `LICENSE` |
-| **Clerk**      | [Create app](https://dashboard.clerk.com/apps) → Development keys → E2E user `e2e.test@{apex}` (API) → [allowed origins](./environments.md#clerk)                                                          |
-| **Convex**     | Runs `convex dev --once` (browser login if needed) → sets `CLERK_JWT_ISSUER_DOMAIN` → syncs `VITE_CONVEX_URL`. Daily dev: `bun run dev:convex`.                                                            |
-| **Codegen**    | Routes + Convex `_generated/` + optional Convex/Clerk agent skills + readiness report (**exit 0** = ready for PRs)                                                                                         |
-| **GitHub**     | Sync dev CI secrets via `gh` (default **yes** first time) — run `gh auth login` before setup                                                                                                               |
-| **Vercel**     | Two projects, web env vars, domains, **DNS hints**, `VERCEL_*` → `gh` (default **yes** first time)                                                                                                         |
-| **Production** | Defer until release: GitHub **`production`** environment for `release-*` (live Clerk/Convex keys, prod deploy key)                                                                                         |
+| Step           | What it does                                                                                                                                                                                                |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CLI check**  | `gh` (global) + `bunx convex` / `bunx vercel` / `bunx clerk` (devDependencies); runs login commands when needed — continue manually if tools are missing                                                    |
+| **Identity**   | Product name + tagline + optional apex domain (Enter to skip) + optional MIT LICENSE removal → [`.reactor/setup.json`](../.reactor/setup.json), [packages/config/product.ts](../packages/config/product.ts) |
+| **Clerk**      | [Clerk CLI](https://clerk.com/docs/cli): `apps create` / `link` + `env pull` when logged in; else dashboard keys. E2E user `e2e.test@{apex}` (API) → [allowed origins](./environments.md#clerk)             |
+| **Convex**     | Runs `convex dev --once` (browser login if needed) → sets `CLERK_JWT_ISSUER_DOMAIN` → syncs `VITE_CONVEX_URL`. Daily dev: `bun run dev:convex`.                                                             |
+| **Codegen**    | Routes + Convex `_generated/` + optional Convex/Clerk agent skills + readiness report (**exit 0** = ready for PRs)                                                                                          |
+| **GitHub**     | Sync dev CI secrets via `gh` (default **yes** first time) — `gh auth login -s repo,workflow` (setup can prompt `gh auth refresh` if needed)                                                                 |
+| **Vercel**     | Two projects, web env vars, custom domains when apex is set, **Vercel DNS nameserver pause**, `VERCEL_*` → `gh` (default **yes** first time)                                                                |
+| **Production** | Defer until release: GitHub **`production`** environment for `release-*` (live Clerk/Convex keys, prod deploy key)                                                                                          |
 
 Dashboard URLs are printed as clickable links in setup steps — open them directly in your terminal or browser.
 
-Details and fallbacks: [setup-automation.md](./setup-automation.md). **DNS and registrar records:** [environments.md](./environments.md#dns-at-your-registrar).
+Details and fallbacks: [setup-automation.md](./setup-automation.md). **DNS (Vercel nameservers at your registrar):** [environments.md](./environments.md#dns-vercel-dns-at-your-registrar).
 
 ### 3. Run and verify the sample app
 

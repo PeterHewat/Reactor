@@ -1,13 +1,13 @@
 /* eslint-disable no-console -- CLI output */
 
 /**
- * Prints a manual step the user must complete (clear call to action).
+ * Prints a deferred manual checklist (setup continues; complete before go-live).
  *
  * @param title - Short action title
  * @param steps - Ordered instructions
  */
 export function printManualAction(title: string, steps: string[]): void {
-  console.log(`\n→ ACTION REQUIRED: ${title}`);
+  console.log(`\n→ Follow up: ${title}`);
   for (const step of steps) {
     console.log(`  • ${step}`);
   }
@@ -20,7 +20,10 @@ export function printManualAction(title: string, steps: string[]): void {
  * @param steps - Ordered instructions
  */
 export function exitWithManualAction(title: string, steps: string[]): never {
-  printManualAction(title, steps);
+  console.log(`\n→ ACTION REQUIRED: ${title}`);
+  for (const step of steps) {
+    console.log(`  • ${step}`);
+  }
   console.log("\nSetup paused — complete the steps above, then resume with `bun run setup`.");
   process.exit(1);
 }

@@ -1,9 +1,10 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console -- CLI output */
 /**
- * Copies shared rules from AGENTS.md into CLAUDE.md, preserving the Convex AI block in CLAUDE.
+ * Copies shared rules from AGENTS.md into CLAUDE.md when CLAUDE.md is a separate file.
+ * When `CLAUDE.md` is a symlink to `AGENTS.md`, there is nothing to sync.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "..");
@@ -23,6 +24,11 @@ function extractBlock(text: string, start: string, end: string): string {
     throw new Error(`Missing markers ${start} / ${end}`);
   }
   return text.slice(startIdx, endIdx + end.length);
+}
+
+if (existsSync(claudePath) && lstatSync(claudePath).isSymbolicLink()) {
+  console.log("○ CLAUDE.md is a symlink to AGENTS.md — nothing to sync");
+  process.exit(0);
 }
 
 const agents = readFileSync(agentsPath, "utf8");

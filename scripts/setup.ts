@@ -8,7 +8,12 @@
  */
 import { copyFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { runClerkAgentSkillsIfNeeded, runConvexAgentSkillsIfNeeded } from "./lib/agent-skills";
+import { ensureAgentLinks } from "./lib/agent-links";
+import {
+  clerkSkillsInstallCommand,
+  runClerkAgentSkillsIfNeeded,
+  runConvexAgentSkillsIfNeeded,
+} from "./lib/agent-skills";
 import { applyIdentity, resolveGitHubRepo } from "./lib/apply-identity";
 import { applyLicenseFromConfig } from "./lib/license-identity";
 import { applyReadmeIdentity } from "./lib/readme-identity";
@@ -20,6 +25,7 @@ import { isConvexLinked } from "./lib/convex-link";
 import { runIdentityWizard } from "./lib/prompt-identity";
 import { runReadiness } from "./lib/readiness";
 import { readSetupConfig } from "./lib/setup-config";
+import { runSetupCliPrerequisites, type SetupCliContext } from "./lib/setup-cli";
 
 const root = resolve(import.meta.dir, "..");
 
@@ -63,6 +69,14 @@ async function main(): Promise<void> {
 
   console.log("Reactor setup\n");
 
+  ensureAgentLinks(root);
+
+  let cliContext: SetupCliContext | undefined;
+  if (interactive) {
+    cliContext = await runSetupCliPrerequisites(root);
+    console.log("");
+  }
+
   copyTemplateIfMissing("apps/web/.env.example", "apps/web/.env.local");
 
   const github = resolveGitHubRepo(root);
@@ -100,7 +114,7 @@ async function main(): Promise<void> {
   }
 
   if (setupConfig) {
-    await bootstrapClerkConvex(root, setupConfig, interactive);
+    await bootstrapClerkConvex(root, setupConfig, interactive, cliContext);
   }
 
   const generateCode = await runGenerate();
@@ -121,7 +135,7 @@ async function main(): Promise<void> {
   const clerkSkillsCode = await runClerkAgentSkillsIfNeeded(root);
   if (clerkSkillsCode !== 0) {
     console.warn(
-      "○ Clerk agent skills not installed (optional). Retry: bunx skills add clerk/skills -y -a cursor --skill clerk-react-patterns --skill clerk-testing --skill clerk-backend-api",
+      `○ Clerk agent skills not installed (optional). Retry: ${clerkSkillsInstallCommand()}`,
     );
   }
 
@@ -133,9 +147,12 @@ async function main(): Promise<void> {
   }
 
   if (setupConfig && interactive) {
-    await bootstrapCiSecrets(root, setupConfig);
-    const vercelToken = await bootstrapVercel(root, setupConfig, github);
-    await bootstrapProduction(root, setupConfig, { vercelToken: vercelToken ?? undefined });
+    await bootstrapCiSecrets(root, setupConfig, cliContext);
+    const vercelToken = await bootstrapVercel(root, setupConfig, github, cliContext);
+    await bootstrapProduction(root, setupConfig, {
+      vercelToken: vercelToken ?? undefined,
+      cliContext,
+    });
   }
 
   console.log("\n✓ Setup complete — continue with docs/getting-started.md");

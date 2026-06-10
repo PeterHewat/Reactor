@@ -1,6 +1,10 @@
 /* eslint-disable no-console -- CLI wizard */
 import { deriveHostnames } from "../../packages/config/hostnames";
-import { isValidApexDomain, normalizeApexDomainInput } from "../../packages/config/validate-domain";
+import {
+  hasApexDomain,
+  isValidApexDomain,
+  normalizeApexDomainInput,
+} from "../../packages/config/validate-domain";
 import { fetchGitHubRepoDescription } from "./github-repo-meta";
 import { shouldOfferLicenseRemoval } from "./license-identity";
 import { writeProductName } from "./product-name";
@@ -29,13 +33,34 @@ export function printHostnameTable(apexDomain: string): void {
 }
 
 /**
+ * Prompts for an optional apex domain; empty input skips custom hostnames.
+ *
+ * @param defaultValue - Previous apex domain, if any
+ */
+async function promptOptionalApexDomain(defaultValue?: string): Promise<string | undefined> {
+  while (true) {
+    const raw = await promptLine("Apex domain (Enter to skip)", {
+      defaultValue,
+      displayDefault: defaultValue ?? "skip",
+    });
+    if (!raw.trim()) {
+      return undefined;
+    }
+    const normalized = normalizeApexDomainInput(raw);
+    if (isValidApexDomain(normalized)) {
+      return normalized;
+    }
+    console.log("  Enter a valid apex domain (e.g. example.com), or press Enter to skip.");
+  }
+}
+
+/**
  * Persists identity config and applies product name / tagline files.
  *
  * @param root - Repository root
  * @param config - Setup config to write
- * @param apexDomain - Apex domain for hostname table
  */
-function persistIdentityConfig(root: string, config: SetupConfig, apexDomain: string): void {
+function persistIdentityConfig(root: string, config: SetupConfig): void {
   writeSetupConfig(root, config);
   if (writeProductName(root, config.productName)) {
     console.log(`✓ Updated packages/config/product.ts → "${config.productName}"`);
@@ -44,12 +69,18 @@ function persistIdentityConfig(root: string, config: SetupConfig, apexDomain: st
     console.log(`✓ Updated packages/config/product.ts tagline → "${config.productTagLine}"`);
   }
   console.log(`✓ Wrote .reactor/setup.json`);
-  printHostnameTable(apexDomain);
+  if (hasApexDomain(config.apexDomain)) {
+    printHostnameTable(config.apexDomain!);
+  } else {
+    console.log(
+      "\n○ No apex domain — custom hostnames deferred until you add one and re-run setup",
+    );
+  }
 }
 
 /**
  * Runs interactive identity prompts and persists setup config + product name.
- * Re-runs skip prompts when `.reactor/setup.json` already has a valid apex domain.
+ * Re-runs skip prompts when `.reactor/setup.json` already has product name and tagline.
  *
  * @param root - Repository root
  * @param github - Parsed GitHub remote, if any
@@ -60,7 +91,7 @@ export async function runIdentityWizard(
 ): Promise<SetupConfig> {
   const existing = readSetupConfig(root);
 
-  if (existing?.productName && existing.productTagLine && isValidApexDomain(existing.apexDomain)) {
+  if (existing?.productName && existing.productTagLine && hasApexDomain(existing.apexDomain)) {
     console.log("\nIdentity");
     console.log(`✓ ${existing.productName} @ ${existing.apexDomain} (from .reactor/setup.json)`);
     const refreshed = buildSetupConfig(
@@ -75,6 +106,26 @@ export async function runIdentityWizard(
       writeSetupConfig(root, refreshed);
     }
     return refreshed;
+  }
+
+  if (existing?.productName && existing.productTagLine) {
+    console.log("\nIdentity");
+    console.log(`✓ ${existing.productName} (no apex domain yet — from .reactor/setup.json)`);
+    const apexDomain = await promptOptionalApexDomain(existing.apexDomain);
+    const config = buildSetupConfig(
+      existing.productName,
+      existing.productTagLine,
+      apexDomain,
+      github,
+      existing,
+      existing.removeMitLicense,
+    );
+    if (apexDomain && apexDomain !== existing.apexDomain) {
+      persistIdentityConfig(root, config);
+    } else if (JSON.stringify(config) !== JSON.stringify(existing)) {
+      writeSetupConfig(root, config);
+    }
+    return config;
   }
 
   console.log("\nIdentity");
@@ -95,18 +146,7 @@ export async function runIdentityWizard(
       ? existing.apexDomain
       : undefined;
 
-  let apexDomain = "";
-  while (!isValidApexDomain(apexDomain)) {
-    apexDomain = await promptLine("Apex domain", {
-      defaultValue: apexDefault,
-      required: true,
-    });
-    apexDomain = normalizeApexDomainInput(apexDomain);
-    if (!isValidApexDomain(apexDomain)) {
-      console.log("  Enter a valid apex domain — not www, not localhost.");
-      apexDomain = "";
-    }
-  }
+  const apexDomain = await promptOptionalApexDomain(apexDefault);
 
   const removeMitLicense = shouldOfferLicenseRemoval(github)
     ? (existing?.removeMitLicense ?? true)
@@ -120,6 +160,6 @@ export async function runIdentityWizard(
     existing,
     removeMitLicense,
   );
-  persistIdentityConfig(root, config, apexDomain);
+  persistIdentityConfig(root, config);
   return config;
 }

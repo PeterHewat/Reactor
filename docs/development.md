@@ -1,11 +1,44 @@
 # Development reference
 
+## Agent workflow
+
+Extended rules for Cursor, Claude Code, and Copilot (trimmed summary in [AGENTS.md](../AGENTS.md)).
+
+### Formatting
+
+Prettier (`.prettierrc.json`) is the source of truth. Agents: `bunx prettier --write <paths>` on every touched path before ending the turn (including Markdown and JSON). Humans: format-on-save in `.vscode/settings.json`; CI uses `prettier --check` via `bun run format`.
+
+### Verify gate (full)
+
+After `bun run check` when workspace code changed:
+
+| Touched paths                                        | Command                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `convex/**`                                          | `bun run --filter @repo/convex test`                                           |
+| `apps/web/**`                                        | `bun run --filter @repo/web test` (+ `@repo/ui-web` / `@repo/utils` if edited) |
+| `apps/marketing/**`                                  | `bun run --filter @repo/marketing test`                                        |
+| `packages/utils/**`, `packages/ui-web/**`            | matching `--filter`                                                            |
+| `packages/config/**`, `packages/env-core/**`         | `bun run test:packages`                                                        |
+| Multiple packages, root tooling, or finishing a task | `bun run verify`                                                               |
+
+### Code review tooling
+
+- Review only — not for commits, tests, or pushes
+- Skip for trivial edits or when fixing a prior review
+- Prefer `/local-review-uncommitted` for uncommitted work; `/local-review` for branch changes
+
+### Windows quirks
+
+Windows 11+, Developer Mode activated, and latest Git for Windows.
+
+Prefix Bash commands with `bash -c "..."` when a shell alias would break POSIX tools (no-op on macOS/Linux).
+
 ## Commands
 
 Repo root ([package.json](../package.json)):
 
 ```bash
-# Quality gate (see AGENTS.md § Verify gate)
+# Quality gate (see AGENTS.md and § Agent workflow below)
 bun run check                       # codegen + lint + typecheck after workspace code edits
 bun run verify                      # check + full test suite at task completion
 bun run --filter @repo/web test     # scoped tests (mirror CI path detection)
@@ -61,12 +94,19 @@ bun run setup          # interactive wizard + readiness (re-run anytime; Enter k
 
 ## Prerequisites
 
-### Local tooling (PATH)
+### Local tooling
 
-- [Git](https://git-scm.com/download/)
-- [Bun](https://bun.sh/) — match `.bun-version` (>= 1.3.14)
-- [Node.js](https://nodejs.org/) — **24** (`.node-version`; `engines.node` is `>=24.0.0`)
-- [GitHub CLI](https://cli.github.com/) (`gh`) — `gh auth login` before `bun run setup` (repository secrets and Vercel deploy keys)
+| Tool                                      | How to run    | Install                                                      |
+| ----------------------------------------- | ------------- | ------------------------------------------------------------ |
+| [Git](https://git-scm.com/download/)      | `git`         | System package                                               |
+| [Bun](https://bun.sh/)                    | `bun`         | Match `.bun-version` (>= 1.3.14)                             |
+| [Node.js](https://nodejs.org/)            | `node`        | **24** (`.node-version`)                                     |
+| [GitHub CLI](https://cli.github.com/)     | `gh`          | Global — `brew install gh`; `gh auth login -s repo,workflow` |
+| [Convex CLI](https://docs.convex.dev/cli) | `bunx convex` | Root `devDependency` — `bun install`                         |
+| [Vercel CLI](https://vercel.com/docs/cli) | `bunx vercel` | Root `devDependency` — `bun install`                         |
+| [Clerk CLI](https://clerk.com/docs/cli)   | `bunx clerk`  | Root `devDependency` — `bun install`                         |
+
+Repo-pinned CLIs use the versions in root `package.json`. Only `gh` is expected as a global/system binary.
 
 ### Accounts (free tiers; signup in the wizard if needed)
 
@@ -74,7 +114,7 @@ bun run setup          # interactive wizard + readiness (re-run anytime; Enter k
 - [Convex](https://convex.dev/) — browser login during the Convex setup step
 - [Clerk](https://clerk.com/) — create an app during the Clerk setup step
 - [Vercel](https://vercel.com/) — account before the Vercel step (API token)
-- **Apex domain you control** (e.g. `example.com`) — DNS records come later from Vercel hints
+- **Apex domain** (optional at first) — when set, setup delegates DNS to Vercel via nameservers at your registrar (e.g. OVH)
 
 CI and local scripts use the same Node/Bun major versions. Recommended editors: [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) (Copilot reads root [AGENTS.md](../AGENTS.md)).
 

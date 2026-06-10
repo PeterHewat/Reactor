@@ -88,7 +88,13 @@ export async function promptConfirm(
  */
 export async function promptSecret(
   question: string,
-  options?: { defaultValue?: string; displayDefault?: string; required?: boolean },
+  options?: {
+    defaultValue?: string;
+    displayDefault?: string;
+    required?: boolean;
+    /** One-line context printed above the prompt (where to find the value). */
+    hint?: string;
+  },
 ): Promise<string> {
   if (!isInteractivePrompt()) {
     return promptLine(question, options);
@@ -107,11 +113,10 @@ export async function promptSecret(
     while (true) {
       const shown = options?.displayDefault ?? options?.defaultValue;
       const suffix = shown ? ` [${shown}]` : "";
-      const prompt = `${question}${suffix}: `;
-      if (options?.required && shown === undefined) {
-        console.log("  Paste the value below (input hidden), then press Enter.");
+      if (options?.hint) {
+        console.log(`  ${options.hint}`);
       }
-      output.write(prompt);
+      output.write(`\n${question}${suffix}: `);
       const answer = await new Promise<string>((resolve) => {
         rl.question("", resolve);
       });

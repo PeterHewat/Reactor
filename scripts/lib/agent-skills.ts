@@ -1,5 +1,6 @@
 /* eslint-disable no-console -- CLI output */
-import { existsSync, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { ensureClaudeSkillsLink } from "./agent-links";
 
 const CONVEX_SKILLS_MARKER = ".agents/skills/convex/SKILL.md";

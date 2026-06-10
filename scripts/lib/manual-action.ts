@@ -1,15 +1,29 @@
 /* eslint-disable no-console -- CLI output */
 
+export type ManualActionOptions = {
+  /** Blocking prompt follows — use "Next" instead of "Follow up". */
+  immediate?: boolean;
+};
+
 /**
- * Prints a deferred manual checklist (setup continues; complete before go-live).
+ * Prints a manual checklist (deferred follow-up or immediate next step before a prompt).
  *
  * @param title - Short action title
  * @param steps - Ordered instructions
+ * @param options - `immediate` when the user must act before the next prompt
  */
-export function printManualAction(title: string, steps: string[]): void {
-  console.log(`\n→ Follow up: ${title}`);
+export function printManualAction(
+  title: string,
+  steps: string[],
+  options?: ManualActionOptions,
+): void {
+  const prefix = options?.immediate ? "→" : "→ Follow up:";
+  console.log(`\n${prefix} ${title}`);
   for (const step of steps) {
     console.log(`  • ${step}`);
+  }
+  if (options?.immediate) {
+    console.log("\n  ↓ Continue at the input prompt below\n");
   }
 }
 

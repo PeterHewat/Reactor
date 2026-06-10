@@ -30,6 +30,7 @@ import {
   formatVercelApiError,
   getVercelAuthContext,
   loadVercelProjectDetails,
+  updateVercelProjectGitNotifications,
   upsertVercelProjectEnv,
   VERCEL_DNS_NAMESERVERS,
   VERCEL_STAGING_GIT_BRANCH,
@@ -247,6 +248,35 @@ type VercelDomainSpec = {
 };
 
 /**
+ * Disables Vercel GitHub bot comments, commit statuses, and deployment events on both projects.
+ *
+ * @param token - Vercel API token
+ * @param teamId - Optional team scope
+ * @param projects - Web and marketing project metadata
+ */
+async function applyVercelQuietGitNotifications(
+  token: string,
+  teamId: string | undefined,
+  projects: VercelProjectDetails[],
+): Promise<void> {
+  for (const project of projects) {
+    try {
+      await updateVercelProjectGitNotifications(token, teamId, project.id);
+      console.log(`✓ Vercel Git notifications silenced (${project.name})`);
+    } catch (err) {
+      const detail =
+        err instanceof VercelApiError ? formatVercelApiError(err) : String(err).slice(0, 120);
+      console.warn(`○ Could not silence Vercel Git notifications for ${project.name}: ${detail}`);
+      printManualAction(`Silence Vercel Git notifications for ${project.name}`, [
+        `${VERCEL_DASHBOARD} → **${project.name}** → **Settings → Git**`,
+        "Turn off Pull Request Comments, Commit Comments, deployment_status Events, repository_dispatch Events, and Commit Status",
+        `API error: ${detail}`,
+      ]);
+    }
+  }
+}
+
+/**
  * Post-setup checklist so `main` deploys staging without promoting production domains.
  */
 function printVercelGitStagingGuide(): void {
@@ -431,8 +461,14 @@ async function resumeDnsConfiguration(
   }
 
   const vercel = setup.vercel!;
-  const webProject = await loadVercelProjectDetails(token, teamId, vercel.projectIdWeb);
-  const marketingProject = await loadVercelProjectDetails(token, teamId, vercel.projectIdMarketing);
+  const webProject = await loadVercelProjectDetails(token, teamId, {
+    id: vercel.projectIdWeb,
+    name: vercel.projectNameWeb,
+  });
+  const marketingProject = await loadVercelProjectDetails(token, teamId, {
+    id: vercel.projectIdMarketing,
+    name: vercel.projectNameMarketing,
+  });
   await attachReactorCustomDomains(token, teamId, hostnames.apex, webProject, marketingProject);
 
   await awaitDnsConfiguration(root, hostnames.apex, [
@@ -517,8 +553,21 @@ export async function bootstrapVercel(
 
   if (vercelSynced && (dnsConfigured || !hasApex)) {
     console.log("\nVercel");
+    const resolved = await resolveVercelApiToken(root);
+    if (resolved && setup.vercel) {
+      let teamId: string | undefined;
+      try {
+        teamId = (await getVercelAuthContext(resolved.token)).teamId;
+      } catch {
+        teamId = undefined;
+      }
+      await applyVercelQuietGitNotifications(resolved.token, teamId, [
+        { id: setup.vercel.projectIdWeb, name: setup.vercel.projectNameWeb },
+        { id: setup.vercel.projectIdMarketing, name: setup.vercel.projectNameMarketing },
+      ]);
+    }
     console.log("✓ Vercel already configured — skip");
-    return process.env.VERCEL_TOKEN?.trim() ?? null;
+    return process.env.VERCEL_TOKEN?.trim() ?? resolved?.token ?? null;
   }
 
   if (vercelSynced && !dnsConfigured && hasApex) {
@@ -593,6 +642,7 @@ export async function bootstrapVercel(
   );
 
   await syncWebVercelEnv(token, teamId, webProject.id, root);
+  await applyVercelQuietGitNotifications(token, teamId, [webProject, marketingProject]);
 
   const meta: VercelSetupMeta = {
     orgId: vercelOrgId(auth),

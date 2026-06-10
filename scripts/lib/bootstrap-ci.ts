@@ -4,8 +4,9 @@ import { resolveGitHubRepo } from "./apply-identity";
 import { mintConvexDeployKey } from "./convex-deploy-key";
 import { isConvexLinked } from "./convex-link";
 import { readEnvFile } from "./env-file";
-import { ghSecretSet, isGhAuthenticated, isGhInstalled } from "./gh-secrets";
-import { exitWithManualAction } from "./manual-action";
+import { ghSecretSet, isGhAuthenticated } from "./gh-secrets";
+import { printManualAction } from "./manual-action";
+import { canAutomateGh, type SetupCliContext } from "./setup-cli";
 import { githubEnvironmentsUrl, githubSecretsUrl } from "./platform-urls";
 import { promptConfirm } from "./prompt";
 import { markGithubSecretsSynced, type SetupConfig } from "./setup-config";
@@ -17,8 +18,13 @@ const WEB_ENV = "apps/web/.env.local";
  *
  * @param root - Repository root
  * @param setup - Persisted setup config (controls default yes/no)
+ * @param cliContext - CLI readiness from the prerequisites step
  */
-export async function bootstrapCiSecrets(root: string, setup: SetupConfig): Promise<void> {
+export async function bootstrapCiSecrets(
+  root: string,
+  setup: SetupConfig,
+  cliContext?: SetupCliContext,
+): Promise<void> {
   const github = resolveGitHubRepo(root);
   const firstSync = !setup.github?.syncedSecrets?.repo;
 
@@ -28,18 +34,7 @@ export async function bootstrapCiSecrets(root: string, setup: SetupConfig): Prom
     return;
   }
 
-  if (!(await isGhInstalled())) {
-    exitWithManualAction("Install GitHub CLI", [
-      "Install from https://cli.github.com/",
-      "Run `gh auth login`, then re-run `bun run setup`",
-    ]);
-  }
-  if (!(await isGhAuthenticated())) {
-    exitWithManualAction("Authenticate GitHub CLI", [
-      "Run `gh auth login` before the GitHub Actions step",
-      "Re-run `bun run setup`",
-    ]);
-  }
+  const ghReady = cliContext ? canAutomateGh(cliContext) : await isGhAuthenticated();
 
   console.log("\nGitHub Actions");
   console.log(
@@ -56,48 +51,45 @@ export async function bootstrapCiSecrets(root: string, setup: SetupConfig): Prom
   }
 
   const proceed = await promptConfirm("Sync dev CI secrets to GitHub?", {
-    defaultYes: firstSync,
+    defaultYes: firstSync && ghReady,
   });
   if (!proceed) {
     console.log("○ Skipped — docs/ci-cd.md#repository-secrets");
     return;
   }
 
-  if (!(await isGhInstalled())) {
-    exitWithManualAction("Install GitHub CLI", [
-      "Install from https://cli.github.com/",
-      "Re-run `bun run setup` and confirm the GitHub Actions sync step",
-    ]);
-  }
-
-  if (!(await isGhAuthenticated())) {
+  if (!ghReady) {
     if (github) {
       console.log(`  Manual fallback: ${githubSecretsUrl(github)}`);
       console.log(`  Environments: ${githubEnvironmentsUrl(github)}`);
     }
-    exitWithManualAction("Authenticate GitHub CLI", [
-      "Run `gh auth login` in a terminal",
+    printManualAction("Install and authenticate GitHub CLI", [
+      "Install from https://cli.github.com/ (macOS: `brew install gh`)",
+      "Run `gh auth login`",
       "Resume `bun run setup` and confirm the GitHub Actions sync step",
     ]);
+    return;
   }
 
   if (!isConvexLinked(root)) {
-    exitWithManualAction("Link Convex before syncing CI secrets", [
+    printManualAction("Link Convex before syncing CI secrets", [
       "Resume `bun run setup` — the Convex step links the project and sets CLERK_JWT_ISSUER_DOMAIN",
       "Then confirm the GitHub Actions sync step",
     ]);
+    return;
   }
 
   const webEnv = readEnvFile(root, WEB_ENV);
-  const deployKey = await mintConvexDeployKey(root, "github-ci", "dev");
-  if (!deployKey) {
-    exitWithManualAction("Mint CONVEX_DEPLOY_KEY for CI", [
+  const deployKeyResult = await mintConvexDeployKey(root, "github-ci", "dev");
+  if (!deployKeyResult) {
+    printManualAction("Mint CONVEX_DEPLOY_KEY for CI", [
       "Resume `bun run setup` — complete the Convex step first",
       "Then confirm the GitHub Actions sync step",
     ]);
+    return;
   }
 
-  const deployKeyOk = await ghSecretSet(root, "CONVEX_DEPLOY_KEY", deployKey);
+  const deployKeyOk = await ghSecretSet(root, "CONVEX_DEPLOY_KEY", deployKeyResult.key);
   console.log(deployKeyOk ? "✓ CONVEX_DEPLOY_KEY" : "○ Failed to set CONVEX_DEPLOY_KEY");
 
   const pairs: Array<[string, string | undefined]> = [

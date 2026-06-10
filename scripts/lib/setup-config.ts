@@ -15,6 +15,8 @@ export type GitHubSyncedSecrets = {
 export type VercelSetupMeta = {
   /** Vercel projects, env vars, and domains configured via setup. */
   synced?: boolean;
+  /** User confirmed Vercel DNS nameservers at registrar (setup pauses until true). */
+  dnsConfigured?: boolean;
   orgId: string;
   projectIdWeb: string;
   projectIdMarketing: string;
@@ -25,7 +27,8 @@ export type VercelSetupMeta = {
 export type SetupConfig = {
   productName: string;
   productTagLine: string;
-  apexDomain: string;
+  /** Omit until you own a domain — re-run setup to attach custom hostnames. */
+  apexDomain?: string;
   github: {
     org: string;
     repo: string;
@@ -59,7 +62,7 @@ export function readSetupConfig(root: string): SetupConfig | null {
   }
   try {
     const parsed = JSON.parse(readFileSync(path, "utf8")) as SetupConfig;
-    if (!parsed.productName || !parsed.apexDomain) {
+    if (!parsed.productName) {
       return null;
     }
     return parsed;
@@ -85,13 +88,13 @@ export function writeSetupConfig(root: string, config: SetupConfig): void {
  *
  * @param productName - Display product name
  * @param productTagLine - Marketing tagline
- * @param apexDomain - Apex domain
+ * @param apexDomain - Apex domain, when configured
  * @param github - Parsed GitHub remote, if any
  */
 export function buildSetupConfig(
   productName: string,
   productTagLine: string,
-  apexDomain: string,
+  apexDomain: string | undefined,
   github: GitHubRepo | null,
   existing?: SetupConfig | null,
   removeMitLicense?: boolean,
@@ -99,7 +102,7 @@ export function buildSetupConfig(
   return {
     productName,
     productTagLine,
-    apexDomain,
+    ...(apexDomain ? { apexDomain } : {}),
     github: github
       ? {
           org: github.org,
@@ -152,7 +155,26 @@ export function markVercelSynced(root: string, vercel: VercelSetupMeta): void {
   if (!config) {
     return;
   }
-  writeSetupConfig(root, { ...config, vercel: { ...vercel, synced: true } });
+  writeSetupConfig(root, {
+    ...config,
+    vercel: { ...config.vercel, ...vercel, synced: true },
+  });
+}
+
+/**
+ * Records that the user confirmed registrar DNS for Vercel hostnames.
+ *
+ * @param root - Repository root
+ */
+export function markVercelDnsConfigured(root: string): void {
+  const config = readSetupConfig(root);
+  if (!config?.vercel) {
+    return;
+  }
+  writeSetupConfig(root, {
+    ...config,
+    vercel: { ...config.vercel, dnsConfigured: true },
+  });
 }
 
 /**

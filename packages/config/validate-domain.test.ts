@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidApexDomain, normalizeApexDomainInput } from "./validate-domain";
+import { hasApexDomain, isValidApexDomain, normalizeApexDomainInput } from "./validate-domain";
 
 describe("normalizeApexDomainInput", () => {
   it("strips scheme and trailing dot", () => {
@@ -19,5 +19,17 @@ describe("isValidApexDomain", () => {
     expect(isValidApexDomain("www.example.com")).toBe(false);
     expect(isValidApexDomain("localhost")).toBe(false);
     expect(isValidApexDomain("https://example.com")).toBe(false);
+  });
+});
+
+describe("hasApexDomain", () => {
+  it("returns true for a valid apex", () => {
+    expect(hasApexDomain("example.com")).toBe(true);
+  });
+
+  it("returns false when missing or invalid", () => {
+    expect(hasApexDomain()).toBe(false);
+    expect(hasApexDomain("")).toBe(false);
+    expect(hasApexDomain("www.example.com")).toBe(false);
   });
 });

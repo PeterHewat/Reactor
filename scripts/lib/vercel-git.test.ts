@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { hasVercelGitNamespaceForOrg, vercelSearchIncludesRepo } from "./vercel-git";
+import {
+  hasVercelGitNamespaceForOrg,
+  vercelGitNamespaceId,
+  vercelSearchIncludesRepo,
+} from "./vercel-git";
 import type { GitHubRepo } from "./repo-identity";
 import type { VercelGitNamespace } from "./vercel-api";
 
@@ -26,9 +30,34 @@ describe("hasVercelGitNamespaceForOrg", () => {
   });
 });
 
+describe("vercelGitNamespaceId", () => {
+  test("prefers id over installationId", () => {
+    expect(
+      vercelGitNamespaceId({ slug: "a", provider: "github", id: "ns1", installationId: 2 }),
+    ).toBe("ns1");
+  });
+});
+
 describe("vercelSearchIncludesRepo", () => {
   test("matches owner and slug fields", () => {
     expect(vercelSearchIncludesRepo([{ owner: "PeterHewat", slug: "Reactor" }], github)).toBe(true);
+  });
+
+  test("matches Vercel API owner object and namespace fields", () => {
+    expect(
+      vercelSearchIncludesRepo(
+        [
+          {
+            url: "https://github.com/PeterHewat/Reactor",
+            slug: "Reactor",
+            name: "Reactor",
+            namespace: "PeterHewat",
+            owner: { id: 15655530, name: "PeterHewat" },
+          },
+        ],
+        github,
+      ),
+    ).toBe(true);
   });
 
   test("matches full path in slug", () => {

@@ -1,4 +1,12 @@
 /* eslint-disable no-console -- CLI wizard */
+import { parseConvexProdDeploymentSlug } from "./convex-url";
+import { readSpawnPipe } from "./spawn-io";
+
+export type MintConvexDeployKeyResult = {
+  key: string;
+  prodDeploymentSlug?: string;
+};
+
 /**
  * Mints a Convex deploy key and returns stdout (the key).
  *
@@ -10,7 +18,7 @@ export async function mintConvexDeployKey(
   root: string,
   name: string,
   deployment: "dev" | "prod" = "dev",
-): Promise<string | null> {
+): Promise<MintConvexDeployKeyResult | null> {
   const args = ["bunx", "convex", "deployment", "token", "create", name];
   if (deployment === "prod") {
     args.push("--deployment", "prod");
@@ -19,12 +27,29 @@ export async function mintConvexDeployKey(
   const proc = Bun.spawn(args, {
     cwd: root,
     stdout: "pipe",
-    stderr: "inherit",
+    stderr: "pipe",
   });
-  const code = await proc.exited;
+  const [stdout, stderr, code] = await Promise.all([
+    readSpawnPipe(proc.stdout),
+    readSpawnPipe(proc.stderr),
+    proc.exited,
+  ]);
+  const combined = `${stdout}\n${stderr}`.trim();
+  if (combined) {
+    for (const line of combined.split("\n")) {
+      console.log(line);
+    }
+  }
   if (code !== 0) {
     return null;
   }
-  const key = (await new Response(proc.stdout).text()).trim();
-  return key || null;
+  const key = stdout.trim();
+  if (!key) {
+    return null;
+  }
+  return {
+    key,
+    prodDeploymentSlug:
+      deployment === "prod" ? (parseConvexProdDeploymentSlug(combined) ?? undefined) : undefined,
+  };
 }

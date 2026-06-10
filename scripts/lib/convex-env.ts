@@ -1,5 +1,12 @@
 /* eslint-disable no-console -- CLI wizard */
+import { parseConvexProdDeploymentSlug } from "./convex-url";
 import { CONVEX_DASHBOARD } from "./platform-urls";
+import { readSpawnPipe } from "./spawn-io";
+
+export type SetConvexEnvResult = {
+  ok: boolean;
+  prodDeploymentSlug?: string;
+};
 
 /**
  * Sets a Convex deployment environment variable via the CLI.
@@ -14,7 +21,7 @@ export async function setConvexEnvVar(
   name: string,
   value: string,
   prod = false,
-): Promise<boolean> {
+): Promise<SetConvexEnvResult> {
   const args = ["bunx", "convex", "env", "set", name, value];
   if (prod) {
     args.push("--prod");
@@ -22,18 +29,31 @@ export async function setConvexEnvVar(
   console.log(`\n→ ${args.join(" ")}`);
   const proc = Bun.spawn(args, {
     cwd: root,
-    stdout: "inherit",
-    stderr: "inherit",
+    stdout: "pipe",
+    stderr: "pipe",
   });
-  const code = (await proc.exited) ?? 1;
+  const [stdout, stderr, code] = await Promise.all([
+    readSpawnPipe(proc.stdout),
+    readSpawnPipe(proc.stderr),
+    proc.exited,
+  ]);
+  const combined = `${stdout}\n${stderr}`.trim();
+  if (combined) {
+    for (const line of combined.split("\n")) {
+      console.log(line);
+    }
+  }
   if (code === 0) {
-    return true;
+    return {
+      ok: true,
+      prodDeploymentSlug: prod ? (parseConvexProdDeploymentSlug(combined) ?? undefined) : undefined,
+    };
   }
   console.warn(`○ Could not set ${name} via CLI — use Convex dashboard`);
   console.log(
     `  ${CONVEX_DASHBOARD} → ${prod ? "Production" : "Development"} → Settings → Environment variables`,
   );
-  return false;
+  return { ok: false };
 }
 
 /**
@@ -60,6 +80,6 @@ export async function getConvexEnvVar(
   if ((await proc.exited) !== 0) {
     return null;
   }
-  const text = (await new Response(proc.stdout).text()).trim();
+  const text = await readSpawnPipe(proc.stdout);
   return text || null;
 }

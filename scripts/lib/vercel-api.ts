@@ -1,5 +1,8 @@
 const VERCEL_API = "https://api.vercel.com";
 
+/** Vercel DNS nameservers — point your registrar here for automatic project DNS records. */
+export const VERCEL_DNS_NAMESERVERS = ["ns1.vercel-dns.com", "ns2.vercel-dns.com"] as const;
+
 export type VercelAuthContext = {
   teamId: string | undefined;
   userId: string;
@@ -164,11 +167,15 @@ export type VercelGitNamespace = {
   installationId?: number;
 };
 
+export type VercelGitRepoOwner = string | { name?: string; id?: number };
+
 export type VercelGitRepoSearchItem = {
   slug?: string;
   name?: string;
-  owner?: string;
+  owner?: VercelGitRepoOwner;
   org?: string;
+  namespace?: string;
+  url?: string;
 };
 
 type VercelGitRepoSearchResponse = {
@@ -663,6 +670,31 @@ export async function getVercelDomainConfig(
   domain: string,
 ): Promise<VercelDomainConfig> {
   return vercelRequest<VercelDomainConfig>(token, `/v6/domains/${domain}/config`, { teamId });
+}
+
+/**
+ * Adds an apex domain to the Vercel team (required before Vercel DNS / custom hostnames).
+ *
+ * @param token - Vercel API token
+ * @param teamId - Optional team scope
+ * @param domain - Apex hostname
+ */
+export async function ensureVercelTeamDomain(
+  token: string,
+  teamId: string | undefined,
+  domain: string,
+): Promise<void> {
+  try {
+    await vercelRequest(token, "/v5/domains", {
+      method: "POST",
+      teamId,
+      body: { name: domain },
+    });
+  } catch (err) {
+    if (!(err instanceof VercelApiError) || (err.status !== 400 && err.status !== 409)) {
+      throw err;
+    }
+  }
 }
 
 /**

@@ -32,23 +32,26 @@ For apex domain `example.com`, Reactor uses four public hostnames:
 | **Web app**   | `preview.example.com`     | `example.com`     | `{product-slug}-web`       |
 | **Marketing** | `preview.www.example.com` | `www.example.com` | `{product-slug}-marketing` |
 
-### DNS (at your registrar)
+### DNS (Vercel DNS at your registrar)
 
-| Hostname                  | Record type | Typical value                                         |
-| ------------------------- | ----------- | ----------------------------------------------------- |
-| `example.com`             | **A**       | Vercel apex IP (from setup / Vercel Domains UI)       |
-| `www.example.com`         | **CNAME**   | `cname.vercel-dns.com` (or value shown in Vercel)     |
-| `preview.example.com`     | **CNAME**   | `cname.vercel-dns.com` (or value from setup / Vercel) |
-| `preview.www.example.com` | **CNAME**   | `cname.vercel-dns.com` (or value from setup / Vercel) |
+Keep domain registration at your registrar (e.g. OVH). Delegate DNS to Vercel by pointing nameservers to:
+
+- `ns1.vercel-dns.com`
+- `ns2.vercel-dns.com`
 
 **Checklist:**
 
-1. Add each hostname in the correct Vercel project ([web](#vercel-web--marketing) vs marketing).
-2. Create the DNS record at your registrar. TTL `300` or automatic is fine.
-3. Wait for propagation. Vercel shows **Valid** when DNS is correct.
-4. Confirm:
+1. Run `bun run setup` with an apex domain — setup adds the domain to Vercel, attaches hostnames to projects, and **pauses** until you confirm nameservers are updated.
+2. In Vercel → **Domains** → your apex → enable **Vercel DNS** if prompted.
+3. At your registrar, set custom nameservers to the two values above (copy any email MX/TXT records into Vercel first).
+4. Wait for propagation. Vercel shows **Valid** when each hostname resolves.
+5. Confirm:
    - `example.com` and `www.example.com` → **Production** (updated only by Release workflow)
    - `preview.example.com` and `preview.www.example.com` → git branch **`main`** (Vercel Preview deploys on merge)
+
+**No domain yet:** skip the apex prompt in setup (press Enter). Projects deploy to default `*.vercel.app` URLs until you add a domain and re-run setup.
+
+Per-hostname A/CNAME records at the registrar still work if you cannot change nameservers — add them manually per the Vercel Domains UI.
 
 ### Vercel (web + marketing)
 

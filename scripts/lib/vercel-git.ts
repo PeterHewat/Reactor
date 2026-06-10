@@ -15,6 +15,28 @@ import {
   type VercelGitRepoSearchItem,
 } from "./vercel-api";
 
+/**
+ * Normalizes Vercel `search-repo` owner fields (string or `{ name }` object).
+ *
+ * @param item - Repo search result from Vercel
+ */
+function vercelRepoOwnerSlug(item: VercelGitRepoSearchItem): string {
+  const owner = item.owner;
+  if (typeof owner === "string") {
+    return owner;
+  }
+  if (owner && typeof owner === "object" && typeof owner.name === "string") {
+    return owner.name;
+  }
+  if (typeof item.org === "string") {
+    return item.org;
+  }
+  if (typeof item.namespace === "string") {
+    return item.namespace;
+  }
+  return "";
+}
+
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const GITHUB_APP_PROMPT_MS = 15_000;
@@ -48,8 +70,19 @@ export function vercelSearchIncludesRepo(
   const fullPath = `${orgLower}/${repoLower}`;
 
   return items.some((item) => {
+    if (item.url) {
+      const fromUrl = item.url.match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/i);
+      if (fromUrl) {
+        const org = fromUrl[1]!.toLowerCase();
+        const repo = fromUrl[2]!.replace(/\.git$/i, "").toLowerCase();
+        if (org === orgLower && repo === repoLower) {
+          return true;
+        }
+      }
+    }
+
     const slug = (item.slug ?? item.name ?? "").toLowerCase();
-    const owner = (item.owner ?? item.org ?? "").toLowerCase();
+    const owner = vercelRepoOwnerSlug(item).toLowerCase();
     if (owner && slug && !slug.includes("/")) {
       return owner === orgLower && slug === repoLower;
     }
@@ -59,11 +92,51 @@ export function vercelSearchIncludesRepo(
 }
 
 /**
- * Returns whether Vercel can see the repository via the GitHub integration API.
+ * Namespace id for `search-repo` — API may return `id` or `installationId`.
+ *
+ * @param ns - Git namespace from Vercel
+ */
+export function vercelGitNamespaceId(ns: VercelGitNamespace): string | number | undefined {
+  return ns.id ?? ns.installationId;
+}
+
+export type VercelGitHubAccessState =
+  | "ready"
+  | "needs_login"
+  | "needs_app_install"
+  | "needs_repo_access";
+
+/**
+ * Diagnoses why Vercel cannot see a GitHub repository yet.
  *
  * @param token - Vercel API token
  * @param github - Parsed GitHub remote
  */
+export async function diagnoseVercelGitHubAccess(
+  token: string,
+  github: GitHubRepo,
+): Promise<VercelGitHubAccessState> {
+  if (await canVercelAccessGitHubRepo(token, github)) {
+    return "ready";
+  }
+
+  const namespaces = await listVercelGitNamespaces(token);
+  if (!hasVercelGitNamespaceForOrg(namespaces, github.org)) {
+    return "needs_login";
+  }
+
+  return "needs_repo_access";
+}
+
+/**
+ * GitHub settings URL to grant the Vercel app access to repositories.
+ *
+ * @param github - Parsed GitHub remote
+ */
+export function githubVercelAppRepositoryAccessUrl(_github: GitHubRepo): string {
+  return `https://github.com/settings/installations`;
+}
+
 export async function canVercelAccessGitHubRepo(
   token: string,
   github: GitHubRepo,
@@ -71,13 +144,14 @@ export async function canVercelAccessGitHubRepo(
   const namespaces = await listVercelGitNamespaces(token);
 
   for (const ns of namespaces) {
-    if (ns.id === undefined) {
+    const namespaceId = vercelGitNamespaceId(ns);
+    if (namespaceId === undefined) {
       continue;
     }
     try {
       const repos = await searchVercelGitRepos(token, {
         query: github.repo,
-        namespaceId: ns.id,
+        namespaceId,
       });
       if (vercelSearchIncludesRepo(repos, github)) {
         return true;
@@ -189,9 +263,19 @@ async function pollForGitRepoAccess(
     polls += 1;
     if (polls % 10 === 0) {
       const elapsed = Math.round((Date.now() - started) / 1000);
-      console.log(
-        `\n  Still waiting (${elapsed}s) — login connection + Vercel GitHub App install are both required`,
-      );
+      const state = await diagnoseVercelGitHubAccess(token, github);
+      if (state === "needs_repo_access") {
+        console.log(
+          `\n  Still waiting (${elapsed}s) — Vercel is connected to GitHub but **${github.org}/${github.repo}** is not granted`,
+        );
+        console.log(
+          `  Configure: ${githubVercelAppRepositoryAccessUrl(github)} → Vercel → Repository access → add **${github.repo}**`,
+        );
+      } else {
+        console.log(
+          `\n  Still waiting (${elapsed}s) — connect GitHub in Vercel **and** install the Vercel GitHub App`,
+        );
+      }
     } else {
       process.stdout.write(".");
     }
@@ -223,8 +307,11 @@ export async function ensureVercelGitHubReady(token: string, github: GitHubRepo)
         "\n  Login connection alone is not enough — install the Vercel GitHub App for repo access",
       );
       await promptBrowserAuth(
-        `Install the Vercel GitHub App (grant access to ${github.org}/${github.repo})`,
+        `Install the Vercel GitHub App, then grant access to ${github.repo}`,
         VERCEL_GITHUB_APP,
+      );
+      console.log(
+        `  After install: ${githubVercelAppRepositoryAccessUrl(github)} → Vercel → Repository access → **${github.repo}**`,
       );
     },
   });
@@ -234,11 +321,22 @@ export async function ensureVercelGitHubReady(token: string, github: GitHubRepo)
     return true;
   }
 
-  printManualAction("Vercel still cannot access your GitHub repository", [
-    `Account → Login Connections: ${VERCEL_LOGIN_CONNECTIONS}`,
-    `Install the Vercel GitHub App and grant access to **${github.org}/${github.repo}**: ${VERCEL_GITHUB_APP}`,
-    "Re-run `bun run setup` after both steps",
-  ]);
+  const state = await diagnoseVercelGitHubAccess(token, github);
+  if (state === "needs_repo_access") {
+    printManualAction(`Grant Vercel access to ${github.org}/${github.repo}`, [
+      `Open: ${githubVercelAppRepositoryAccessUrl(github)}`,
+      "Click **Configure** on the Vercel GitHub App",
+      `Under Repository access, select **Only select repositories** and add **${github.repo}**`,
+      "Re-run `bun run setup`",
+    ]);
+  } else {
+    printManualAction("Vercel still cannot access your GitHub repository", [
+      `Account → Login Connections: ${VERCEL_LOGIN_CONNECTIONS}`,
+      `Install the Vercel GitHub App: ${VERCEL_GITHUB_APP}`,
+      `Then grant access to **${github.org}/${github.repo}** via GitHub → Settings → Integrations → Applications`,
+      "Re-run `bun run setup` after both steps",
+    ]);
+  }
   return false;
 }
 

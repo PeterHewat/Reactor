@@ -31,3 +31,12 @@ export function isValidApexDomain(input: string): boolean {
   }
   return APEX_DOMAIN.test(normalized);
 }
+
+/**
+ * Returns whether setup has a configured apex domain (optional during early setup).
+ *
+ * @param apexDomain - Apex domain from `.reactor/setup.json`, if any
+ */
+export function hasApexDomain(apexDomain?: string | null): boolean {
+  return Boolean(apexDomain && isValidApexDomain(apexDomain));
+}

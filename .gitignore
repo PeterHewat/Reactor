@@ -74,10 +74,18 @@ apps/web/src/routeTree.gen.ts
 # Convex local backend (from `convex dev --once` without cloud login)
 .convex/
 
+# Setup-local secrets (Clerk production keys from `clerk env pull --instance prod`)
+.reactor/clerk-production.env
+
 # Agent skills installed by setup (Convex: `bunx convex ai-files install`; Clerk: `bunx skills add clerk/skills`)
+# `.claude/skills` is a committed symlink to `.agents/skills` — ignore generated skill trees only.
+# Trailing `/` on .claude patterns does not match symlinks; use `clerk-*` / `convex*` without `/`.
 .agents/skills/convex/
 .agents/skills/convex-*/
 .agents/skills/clerk-*/
+.claude/skills/convex
+.claude/skills/convex-*
+.claude/skills/clerk-*
 skills-lock.json
 
 # Test results

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { formatProductTs } from "./prettier-file";
 
 /**
  * Reads `PRODUCT_TAGLINE` from `packages/config/product.ts`.
@@ -38,5 +39,6 @@ export function writeProductTagline(root: string, productTagLine: string): boole
     return false;
   }
   writeFileSync(productPath, next);
+  formatProductTs(root);
   return true;
 }

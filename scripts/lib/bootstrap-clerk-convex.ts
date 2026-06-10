@@ -2,7 +2,8 @@
 import { defaultE2eClerkEmail } from "../../packages/config/e2e-clerk";
 import { isPlaceholderEnvValue } from "../../packages/config/env-placeholders";
 import { deriveHostnames } from "../../packages/config/hostnames";
-import { ensureClerkE2eUser } from "./clerk-e2e-user";
+import { hasApexDomain } from "../../packages/config/validate-domain";
+import { ensureClerkE2eUser, isClerkEmailPasswordDisabledMessage } from "./clerk-e2e-user";
 import {
   isClerkPublishableKey,
   isClerkSecretKey,
@@ -23,7 +24,15 @@ import {
   CLERK_DASHBOARD,
   CONVEX_DASHBOARD,
 } from "./platform-urls";
-import { maskSecret, promptLine } from "./prompt";
+import {
+  bootstrapClerkEnvViaCli,
+  findClerkAppByName,
+  linkClerkApp,
+  pullClerkEnv,
+} from "./clerk-cli";
+import { maskSecret, promptLine, promptSecret } from "./prompt";
+import { productNameToSlug } from "./repo-identity";
+import { canAutomateClerk, type SetupCliContext } from "./setup-cli";
 import type { SetupConfig } from "./setup-config";
 
 const WEB_ENV = "apps/web/.env.local";
@@ -52,11 +61,6 @@ async function provisionE2eClerkUser(
     : webEnv.E2E_CLERK_USER_EMAIL;
 
   console.log("\nClerk E2E test user");
-  printManualAction("Enable Clerk Email + Password (Development)", [
-    `Clerk dashboard: ${CLERK_DASHBOARD}`,
-    "Configure → User & authentication → enable **Email** and **Password**",
-    "Setup creates the E2E user via API when missing; Playwright signs in without the password",
-  ]);
 
   let email = (existingEmail ?? defaultEmail).trim();
   let result = await ensureClerkE2eUser(secretKey, email);
@@ -81,11 +85,19 @@ async function provisionE2eClerkUser(
     );
   } else {
     console.log(`○ Could not create E2E user: ${result.message}`);
-    printManualAction("Fix Clerk E2E user setup", [
-      `Clerk dashboard: ${CLERK_DASHBOARD}`,
-      "Enable **Email** and **Password** (Development), then resume setup",
-      "Or create the user manually in the Clerk dashboard",
-    ]);
+    if (isClerkEmailPasswordDisabledMessage(result.message)) {
+      printManualAction("Enable Clerk Email + Password (Development)", [
+        `Clerk dashboard: ${CLERK_DASHBOARD}`,
+        "Configure → User & authentication → enable **Email** and **Password**",
+        "Then resume `bun run setup`",
+      ]);
+    } else {
+      printManualAction("Fix Clerk E2E user setup", [
+        `Clerk dashboard: ${CLERK_DASHBOARD}`,
+        "Create the user manually, or use a different E2E_CLERK_USER_EMAIL",
+        "Then resume `bun run setup`",
+      ]);
+    }
   }
 
   upsertEnvKeys(root, WEB_ENV, { E2E_CLERK_USER_EMAIL: email });
@@ -176,7 +188,7 @@ async function promptClerkKeys(root: string, setup: SetupConfig): Promise<string
 
   let publishableKey = "";
   while (!isClerkPublishableKey(publishableKey)) {
-    const rawPk = await promptLine("VITE_CLERK_PUBLISHABLE_KEY (pk_test_…)", {
+    const rawPk = await promptSecret("VITE_CLERK_PUBLISHABLE_KEY (pk_test_…)", {
       defaultValue: existingPk,
       displayDefault: existingPk ? maskSecret(existingPk) : undefined,
       required: !existingPk,
@@ -188,7 +200,7 @@ async function promptClerkKeys(root: string, setup: SetupConfig): Promise<string
     }
   }
 
-  const rawSk = await promptLine(
+  const rawSk = await promptSecret(
     "CLERK_SECRET_KEY (sk_test_…) — copy from **Secret keys** on the same page",
     {
       defaultValue: existingSk,
@@ -251,10 +263,12 @@ async function promptClerkKeys(root: string, setup: SetupConfig): Promise<string
  * @param setup - Persisted setup config
  */
 async function syncClerkDevOrigins(secretKey: string, setup: SetupConfig): Promise<void> {
-  const hostnames = deriveHostnames(setup.apexDomain);
+  const clerkDevOrigins = hasApexDomain(setup.apexDomain)
+    ? deriveHostnames(setup.apexDomain!).clerkDevOrigins
+    : ["http://localhost:5173"];
   console.log("\nClerk allowed origins (Development instance)");
 
-  const result = await mergeClerkAllowedOrigins(secretKey, hostnames.clerkDevOrigins, {
+  const result = await mergeClerkAllowedOrigins(secretKey, clerkDevOrigins, {
     developmentOrigin: "http://localhost:5173",
   });
 
@@ -262,9 +276,7 @@ async function syncClerkDevOrigins(secretKey: string, setup: SetupConfig): Promi
     if (result.added.length > 0) {
       console.log(`✓ Clerk allowed origins updated (+ ${result.added.join(", ")})`);
     } else {
-      console.log(
-        `✓ Clerk allowed origins already include ${hostnames.clerkDevOrigins.join(", ")}`,
-      );
+      console.log(`✓ Clerk allowed origins already include ${clerkDevOrigins.join(", ")}`);
     }
     return;
   }
@@ -273,7 +285,7 @@ async function syncClerkDevOrigins(secretKey: string, setup: SetupConfig): Promi
   printManualAction("Set Clerk allowed origins via Backend API", [
     "Allowed origins are not configured on the Clerk Domains dashboard page",
     `PATCH https://api.clerk.com/v1/instance with Authorization: Bearer <CLERK_SECRET_KEY>`,
-    `Body: {"allowed_origins":${JSON.stringify(hostnames.clerkDevOrigins)},"development_origin":"http://localhost:5173"}`,
+    `Body: {"allowed_origins":${JSON.stringify(clerkDevOrigins)},"development_origin":"http://localhost:5173"}`,
     "Re-run setup after fixing the secret key, or apply the PATCH manually",
   ]);
 }
@@ -284,19 +296,71 @@ async function syncClerkDevOrigins(secretKey: string, setup: SetupConfig): Promi
  * @param root - Repository root
  * @param setup - Persisted setup config
  * @param interactive - When true, prompt for Clerk keys (prefilled from env)
+ * @param cliContext - CLI readiness from the prerequisites step
  */
 export async function bootstrapClerkConvex(
   root: string,
   setup: SetupConfig,
   interactive: boolean,
+  cliContext?: SetupCliContext,
 ): Promise<void> {
   const webEnv = readEnvFile(root, WEB_ENV);
 
   let issuerDomain: string | null = null;
 
   const envKeys = readValidClerkKeysFromEnv(root);
+  const clerkCliReady = interactive && cliContext && canAutomateClerk(cliContext);
 
-  if (envKeys) {
+  if (clerkCliReady) {
+    const namedApp = await findClerkAppByName(cliContext.clerk, root, setup.productName);
+
+    if (!namedApp) {
+      if (envKeys) {
+        console.log("\nClerk");
+        console.log(
+          `○ ${WEB_ENV} has keys for another Clerk app — no application named "${setup.productName}" in your account`,
+        );
+        console.log("  Creating and linking via Clerk CLI…");
+      }
+      const pulled = await bootstrapClerkEnvViaCli(root, setup, cliContext.clerk);
+      const afterPull = pulled ? readValidClerkKeysFromEnv(root) : null;
+      if (afterPull) {
+        issuerDomain = await applyClerkKeysFromEnv(
+          root,
+          setup,
+          afterPull.publishableKey,
+          afterPull.secretKey,
+        );
+      } else {
+        issuerDomain = await promptClerkKeys(root, setup);
+      }
+    } else if (!envKeys) {
+      console.log("\nClerk");
+      console.log(`✓ Found Clerk app "${namedApp.name}" (${namedApp.id})`);
+      await linkClerkApp(cliContext.clerk, root, namedApp.id);
+      if (await pullClerkEnv(cliContext.clerk, root)) {
+        const afterPull = readValidClerkKeysFromEnv(root);
+        if (afterPull) {
+          issuerDomain = await applyClerkKeysFromEnv(
+            root,
+            setup,
+            afterPull.publishableKey,
+            afterPull.secretKey,
+          );
+        }
+      }
+      if (!issuerDomain) {
+        issuerDomain = await promptClerkKeys(root, setup);
+      }
+    } else {
+      issuerDomain = await applyClerkKeysFromEnv(
+        root,
+        setup,
+        envKeys.publishableKey,
+        envKeys.secretKey,
+      );
+    }
+  } else if (envKeys) {
     issuerDomain = await applyClerkKeysFromEnv(
       root,
       setup,
@@ -314,7 +378,10 @@ export async function bootstrapClerkConvex(
 
   if (!isConvexLinked(root)) {
     if (interactive) {
-      await ensureConvexLinkedInteractive(root);
+      await ensureConvexLinkedInteractive(root, {
+        convexAuthenticated: cliContext?.convex.authenticated,
+        projectSlug: productNameToSlug(setup.productName),
+      });
     } else {
       printManualAction("Link Convex to this repository", [
         `Convex dashboard: ${CONVEX_DASHBOARD}`,

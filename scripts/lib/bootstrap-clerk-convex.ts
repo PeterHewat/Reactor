@@ -4,6 +4,7 @@ import { isPlaceholderEnvValue } from "../../packages/config/env-placeholders";
 import { deriveHostnames } from "../../packages/config/hostnames";
 import { hasApexDomain } from "../../packages/config/validate-domain";
 import { ensureClerkE2eUser, isClerkEmailPasswordDisabledMessage } from "./clerk-e2e-user";
+import { ensureClerkConvexJwtTemplate } from "./clerk-jwt-template";
 import {
   isClerkPublishableKey,
   isClerkSecretKey,
@@ -22,6 +23,7 @@ import {
   CLERK_API_KEYS,
   CLERK_CREATE_APP,
   CLERK_DASHBOARD,
+  CLERK_JWT_TEMPLATES,
   CONVEX_DASHBOARD,
 } from "./platform-urls";
 import {
@@ -139,6 +141,20 @@ async function applyClerkKeysFromEnv(
 
   if (secretKey.startsWith("sk_test_")) {
     await syncClerkDevOrigins(secretKey, setup);
+  }
+
+  const jwtTemplate = await ensureClerkConvexJwtTemplate(secretKey);
+  if (jwtTemplate.ok && jwtTemplate.created) {
+    console.log('✓ Created Clerk JWT template "convex" (Convex + Clerk auth)');
+  } else if (jwtTemplate.ok) {
+    console.log('✓ Clerk JWT template "convex" present');
+  } else {
+    console.log(`○ Could not create Clerk JWT template "convex": ${jwtTemplate.message}`);
+    printManualAction('Create Clerk JWT template "convex"', [
+      `JWT templates: ${CLERK_JWT_TEMPLATES}`,
+      "New template → **Convex** preset → Save (name must be `convex`)",
+      "Then resume `bun run setup` or re-run Playwright E2E",
+    ]);
   }
 
   return issuerDomain;

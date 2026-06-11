@@ -1,4 +1,3 @@
-import { isClerkAPIResponseError } from "@clerk/backend/errors";
 import { clerkSetup } from "@clerk/testing/playwright";
 import { test as setup } from "@playwright/test";
 import {
@@ -29,9 +28,13 @@ setup("clerk testing token", async () => {
       dotenv: false,
     });
   } catch (error) {
-    if (isClerkAPIResponseError(error) && error.status === 404) {
+    const status =
+      typeof error === "object" && error !== null && "status" in error
+        ? (error as { status: unknown }).status
+        : undefined;
+    if (status === 404) {
       throw new Error(
-        "Clerk testing token request failed (404). Use matching Development keys from the same Clerk application — re-sync via `bun run setup` or update GitHub repository secrets (docs/ci-cd.md#repository-secrets).",
+        'Clerk testing token request failed (404). Ensure JWT template "convex" exists (Clerk dashboard → JWT templates → Convex preset, or `bun run setup`) and Development keys match — docs/setup-automation.md#clerk',
         { cause: error },
       );
     }

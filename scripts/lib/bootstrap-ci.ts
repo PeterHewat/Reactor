@@ -5,7 +5,7 @@ import { resolveGitHubRepo } from "./apply-identity";
 import { resolveDevConvexDeployKey } from "./convex-deploy-key";
 import { isConvexLinked } from "./convex-link";
 import { readEnvFile } from "./env-file";
-import { ghSecretSet, isGhAuthenticated } from "./gh-secrets";
+import { ghSecretSet, isGhAuthenticated, listGhRepoSecrets } from "./gh-secrets";
 import { printManualAction } from "./manual-action";
 import { canAutomateGh, type SetupCliContext } from "./setup-cli";
 import { githubEnvironmentsUrl, githubSecretsUrl } from "./platform-urls";
@@ -13,6 +13,25 @@ import { promptConfirm } from "./prompt";
 import { markGithubSecretsSynced, type SetupConfig } from "./setup-config";
 
 const WEB_ENV = "apps/web/.env.local";
+
+const REPO_ENV_SECRETS = [
+  "VITE_CONVEX_URL",
+  "VITE_CLERK_PUBLISHABLE_KEY",
+  "CLERK_SECRET_KEY",
+  "E2E_CLERK_USER_EMAIL",
+] as const;
+
+type RepoEnvSecret = (typeof REPO_ENV_SECRETS)[number];
+
+function isLocalRepoSecretReady(name: RepoEnvSecret, value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  if (name === "E2E_CLERK_USER_EMAIL") {
+    return !isPlaceholderE2EClerkEmail(value);
+  }
+  return !isPlaceholderEnvValue(value);
+}
 
 /**
  * Pushes dev-stack repository secrets to GitHub when the user confirms.
@@ -27,9 +46,16 @@ export async function bootstrapCiSecrets(
   cliContext?: SetupCliContext,
 ): Promise<void> {
   const github = resolveGitHubRepo(root);
+  const webEnv = readEnvFile(root, WEB_ENV);
+  const remoteSecrets = new Set(await listGhRepoSecrets(root));
+  const missingOnGitHub = REPO_ENV_SECRETS.filter(
+    (name) => isLocalRepoSecretReady(name, webEnv[name]) && !remoteSecrets.has(name),
+  );
+  const needsDeployKey = !remoteSecrets.has("CONVEX_DEPLOY_KEY");
   const firstSync = !setup.github?.syncedSecrets?.repo;
+  const needsSync = firstSync || needsDeployKey || missingOnGitHub.length > 0;
 
-  if (!firstSync) {
+  if (!needsSync) {
     console.log("\nGitHub Actions");
     console.log("✓ Dev CI secrets already synced — skip");
     return;
@@ -38,6 +64,9 @@ export async function bootstrapCiSecrets(
   const ghReady = cliContext ? canAutomateGh(cliContext) : await isGhAuthenticated();
 
   console.log("\nGitHub Actions");
+  if (!firstSync && missingOnGitHub.length > 0) {
+    console.log(`  Missing on GitHub: ${missingOnGitHub.join(", ")}`);
+  }
   console.log(
     "  Syncs dev-stack **repository** secrets via `gh secret set` so PR CI and E2E can run (development Convex + Clerk only).",
   );
@@ -52,7 +81,7 @@ export async function bootstrapCiSecrets(
   }
 
   const proceed = await promptConfirm("Sync dev CI secrets to GitHub?", {
-    defaultYes: firstSync && ghReady,
+    defaultYes: needsSync && ghReady,
   });
   if (!proceed) {
     console.log("○ Skipped — docs/ci-cd.md#repository-secrets");
@@ -80,46 +109,51 @@ export async function bootstrapCiSecrets(
     return;
   }
 
-  const webEnv = readEnvFile(root, WEB_ENV);
-  const deployKey = await resolveDevConvexDeployKey(root, "github-ci");
-  if (!deployKey) {
-    printManualAction("Mint CONVEX_DEPLOY_KEY for CI", [
-      "Resume `bun run setup` — complete the Convex step first",
-      "Then confirm the GitHub Actions sync step",
-    ]);
-    return;
+  let allSecretsOk = true;
+  let deployKeyOk = !needsDeployKey || remoteSecrets.has("CONVEX_DEPLOY_KEY");
+  if (firstSync || needsDeployKey) {
+    const deployKey = await resolveDevConvexDeployKey(root, "github-ci");
+    if (!deployKey) {
+      printManualAction("Mint CONVEX_DEPLOY_KEY for CI", [
+        "Resume `bun run setup` — complete the Convex step first",
+        "Then confirm the GitHub Actions sync step",
+      ]);
+      return;
+    }
+    deployKeyOk = await ghSecretSet(root, "CONVEX_DEPLOY_KEY", deployKey);
+    console.log(deployKeyOk ? "✓ CONVEX_DEPLOY_KEY" : "○ Failed to set CONVEX_DEPLOY_KEY");
+    if (!deployKeyOk) {
+      allSecretsOk = false;
+    }
   }
 
-  const deployKeyOk = await ghSecretSet(root, "CONVEX_DEPLOY_KEY", deployKey);
-  console.log(deployKeyOk ? "✓ CONVEX_DEPLOY_KEY" : "○ Failed to set CONVEX_DEPLOY_KEY");
-
-  const pairs: Array<[string, string | undefined]> = [
-    ["VITE_CONVEX_URL", webEnv.VITE_CONVEX_URL],
-    ["VITE_CLERK_PUBLISHABLE_KEY", webEnv.VITE_CLERK_PUBLISHABLE_KEY],
-    ["CLERK_SECRET_KEY", webEnv.CLERK_SECRET_KEY],
-    ["E2E_CLERK_USER_EMAIL", webEnv.E2E_CLERK_USER_EMAIL],
-  ];
-
-  let allEnvSecretsOk = true;
-  for (const [name, value] of pairs) {
-    const isPlaceholder =
-      name === "E2E_CLERK_USER_EMAIL"
-        ? isPlaceholderE2EClerkEmail(value)
-        : isPlaceholderEnvValue(value);
-    if (!value || isPlaceholder) {
+  for (const name of REPO_ENV_SECRETS) {
+    const value = webEnv[name];
+    if (!isLocalRepoSecretReady(name, value)) {
       console.log(`○ Skip ${name} — not set in ${WEB_ENV}`);
       continue;
     }
-    const ok = await ghSecretSet(root, name, value);
+    if (!firstSync && remoteSecrets.has(name) && !missingOnGitHub.includes(name)) {
+      continue;
+    }
+    const ok = await ghSecretSet(root, name, value!);
     console.log(ok ? `✓ ${name}` : `○ Failed to set ${name}`);
     if (!ok) {
-      allEnvSecretsOk = false;
+      allSecretsOk = false;
     }
   }
 
-  if (deployKeyOk && allEnvSecretsOk) {
+  const updatedRemoteSecrets = new Set(await listGhRepoSecrets(root));
+  const stillMissing = REPO_ENV_SECRETS.filter(
+    (name) => isLocalRepoSecretReady(name, webEnv[name]) && !updatedRemoteSecrets.has(name),
+  );
+
+  if (deployKeyOk && allSecretsOk && stillMissing.length === 0) {
     markGithubSecretsSynced(root);
-  } else if (!allEnvSecretsOk) {
+  } else if (!allSecretsOk || stillMissing.length > 0) {
     console.log("○ repo secrets not marked synced — fix failures above and resume setup");
+    if (stillMissing.length > 0) {
+      console.log(`○ Still missing on GitHub: ${stillMissing.join(", ")}`);
+    }
   }
 }

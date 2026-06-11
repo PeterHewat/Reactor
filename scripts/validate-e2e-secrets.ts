@@ -23,7 +23,10 @@ function fail(message: string): never {
 
 const syncIssues = getTasksE2EConfigIssues();
 if (syncIssues.length > 0) {
-  fail(`Web E2E secrets incomplete: ${syncIssues.join("; ")}`);
+  const remediation = syncIssues.some((issue) => issue.includes("E2E_CLERK_USER_EMAIL"))
+    ? " Set repository secret E2E_CLERK_USER_EMAIL via `bun run setup` or `gh secret set E2E_CLERK_USER_EMAIL` (docs/ci-cd.md#repository-secrets)."
+    : "";
+  fail(`Web E2E secrets incomplete: ${syncIssues.join("; ")}.${remediation}`);
 }
 
 const publishableKey = process.env.VITE_CLERK_PUBLISHABLE_KEY!;

@@ -159,6 +159,24 @@ export async function ghSecretSet(root: string, name: string, value: string): Pr
 }
 
 /**
+ * Lists GitHub Actions repository secret names via `gh secret list`.
+ *
+ * @param root - Repository root
+ */
+export async function listGhRepoSecrets(root: string): Promise<string[]> {
+  const capture = await runCapture(["gh", "secret", "list", "--json", "name", "-q", ".[].name"], {
+    cwd: root,
+  });
+  if (!capture.ok) {
+    return [];
+  }
+  return capture.stdout
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+/**
  * Sets a GitHub Actions environment secret via `gh secret set --env`.
  *
  * @param root - Repository root

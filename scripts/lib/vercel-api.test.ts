@@ -6,6 +6,7 @@ import {
   isVercelInstallGitHubAppError,
   mergeVercelProjectEnvironments,
   parseVercelApiErrorDetails,
+  resolveProductionTrackingBranch,
   resolveVercelEnvironmentId,
   VERCEL_PRE_RELEASE_ENV_SLUG,
   VERCEL_QUIET_GIT_NOTIFICATIONS,
@@ -118,6 +119,33 @@ describe("mergeVercelProjectEnvironments", () => {
   });
 });
 
+describe("resolveProductionTrackingBranch", () => {
+  test("prefers production environment branchMatcher over link.productionBranch", () => {
+    expect(
+      resolveProductionTrackingBranch(
+        [
+          {
+            id: "env_prod",
+            slug: "production",
+            type: "production",
+            branchMatcher: { type: "equals", pattern: "production" },
+          },
+        ],
+        "main",
+      ),
+    ).toBe("production");
+  });
+
+  test("falls back to link.productionBranch when branchMatcher is missing", () => {
+    expect(
+      resolveProductionTrackingBranch(
+        [{ id: "env_prod", slug: "production", type: "production" }],
+        "main",
+      ),
+    ).toBe("main");
+  });
+});
+
 describe("VERCEL_QUIET_GIT_NOTIFICATIONS", () => {
   test("disables all GitHub PR noise settings", () => {
     expect(VERCEL_QUIET_GIT_NOTIFICATIONS.gitComments).toEqual({
@@ -128,6 +156,7 @@ describe("VERCEL_QUIET_GIT_NOTIFICATIONS", () => {
       createDeployments: "disabled",
       disableRepositoryDispatchEvents: true,
       gitCommitStatus: false,
+      consolidatedGitCommitStatus: { enabled: false, propagateFailures: false },
     });
   });
 });

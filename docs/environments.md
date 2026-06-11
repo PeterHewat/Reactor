@@ -55,15 +55,16 @@ Per-hostname A/CNAME records at the registrar still work if you cannot change na
 
 ### Vercel (web + marketing)
 
-**Automated (`bun run setup`):** creates or finds Git-linked `{product-slug}-web` and `{product-slug}-marketing`, sets web `VITE_*` env vars, attaches domains, optional `gh secret set` for `VERCEL_*`.
+**Automated (`bun run setup`):** creates or finds Git-linked `{product-slug}-web` and `{product-slug}-marketing`, silences GitHub bot noise (PR/commit comments, commit status, consolidated status, `deployment_status` / `repository_dispatch` events), sets web `VITE_*` and Preview `CONVEX_DEPLOY_KEY` env vars, points Production tracking branch at `production`, attaches domains, optional `gh secret set` for `VERCEL_*`. Re-run setup to re-apply Git and branch settings after dashboard drift.
 
 **Git staging model:**
 
 1. Connect each project to your GitHub repo (root `apps/web`, `apps/marketing`).
-2. **Production Branch** = `production` (not `main`) — create an empty `production` branch once if needed.
-3. Merges to **`main`** deploy **Preview** builds to `preview.*` hostnames.
-4. **Release** workflow deploys production domains via `vercel deploy --prod` in GitHub Actions.
-5. `ignoreCommand` in each `vercel.json` builds on **`main` only** (skips PR branch deploys).
+2. **Production tracking branch** = `production` (not `main`) — **Settings → Environments → Production → Tracking Branch** (setup creates the empty `production` Git branch on `origin` when missing, then sets this via API).
+3. **Preview** stays at **All unassigned branches** (default) — do not pin Preview to `main`. Once Production tracks `production`, every other branch (including `main`) is Preview.
+4. Merges to **`main`** deploy **Preview** builds to `preview.*` hostnames.
+5. **Release** workflow deploys production domains via `vercel deploy --prod` in GitHub Actions.
+6. `ignoreCommand` in each `vercel.json` builds on **`main` only** (skips PR branch deploys).
 
 | Hostname assignment                              | How it updates                                                        |
 | ------------------------------------------------ | --------------------------------------------------------------------- |
@@ -100,7 +101,7 @@ Details: [ci-cd.md](./ci-cd.md#repository-secrets).
 ## First-time checklist
 
 1. `bun run setup` through Clerk, Convex, Vercel, GitHub secrets.
-2. Vercel: Production Branch = `production`; `preview.*` on branch `main`.
+2. Vercel: **Settings → Environments → Production** → Tracking Branch = `production`; Preview = **All unassigned branches** (leave default).
 3. DNS valid for all four hostnames.
 4. Merge a PR to `main` → **Staging** workflow green (Convex + E2E); Vercel deploys staging URLs.
 5. **Release** workflow → `release-*` tag → production.

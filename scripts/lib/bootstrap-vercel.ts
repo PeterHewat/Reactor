@@ -1,5 +1,8 @@
 /* eslint-disable no-console -- CLI wizard */
 import { isPlaceholderEnvValue } from "../../packages/config/env-placeholders";
+import { resolveDevConvexDeployKey } from "./convex-deploy-key";
+import { isConvexLinked } from "./convex-link";
+import { ensureGitProductionBranch } from "./ensure-git-production-branch";
 import { deriveHostnames } from "../../packages/config/hostnames";
 import { hasApexDomain } from "../../packages/config/validate-domain";
 import { readEnvFile } from "./env-file";
@@ -31,8 +34,10 @@ import {
   getVercelAuthContext,
   loadVercelProjectDetails,
   updateVercelProjectGitNotifications,
+  updateVercelProjectProductionBranch,
   upsertVercelProjectEnv,
   VERCEL_DNS_NAMESERVERS,
+  VERCEL_PRODUCTION_GIT_BRANCH,
   VERCEL_STAGING_GIT_BRANCH,
   VercelApiError,
   vercelOrgId,
@@ -49,6 +54,8 @@ import { mintVercelCiTokenViaCli, resolveVercelApiToken } from "./vercel-auth";
 
 const WEB_ENV = "apps/web/.env.local";
 const ENV_TARGETS = ["production", "preview", "development"] as const;
+/** Staging Git builds on `main` are Preview deployments once Production Branch is `production`. */
+const VERCEL_CONVEX_DEPLOY_KEY_TARGETS = ["preview"] as const;
 
 /**
  * Resolves a Vercel API token for setup (env, CLI session, or manual paste).
@@ -240,6 +247,22 @@ async function syncWebVercelEnv(
     await upsertVercelProjectEnv(token, teamId, projectId, key, value, [...ENV_TARGETS]);
     console.log(`✓ Vercel env ${key} (${ENV_TARGETS.join(", ")})`);
   }
+
+  if (!isConvexLinked(root)) {
+    console.log("○ Skip Vercel env CONVEX_DEPLOY_KEY — Convex not linked");
+    return;
+  }
+
+  const deployKey = await resolveDevConvexDeployKey(root, "vercel-preview");
+  if (!deployKey) {
+    console.log("○ Skip Vercel env CONVEX_DEPLOY_KEY — could not resolve dev deploy key");
+    return;
+  }
+
+  await upsertVercelProjectEnv(token, teamId, projectId, "CONVEX_DEPLOY_KEY", deployKey, [
+    ...VERCEL_CONVEX_DEPLOY_KEY_TARGETS,
+  ]);
+  console.log(`✓ Vercel env CONVEX_DEPLOY_KEY (${VERCEL_CONVEX_DEPLOY_KEY_TARGETS.join(", ")})`);
 }
 
 type VercelDomainSpec = {
@@ -277,16 +300,72 @@ async function applyVercelQuietGitNotifications(
 }
 
 /**
- * Post-setup checklist so `main` deploys staging without promoting production domains.
+ * Manual fallback when the production-branch API call fails.
  */
-function printVercelGitStagingGuide(): void {
-  printManualAction("Configure Vercel Git for staging on main", [
-    `Each project → **Settings → Git** → Production Branch = \`production\` (not \`main\`)`,
-    `Create an empty \`production\` branch once if needed: \`git checkout --orphan production && git commit --allow-empty -m init && git push -u origin production\``,
-    `Merges to \`${VERCEL_STAGING_GIT_BRANCH}\` then deploy **Preview** builds to \`preview.*\` hostnames`,
+function printVercelProductionBranchGuide(gitBranchOk: boolean): void {
+  const steps = [
+    `Each project → **Settings → Environments** → **Production** → Tracking Branch = \`${VERCEL_PRODUCTION_GIT_BRANCH}\``,
+    `**Preview** can stay at **All unassigned branches** — once Production tracks \`${VERCEL_PRODUCTION_GIT_BRANCH}\`, \`${VERCEL_STAGING_GIT_BRANCH}\` is unassigned and becomes Preview`,
     "Production (`apex` / `www`) ships only via **Release** workflow (`vercel deploy --prod` in GitHub Actions)",
-    `Only \`${VERCEL_STAGING_GIT_BRANCH}\` triggers Vercel builds (\`ignoreCommand\` in vercel.json skips PR branches)`,
-  ]);
+  ];
+  if (!gitBranchOk) {
+    steps.unshift(
+      `Push an empty \`${VERCEL_PRODUCTION_GIT_BRANCH}\` branch: \`git push origin $(git commit-tree -m init $(git hash-object -t tree /dev/null)):refs/heads/production\``,
+    );
+  }
+  printManualAction("Set Vercel Production tracking branch to `production`", steps);
+}
+
+/**
+ * Sets Production Branch to `production` and syncs web env (incl. `CONVEX_DEPLOY_KEY` for Preview builds).
+ *
+ * @param token - Vercel API token
+ * @param teamId - Optional team scope
+ * @param webProject - Web project metadata
+ * @param marketingProject - Marketing project metadata
+ * @param root - Repository root
+ */
+async function applyVercelStagingGitConfig(
+  token: string,
+  teamId: string | undefined,
+  webProject: VercelProjectDetails,
+  marketingProject: VercelProjectDetails,
+  root: string,
+): Promise<void> {
+  await syncWebVercelEnv(token, teamId, webProject.id, root);
+
+  const gitBranchOk = await ensureGitProductionBranch(root);
+
+  let branchOk = gitBranchOk;
+  for (const project of [webProject, marketingProject]) {
+    try {
+      const updated = await updateVercelProjectProductionBranch(
+        token,
+        teamId,
+        project.id,
+        VERCEL_PRODUCTION_GIT_BRANCH,
+      );
+      if (updated) {
+        console.log(
+          `✓ Vercel Production tracking branch → \`${VERCEL_PRODUCTION_GIT_BRANCH}\` (${project.name})`,
+        );
+      } else {
+        branchOk = false;
+        console.warn(
+          `○ Production branch still not \`${VERCEL_PRODUCTION_GIT_BRANCH}\` for ${project.name} — set manually in Environments → Production`,
+        );
+      }
+    } catch (err) {
+      branchOk = false;
+      const detail =
+        err instanceof VercelApiError ? formatVercelApiError(err) : String(err).slice(0, 120);
+      console.warn(`○ Could not set Production Branch for ${project.name}: ${detail}`);
+    }
+  }
+
+  if (!branchOk) {
+    printVercelProductionBranchGuide(gitBranchOk);
+  }
 }
 
 /**
@@ -561,10 +640,12 @@ export async function bootstrapVercel(
       } catch {
         teamId = undefined;
       }
-      await applyVercelQuietGitNotifications(resolved.token, teamId, [
+      const projects: VercelProjectDetails[] = [
         { id: setup.vercel.projectIdWeb, name: setup.vercel.projectNameWeb },
         { id: setup.vercel.projectIdMarketing, name: setup.vercel.projectNameMarketing },
-      ]);
+      ];
+      await applyVercelQuietGitNotifications(resolved.token, teamId, projects);
+      await applyVercelStagingGitConfig(resolved.token, teamId, projects[0]!, projects[1]!, root);
     }
     console.log("✓ Vercel already configured — skip");
     return process.env.VERCEL_TOKEN?.trim() ?? resolved?.token ?? null;
@@ -641,7 +722,7 @@ export async function bootstrapVercel(
     gitReady,
   );
 
-  await syncWebVercelEnv(token, teamId, webProject.id, root);
+  await applyVercelStagingGitConfig(token, teamId, webProject, marketingProject, root);
   await applyVercelQuietGitNotifications(token, teamId, [webProject, marketingProject]);
 
   const meta: VercelSetupMeta = {
@@ -678,8 +759,6 @@ export async function bootstrapVercel(
     console.log("\n○ Custom domains deferred — no apex domain in setup");
     console.log("  Projects use default *.vercel.app URLs until you add a domain and re-run setup");
   }
-
-  printVercelGitStagingGuide();
 
   if (hasApex) {
     const hostnames = deriveHostnames(setup.apexDomain!);

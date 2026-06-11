@@ -1,6 +1,9 @@
 /* eslint-disable no-console -- CLI wizard */
 import { parseConvexProdDeploymentSlug } from "./convex-url";
+import { readEnvFile, upsertEnvKey } from "./env-file";
 import { readSpawnPipe } from "./spawn-io";
+
+const ROOT_ENV = ".env.local";
 
 export type MintConvexDeployKeyResult = {
   key: string;
@@ -52,4 +55,28 @@ export async function mintConvexDeployKey(
     prodDeploymentSlug:
       deployment === "prod" ? (parseConvexProdDeploymentSlug(combined) ?? undefined) : undefined,
   };
+}
+
+/**
+ * Returns the dev Convex deploy key from root `.env.local`, minting and persisting when missing.
+ *
+ * @param root - Repository root
+ * @param mintName - Token label when a new key is created
+ */
+export async function resolveDevConvexDeployKey(
+  root: string,
+  mintName = "reactor-dev-deploy",
+): Promise<string | null> {
+  const fromFile = readEnvFile(root, ROOT_ENV).CONVEX_DEPLOY_KEY?.trim();
+  if (fromFile) {
+    return fromFile;
+  }
+
+  const minted = await mintConvexDeployKey(root, mintName, "dev");
+  if (!minted?.key) {
+    return null;
+  }
+
+  upsertEnvKey(root, ROOT_ENV, "CONVEX_DEPLOY_KEY", minted.key);
+  return minted.key;
 }

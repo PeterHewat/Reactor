@@ -50,7 +50,7 @@ env:
 
 jobs:
   web-e2e:
-    name: Web E2E
+    name: Web
     runs-on: ubuntu-latest
     if: inputs.run_web
     steps:
@@ -60,23 +60,13 @@ jobs:
       - uses: ./.github/actions/setup-bun
       - name: Resolve E2E mode
         id: e2e
-        run: |
-          set -euo pipefail
-          missing=()
-          [ -z "${{ secrets.CLERK_SECRET_KEY }}" ] && missing+=("CLERK_SECRET_KEY")
-          [ -z "${{ secrets.E2E_CLERK_USER_EMAIL }}" ] && missing+=("E2E_CLERK_USER_EMAIL")
-          [ -z "${{ secrets.VITE_CONVEX_URL }}" ] && missing+=("VITE_CONVEX_URL")
-          [ -z "${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}" ] && missing+=("VITE_CLERK_PUBLISHABLE_KEY")
-          if [ ${#missing[@]} -gt 0 ]; then
-            if [ "${{ inputs.require_full_web_e2e }}" = "true" ]; then
-              echo "::error::Full web E2E required but secrets are missing: ${missing[*]}. See docs/ci-cd.md#repository-secrets"
-              exit 1
-            fi
-            echo "ui_only=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Missing E2E secrets (${missing[*]}). Running UI-only Playwright (home, routing)."
-          else
-            echo "ui_only=false" >> "$GITHUB_OUTPUT"
-          fi
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          REQUIRE_FULL_WEB_E2E: ${{ inputs.require_full_web_e2e }}
+        run: bun scripts/validate-e2e-secrets.ts >> "$GITHUB_OUTPUT"
       - name: Codegen, install browsers, and run Playwright (web)
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
@@ -110,7 +100,7 @@ jobs:
           retention-days: 7
 
   marketing-e2e:
-    name: Marketing E2E
+    name: Marketing
     runs-on: ubuntu-latest
     if: inputs.run_marketing
     steps:

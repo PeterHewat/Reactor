@@ -1,0 +1,18 @@
+# Gitleaks config for CI (gitleaks-action auto-detects this file).
+# See SECURITY.md and docs/ci-cd.md.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake Clerk/Convex credentials in unit and E2E test fixtures"
+condition = "AND"
+paths = [
+  '''(?:^|/)apps/web/tests/''',
+  '''(?:^|/)scripts/lib/.*\.test\.ts$''',
+  '''(?:^|/)packages/.*/.*\.test\.ts$''',
+]
+regexTarget = "line"
+regexes = [
+  '''(?i)(?:fixture|not-real|not-a-real|unit-test|dev-local|pk_test_(?:override|other|your|unitfixture|aaaaaaaa)|sk_test_aaaa)''',
+]

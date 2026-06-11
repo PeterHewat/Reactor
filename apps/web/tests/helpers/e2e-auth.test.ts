@@ -49,6 +49,13 @@ describe("e2e-auth", () => {
     expect(isTasksE2EConfigured()).toBe(true);
   });
 
+  it("accepts the setup fallback E2E email without an apex domain", () => {
+    setValidE2EEnv();
+    process.env.E2E_CLERK_USER_EMAIL = "e2e.test@example.com";
+    expect(getTasksE2EConfigIssues()).toEqual([]);
+    expect(isTasksE2EConfigured()).toBe(true);
+  });
+
   it("prefers CLERK_PUBLISHABLE_KEY over VITE_*", () => {
     process.env.CLERK_PUBLISHABLE_KEY = "pk_test_override";
     process.env.VITE_CLERK_PUBLISHABLE_KEY = "pk_test_other";

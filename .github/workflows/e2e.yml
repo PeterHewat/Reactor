@@ -67,21 +67,13 @@ jobs:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
           REQUIRE_FULL_WEB_E2E: ${{ inputs.require_full_web_e2e }}
         run: bun scripts/validate-e2e-secrets.ts >> "$GITHUB_OUTPUT"
-      - name: Codegen, install browsers, and run Playwright (web)
+      - name: Codegen
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
-          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-          PLAYWRIGHT_UI_ONLY: ${{ steps.e2e.outputs.ui_only == 'true' && '1' || '0' }}
         run: |
           set -euo pipefail
           bun scripts/generate-routes.ts
           if [ "${{ steps.e2e.outputs.ui_only }}" = "true" ]; then
-            export VITE_CONVEX_URL="${VITE_CONVEX_URL:-https://test-project.convex.cloud}"
-            bunx playwright install chromium
-            bun run --filter @repo/web e2e
             exit 0
           fi
           if [ -z "${CONVEX_DEPLOY_KEY:-}" ]; then
@@ -89,7 +81,20 @@ jobs:
             exit 1
           fi
           bun scripts/generate-convex.ts
-          bunx playwright install chromium
+      - name: Install Playwright browsers
+        run: bunx playwright install chromium
+      - name: Run Playwright tests
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          E2E_CLERK_USER_EMAIL: ${{ secrets.E2E_CLERK_USER_EMAIL }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          PLAYWRIGHT_UI_ONLY: ${{ steps.e2e.outputs.ui_only == 'true' && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.e2e.outputs.ui_only }}" = "true" ]; then
+            export VITE_CONVEX_URL="${VITE_CONVEX_URL:-https://test-project.convex.cloud}"
+          fi
           bun run --filter @repo/web e2e
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
@@ -110,7 +115,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
       - name: Install Playwright browsers
         run: bunx playwright install chromium
-      - name: Run Playwright tests (marketing)
+      - name: Run Playwright tests
         run: bun run --filter @repo/marketing e2e
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7

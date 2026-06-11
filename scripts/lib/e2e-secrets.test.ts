@@ -29,6 +29,7 @@ describe("verifyClerkE2ESecrets", () => {
   });
 
   it("rejects mismatched publishable and secret keys", async () => {
+    const publishableKey = `pk_test_${Buffer.from("just-bulldog-13.clerk.accounts.dev").toString("base64")}`;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
@@ -40,7 +41,7 @@ describe("verifyClerkE2ESecrets", () => {
       }),
     );
 
-    const result = await verifyClerkE2ESecrets(fixturePublishable, fixtureSecret);
+    const result = await verifyClerkE2ESecrets(publishableKey, fixtureSecret);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.message).toContain("different Clerk applications");
@@ -69,6 +70,31 @@ describe("verifyClerkE2ESecrets", () => {
     }
   });
 
+  it("rejects when convex JWT template is missing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url === "https://api.clerk.com/v1/instance") {
+          return Response.json({ frontend_api: "just-bulldog-13.clerk.accounts.dev" });
+        }
+        if (url === "https://api.clerk.com/v1/testing_tokens" && init?.method === "POST") {
+          return Response.json({ token: "testing-token" });
+        }
+        if (url === "https://api.clerk.com/v1/jwt_templates") {
+          return Response.json({ data: [{ name: "other" }] });
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    const result = await verifyClerkE2ESecrets(fixturePublishable, fixtureSecret);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('JWT template "convex" is missing');
+    }
+  });
+
   it("accepts matching keys when testing token API succeeds", async () => {
     vi.stubGlobal(
       "fetch",
@@ -79,6 +105,9 @@ describe("verifyClerkE2ESecrets", () => {
         }
         if (url === "https://api.clerk.com/v1/testing_tokens" && init?.method === "POST") {
           return Response.json({ token: "testing-token" });
+        }
+        if (url === "https://api.clerk.com/v1/jwt_templates") {
+          return Response.json({ data: [{ name: "convex" }] });
         }
         throw new Error(`Unexpected fetch: ${url}`);
       }),

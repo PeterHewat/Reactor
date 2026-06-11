@@ -1,4 +1,5 @@
 import { fetchClerkInstance, frontendApiSlugFromPublishableKey } from "./clerk-instance.ts";
+import { hasClerkConvexJwtTemplate } from "./clerk-jwt-template.ts";
 
 export type E2ESecretsCheckResult = { ok: true } | { ok: false; message: string };
 
@@ -40,6 +41,14 @@ export async function verifyClerkE2ESecrets(
     return {
       ok: false,
       message: `Clerk testing token API returned ${tokenResponse.status} — use matching Development keys (pk_test_/sk_test_) from the same Clerk app. See docs/ci-cd.md#repository-secrets`,
+    };
+  }
+
+  if (!(await hasClerkConvexJwtTemplate(secretKey))) {
+    return {
+      ok: false,
+      message:
+        'Clerk JWT template "convex" is missing — run `bun run setup` (auto-creates via API) or Clerk dashboard → JWT templates → Convex preset (docs/setup-automation.md#clerk)',
     };
   }
 

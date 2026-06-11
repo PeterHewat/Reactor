@@ -1,6 +1,6 @@
+import { defineConfig, devices } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { defineConfig, devices } from "@playwright/test";
 import { clerkPublishableKeyForE2E, isPlaywrightUiOnly } from "./tests/helpers/e2e-auth";
 
 const webRoot = import.meta.dirname;
@@ -57,15 +57,15 @@ const playwrightProjects = [
     use: { ...devices["Desktop Chrome"] },
     dependencies: ["clerk setup"],
   },
-] as const;
+];
 
 export default defineConfig({
   testDir: "tests",
   testMatch: "**/*.e2e.ts",
   updateSnapshots: "missing",
   maxFailures: isCI ? 5 : undefined,
-  workers: isCI ? 1 : undefined,
-  fullyParallel: !isCI,
+  // workers: isCI ? 1 : undefined,
+  // fullyParallel: !isCI,
   retries: isCI ? 1 : 0,
   use: {
     baseURL,

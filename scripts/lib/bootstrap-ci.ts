@@ -1,4 +1,5 @@
 /* eslint-disable no-console -- CLI wizard */
+import { isPlaceholderE2EClerkEmail } from "../../packages/config/e2e-clerk";
 import { isPlaceholderEnvValue } from "../../packages/config/env-placeholders";
 import { resolveGitHubRepo } from "./apply-identity";
 import { resolveDevConvexDeployKey } from "./convex-deploy-key";
@@ -101,7 +102,11 @@ export async function bootstrapCiSecrets(
 
   let allEnvSecretsOk = true;
   for (const [name, value] of pairs) {
-    if (!value || isPlaceholderEnvValue(value)) {
+    const isPlaceholder =
+      name === "E2E_CLERK_USER_EMAIL"
+        ? isPlaceholderE2EClerkEmail(value)
+        : isPlaceholderEnvValue(value);
+    if (!value || isPlaceholder) {
       console.log(`○ Skip ${name} — not set in ${WEB_ENV}`);
       continue;
     }

@@ -1,3 +1,4 @@
+import { isPlaceholderE2EClerkEmail } from "@repo/config/e2e-clerk";
 import { isPlaceholderEnvValue } from "@repo/config/env-placeholders";
 
 /** Error message when authenticated tasks E2E env is incomplete. */
@@ -41,7 +42,7 @@ export function getTasksE2EConfigIssues(): string[] {
     issues.push("VITE_CONVEX_URL is missing or still a placeholder");
   }
 
-  if (!email || isPlaceholderEnvValue(email)) {
+  if (!email || isPlaceholderE2EClerkEmail(email)) {
     issues.push("E2E_CLERK_USER_EMAIL is missing or still a placeholder");
   }
 

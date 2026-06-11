@@ -52,11 +52,33 @@ describe("ensureClerkConvexJwtTemplate", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("treats name-taken create errors as success when list missed the template", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("https://api.clerk.com/v1/jwt_templates") && init?.method !== "POST") {
+        return Response.json({ data: [], total_count: 0 });
+      }
+      if (url === "https://api.clerk.com/v1/jwt_templates" && init?.method === "POST") {
+        return new Response(
+          JSON.stringify({
+            errors: [{ code: "form_identifier_exists", message: "That name is taken." }],
+          }),
+          { status: 422 },
+        );
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await ensureClerkConvexJwtTemplate("sk_test_fixture");
+    expect(result).toEqual({ ok: true, created: false });
+  });
+
   it("creates convex template with preset claims", async () => {
     const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url === "https://api.clerk.com/v1/jwt_templates" && init?.method !== "POST") {
-        return Response.json({ data: [] });
+      if (url.startsWith("https://api.clerk.com/v1/jwt_templates") && init?.method !== "POST") {
+        return Response.json({ data: [], total_count: 0 });
       }
       if (url === "https://api.clerk.com/v1/jwt_templates" && init?.method === "POST") {
         const body = JSON.parse(String(init.body)) as {

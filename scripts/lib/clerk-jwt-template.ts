@@ -18,11 +18,35 @@ export const CLERK_CONVEX_JWT_CLAIMS = {
 
 type ClerkJwtTemplateListResponse = {
   data?: Array<{ name?: string }>;
+  total_count?: number;
+};
+
+type ClerkApiErrorResponse = {
+  errors?: Array<{ code?: string; message?: string }>;
 };
 
 export type EnsureClerkConvexJwtTemplateResult =
   | { ok: true; created: boolean }
   | { ok: false; message: string };
+
+function isConvexJwtTemplateName(name: string | undefined): boolean {
+  return name?.trim().toLowerCase() === CLERK_CONVEX_JWT_TEMPLATE_NAME;
+}
+
+function isClerkJwtTemplateNameTakenError(body: string): boolean {
+  if (/form_identifier_exists|name is taken/i.test(body)) {
+    return true;
+  }
+  try {
+    const parsed = JSON.parse(body) as ClerkApiErrorResponse;
+    return (parsed.errors ?? []).some(
+      (error) =>
+        error.code === "form_identifier_exists" || /name is taken/i.test(error.message ?? ""),
+    );
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Returns true when the Clerk instance has a JWT template named `convex`.
@@ -30,14 +54,33 @@ export type EnsureClerkConvexJwtTemplateResult =
  * @param secretKey - Clerk secret key (`sk_test_…` / `sk_live_…`)
  */
 export async function hasClerkConvexJwtTemplate(secretKey: string): Promise<boolean> {
-  const response = await fetch("https://api.clerk.com/v1/jwt_templates", {
-    headers: { Authorization: `Bearer ${secretKey}` },
-  });
-  if (!response.ok) {
-    return false;
+  const limit = 100;
+  let offset = 0;
+
+  while (true) {
+    const url = new URL("https://api.clerk.com/v1/jwt_templates");
+    url.searchParams.set("limit", String(limit));
+    url.searchParams.set("offset", String(offset));
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${secretKey}` },
+    });
+    if (!response.ok) {
+      return false;
+    }
+
+    const body = (await response.json()) as ClerkJwtTemplateListResponse;
+    const page = body.data ?? [];
+    if (page.some((template) => isConvexJwtTemplateName(template.name))) {
+      return true;
+    }
+
+    offset += page.length;
+    const total = body.total_count ?? page.length;
+    if (page.length === 0 || offset >= total) {
+      return false;
+    }
   }
-  const body = (await response.json()) as ClerkJwtTemplateListResponse;
-  return (body.data ?? []).some((template) => template.name === CLERK_CONVEX_JWT_TEMPLATE_NAME);
 }
 
 /**
@@ -69,6 +112,9 @@ export async function ensureClerkConvexJwtTemplate(
 
   if (!response.ok) {
     const detail = (await response.text()).slice(0, 200);
+    if (isClerkJwtTemplateNameTakenError(detail)) {
+      return { ok: true, created: false };
+    }
     return {
       ok: false,
       message: detail || `Clerk JWT template API returned ${response.status}`,

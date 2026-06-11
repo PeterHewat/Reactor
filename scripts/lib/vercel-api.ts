@@ -16,10 +16,16 @@ export type VercelProject = {
 
 export type VercelDeploymentTarget = "production" | "preview";
 
+export type VercelBranchMatcher = {
+  type: "equals" | "startsWith" | "endsWith";
+  pattern: string;
+};
+
 export type VercelProjectEnvironment = {
   id: string;
   slug: string;
   type: "production" | "preview" | "development" | "custom";
+  branchMatcher?: VercelBranchMatcher | null;
 };
 
 /** Custom environment slug for `preview.*` hostnames when the project has no Git link. */
@@ -58,11 +64,17 @@ export type VercelGitComments = {
   onPullRequest: boolean;
 };
 
+export type VercelConsolidatedGitCommitStatus = {
+  enabled: boolean;
+  propagateFailures: boolean;
+};
+
 export type VercelGitProviderOptions = {
-  /** `disabled` stops GitHub `deployment_status` events (PR activity noise). */
+  /** `disabled` stops GitHub Deployments API noise (`deployment_status`); does not stop Vercel builds. */
   createDeployments?: "disabled" | "enabled";
   disableRepositoryDispatchEvents?: boolean;
   gitCommitStatus?: boolean;
+  consolidatedGitCommitStatus?: VercelConsolidatedGitCommitStatus;
 };
 
 export type VercelGitNotificationUpdate = {
@@ -80,6 +92,7 @@ export const VERCEL_QUIET_GIT_NOTIFICATIONS: VercelGitNotificationUpdate = {
     createDeployments: "disabled",
     disableRepositoryDispatchEvents: true,
     gitCommitStatus: false,
+    consolidatedGitCommitStatus: { enabled: false, propagateFailures: false },
   },
 };
 
@@ -381,6 +394,123 @@ export async function updateVercelProjectGitNotifications(
   });
 }
 
+type VercelProjectLink = {
+  productionBranch?: string;
+};
+
+type VercelProjectWithLink = VercelProjectDetails & {
+  link?: VercelProjectLink | null;
+};
+
+/**
+ * Reads the Git branch Vercel treats as Production from the project link payload.
+ *
+ * @param token - Vercel API token
+ * @param teamId - Optional team scope
+ * @param projectId - Project ID
+ */
+export async function readVercelProjectProductionBranch(
+  token: string,
+  teamId: string | undefined,
+  projectId: string,
+): Promise<string | undefined> {
+  const project = await vercelRequest<VercelProjectWithLink>(token, `/v9/projects/${projectId}`, {
+    teamId,
+  });
+  return project.link?.productionBranch?.trim() || undefined;
+}
+
+/**
+ * Resolves Production tracking branch from environment metadata (preferred) or project link.
+ *
+ * @param environments - Project environments from `/custom-environments`
+ * @param linkBranch - `link.productionBranch` fallback
+ */
+export function resolveProductionTrackingBranch(
+  environments: VercelProjectEnvironment[],
+  linkBranch?: string,
+): string | undefined {
+  const productionEnv = environments.find((env) => env.type === "production");
+  if (productionEnv?.branchMatcher?.type === "equals") {
+    const pattern = productionEnv.branchMatcher.pattern?.trim();
+    if (pattern) {
+      return pattern;
+    }
+  }
+  return linkBranch?.trim() || undefined;
+}
+
+/**
+ * Reads the Git branch shown in Environments → Production → Tracking Branch.
+ *
+ * @param token - Vercel API token
+ * @param teamId - Optional team scope
+ * @param projectId - Project ID
+ */
+export async function readVercelProductionTrackingBranch(
+  token: string,
+  teamId: string | undefined,
+  projectId: string,
+): Promise<string | undefined> {
+  const [environments, linkBranch] = await Promise.all([
+    listVercelProjectEnvironments(token, teamId, projectId),
+    readVercelProjectProductionBranch(token, teamId, projectId),
+  ]);
+  return resolveProductionTrackingBranch(environments, linkBranch);
+}
+
+/**
+ * Points Vercel Production deployments at a non-`main` branch (Environments → Production → Tracking Branch).
+ * Tries the Environments API first, then the legacy `/branch` endpoint.
+ *
+ * @param token - Vercel API token
+ * @param teamId - Optional team scope
+ * @param projectId - Project ID
+ * @param branch - Git branch for Production deployments
+ * @returns Whether the project now reports the requested branch
+ */
+export async function updateVercelProjectProductionBranch(
+  token: string,
+  teamId: string | undefined,
+  projectId: string,
+  branch: string = VERCEL_PRODUCTION_GIT_BRANCH,
+): Promise<boolean> {
+  const matcher: VercelBranchMatcher = { type: "equals", pattern: branch };
+  const environments = await listVercelProjectEnvironments(token, teamId, projectId);
+  const productionEnv = environments.find((env) => env.type === "production");
+
+  if (productionEnv) {
+    try {
+      await vercelRequest(
+        token,
+        `/v9/projects/${projectId}/custom-environments/${productionEnv.id}`,
+        {
+          method: "PATCH",
+          teamId,
+          body: { branchMatcher: matcher },
+        },
+      );
+      if ((await readVercelProductionTrackingBranch(token, teamId, projectId)) === branch) {
+        return true;
+      }
+    } catch {
+      // Fall through to legacy endpoint.
+    }
+  }
+
+  try {
+    await vercelRequest(token, `/v9/projects/${projectId}/branch`, {
+      method: "PATCH",
+      teamId,
+      body: { branch },
+    });
+  } catch {
+    return false;
+  }
+
+  return (await readVercelProductionTrackingBranch(token, teamId, projectId)) === branch;
+}
+
 /**
  * Creates a Vercel project (monorepo subdirectory).
  *
@@ -673,6 +803,9 @@ export async function addVercelProjectDomain(
  */
 /** Git branch that receives staging (preview.*) deploys when Production Branch is not `main`. */
 export const VERCEL_STAGING_GIT_BRANCH = "main";
+
+/** Git branch Vercel treats as Production; `main` merges should be Preview (staging). */
+export const VERCEL_PRODUCTION_GIT_BRANCH = "production";
 
 /**
  * Adds a domain on the correct Vercel environment, reassigning when already attached elsewhere.

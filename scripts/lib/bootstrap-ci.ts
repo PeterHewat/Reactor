@@ -1,7 +1,7 @@
 /* eslint-disable no-console -- CLI wizard */
 import { isPlaceholderEnvValue } from "../../packages/config/env-placeholders";
 import { resolveGitHubRepo } from "./apply-identity";
-import { mintConvexDeployKey } from "./convex-deploy-key";
+import { resolveDevConvexDeployKey } from "./convex-deploy-key";
 import { isConvexLinked } from "./convex-link";
 import { readEnvFile } from "./env-file";
 import { ghSecretSet, isGhAuthenticated } from "./gh-secrets";
@@ -80,8 +80,8 @@ export async function bootstrapCiSecrets(
   }
 
   const webEnv = readEnvFile(root, WEB_ENV);
-  const deployKeyResult = await mintConvexDeployKey(root, "github-ci", "dev");
-  if (!deployKeyResult) {
+  const deployKey = await resolveDevConvexDeployKey(root, "github-ci");
+  if (!deployKey) {
     printManualAction("Mint CONVEX_DEPLOY_KEY for CI", [
       "Resume `bun run setup` — complete the Convex step first",
       "Then confirm the GitHub Actions sync step",
@@ -89,7 +89,7 @@ export async function bootstrapCiSecrets(
     return;
   }
 
-  const deployKeyOk = await ghSecretSet(root, "CONVEX_DEPLOY_KEY", deployKeyResult.key);
+  const deployKeyOk = await ghSecretSet(root, "CONVEX_DEPLOY_KEY", deployKey);
   console.log(deployKeyOk ? "✓ CONVEX_DEPLOY_KEY" : "○ Failed to set CONVEX_DEPLOY_KEY");
 
   const pairs: Array<[string, string | undefined]> = [

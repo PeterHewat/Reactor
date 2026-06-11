@@ -84,8 +84,8 @@ describe("verifyClerkE2ESecrets", () => {
         if (url === "https://api.clerk.com/v1/jwt_templates" && init?.method === "POST") {
           return new Response("Forbidden", { status: 403 });
         }
-        if (url === "https://api.clerk.com/v1/jwt_templates") {
-          return Response.json({ data: [] });
+        if (url.startsWith("https://api.clerk.com/v1/jwt_templates") && init?.method !== "POST") {
+          return Response.json({ data: [], total_count: 0 });
         }
         throw new Error(`Unexpected fetch: ${url}`);
       }),
@@ -113,8 +113,8 @@ describe("verifyClerkE2ESecrets", () => {
         if (url === "https://api.clerk.com/v1/jwt_templates" && init?.method === "POST") {
           return Response.json({ id: "jwt_template_new", name: "convex" });
         }
-        if (url === "https://api.clerk.com/v1/jwt_templates") {
-          return Response.json({ data: [] });
+        if (url.startsWith("https://api.clerk.com/v1/jwt_templates") && init?.method !== "POST") {
+          return Response.json({ data: [], total_count: 0 });
         }
         throw new Error(`Unexpected fetch: ${url}`);
       }),
@@ -135,8 +135,8 @@ describe("verifyClerkE2ESecrets", () => {
         if (url === "https://api.clerk.com/v1/testing_tokens" && init?.method === "POST") {
           return Response.json({ token: "testing-token" });
         }
-        if (url === "https://api.clerk.com/v1/jwt_templates") {
-          return Response.json({ data: [{ name: "convex" }] });
+        if (url.startsWith("https://api.clerk.com/v1/jwt_templates") && init?.method !== "POST") {
+          return Response.json({ data: [{ name: "convex" }], total_count: 1 });
         }
         throw new Error(`Unexpected fetch: ${url}`);
       }),

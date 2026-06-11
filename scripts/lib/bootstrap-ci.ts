@@ -4,6 +4,7 @@ import { isPlaceholderEnvValue } from "../../packages/config/env-placeholders";
 import { resolveGitHubRepo } from "./apply-identity";
 import { resolveDevConvexDeployKey } from "./convex-deploy-key";
 import { isConvexLinked } from "./convex-link";
+import { ensureClerkConvexJwtTemplate } from "./clerk-jwt-template";
 import { readEnvFile } from "./env-file";
 import { ghSecretSet, isGhAuthenticated, listGhRepoSecrets } from "./gh-secrets";
 import { printManualAction } from "./manual-action";
@@ -107,6 +108,16 @@ export async function bootstrapCiSecrets(
       "Then confirm the GitHub Actions sync step",
     ]);
     return;
+  }
+
+  const clerkSecret = webEnv.CLERK_SECRET_KEY?.trim();
+  if (clerkSecret?.startsWith("sk_test_")) {
+    const jwtTemplate = await ensureClerkConvexJwtTemplate(clerkSecret);
+    if (jwtTemplate.ok && jwtTemplate.created) {
+      console.log('✓ Created Clerk JWT template "convex" (Convex + Clerk auth)');
+    } else if (!jwtTemplate.ok) {
+      console.log(`○ Clerk JWT template "convex": ${jwtTemplate.message}`);
+    }
   }
 
   let allSecretsOk = true;

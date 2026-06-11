@@ -70,7 +70,7 @@ describe("verifyClerkE2ESecrets", () => {
     }
   });
 
-  it("rejects when convex JWT template is missing", async () => {
+  it("rejects when convex JWT template cannot be created", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
@@ -81,8 +81,11 @@ describe("verifyClerkE2ESecrets", () => {
         if (url === "https://api.clerk.com/v1/testing_tokens" && init?.method === "POST") {
           return Response.json({ token: "testing-token" });
         }
+        if (url === "https://api.clerk.com/v1/jwt_templates" && init?.method === "POST") {
+          return new Response("Forbidden", { status: 403 });
+        }
         if (url === "https://api.clerk.com/v1/jwt_templates") {
-          return Response.json({ data: [{ name: "other" }] });
+          return Response.json({ data: [] });
         }
         throw new Error(`Unexpected fetch: ${url}`);
       }),
@@ -91,8 +94,34 @@ describe("verifyClerkE2ESecrets", () => {
     const result = await verifyClerkE2ESecrets(fixturePublishable, fixtureSecret);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toContain('JWT template "convex" is missing');
+      expect(result.message).toContain('JWT template "convex"');
+      expect(result.message).toContain("could not be created");
     }
+  });
+
+  it("creates convex JWT template when missing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url === "https://api.clerk.com/v1/instance") {
+          return Response.json({ frontend_api: "just-bulldog-13.clerk.accounts.dev" });
+        }
+        if (url === "https://api.clerk.com/v1/testing_tokens" && init?.method === "POST") {
+          return Response.json({ token: "testing-token" });
+        }
+        if (url === "https://api.clerk.com/v1/jwt_templates" && init?.method === "POST") {
+          return Response.json({ id: "jwt_template_new", name: "convex" });
+        }
+        if (url === "https://api.clerk.com/v1/jwt_templates") {
+          return Response.json({ data: [] });
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      }),
+    );
+
+    const result = await verifyClerkE2ESecrets(fixturePublishable, fixtureSecret);
+    expect(result).toEqual({ ok: true, jwtTemplateCreated: true });
   });
 
   it("accepts matching keys when testing token API succeeds", async () => {
@@ -114,6 +143,6 @@ describe("verifyClerkE2ESecrets", () => {
     );
 
     const result = await verifyClerkE2ESecrets(fixturePublishable, fixtureSecret);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, jwtTemplateCreated: false });
   });
 });

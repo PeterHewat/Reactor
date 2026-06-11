@@ -29,11 +29,17 @@ if (syncIssues.length > 0) {
   fail(`Web E2E secrets incomplete: ${syncIssues.join("; ")}.${remediation}`);
 }
 
-const publishableKey = process.env.VITE_CLERK_PUBLISHABLE_KEY!;
-const secretKey = process.env.CLERK_SECRET_KEY!;
+const publishableKey = process.env.VITE_CLERK_PUBLISHABLE_KEY!.trim();
+const secretKey = process.env.CLERK_SECRET_KEY!.trim();
 const clerkCheck = await verifyClerkE2ESecrets(publishableKey, secretKey);
 if (!clerkCheck.ok) {
   fail(clerkCheck.message);
+}
+
+if (clerkCheck.jwtTemplateCreated) {
+  console.error(
+    '::notice::Created Clerk JWT template "convex" on the development instance (required for Convex auth in Playwright).',
+  );
 }
 
 console.log("ui_only=false");

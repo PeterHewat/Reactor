@@ -10,5 +10,5 @@
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "setupTests.ts"],
   "exclude": ["dist"],
-  "references": [{ "path": "../test-utils" }]
+  "references": [{ "path": "../env-core" }, { "path": "../test-utils" }]
 }

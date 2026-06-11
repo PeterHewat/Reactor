@@ -19,4 +19,6 @@ runs:
           echo "::error::CONVEX_DEPLOY_KEY is required."
           exit 1
         fi
-        bunx convex deploy --cmd 'bun run build'
+        bun scripts/generate-routes.ts
+        bun scripts/generate-convex.ts
+        bunx convex deploy --cmd 'bun run --filter @repo/convex build'

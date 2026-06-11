@@ -10,7 +10,7 @@ export function AuthHeaderControls() {
   const { isSignedIn } = useAuth();
 
   if (isSignedIn) {
-    return <UserButton afterSignOutUrl="/" />;
+    return <UserButton />;
   }
 
   return (

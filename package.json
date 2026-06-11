@@ -46,7 +46,7 @@
     "outdated": "bun outdated",
     "update": "bun update",
     "audit": "bun audit",
-    "build": "tsc -b",
+    "build": "bun run --filter @repo/marketing sync && tsc -b",
     "build:all": "bun run build && bun run --filter '*' build",
     "clean": "rm -rf node_modules",
     "clean:ts": "tsc -b --clean",

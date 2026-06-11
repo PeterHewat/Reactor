@@ -1,7 +1,7 @@
-import { api } from "@convex/api";
 import type { Id } from "@convex/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback } from "react";
+import { tasksConvexApi } from "../convex-api";
 
 /**
  * Convex-backed tasks data and mutations for the sample vertical slice.
@@ -12,10 +12,10 @@ import { useCallback } from "react";
  * const { tasks, createTask, toggleCompleted, removeTask } = useTasks();
  */
 export function useTasks() {
-  const tasks = useQuery(api.tasks.list, {});
-  const createTask = useMutation(api.tasks.create);
-  const updateTask = useMutation(api.tasks.update);
-  const removeTask = useMutation(api.tasks.remove);
+  const tasks = useQuery(tasksConvexApi.list, {});
+  const createTask = useMutation(tasksConvexApi.create);
+  const updateTask = useMutation(tasksConvexApi.update);
+  const removeTask = useMutation(tasksConvexApi.remove);
 
   const createFromForm = useCallback(
     async (formData: FormData) => {

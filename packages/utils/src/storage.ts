@@ -40,6 +40,52 @@ export function createMemoryStorage(): StorageLike {
 /** Cached memory storage singleton for SSR/test environments. */
 let memoryStorageSingleton: StorageLike | null = null;
 
+function isStorageLike(value: unknown): value is StorageLike {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as StorageLike).getItem === "function" &&
+    typeof (value as StorageLike).setItem === "function" &&
+    typeof (value as StorageLike).removeItem === "function" &&
+    typeof (value as StorageLike).clear === "function"
+  );
+}
+
+function getNativeLocalStorage(): StorageLike | null {
+  if (typeof window !== "undefined" && isStorageLike(window.localStorage)) {
+    return window.localStorage;
+  }
+  if (isStorageLike(globalThis.localStorage)) {
+    return globalThis.localStorage as StorageLike;
+  }
+  return null;
+}
+
+/**
+ * Replaces missing or broken `localStorage` with in-memory storage.
+ *
+ * Node 24+ can expose a non-functional `localStorage` when
+ * `--localstorage-file` is set without a valid path (common in Vitest worker
+ * processes). Test setup should call this before stores that use persistence.
+ */
+export function ensureLocalStoragePolyfill(): void {
+  if (getNativeLocalStorage()) {
+    return;
+  }
+
+  const storage = getLocalStorageOrMemory();
+  Object.defineProperty(globalThis, "localStorage", {
+    value: storage,
+    configurable: true,
+  });
+  if (typeof window !== "undefined") {
+    Object.defineProperty(window, "localStorage", {
+      value: storage,
+      configurable: true,
+    });
+  }
+}
+
 /**
  * Returns `localStorage` when available, otherwise falls back to a
  * singleton in-memory storage implementation.
@@ -58,8 +104,9 @@ let memoryStorageSingleton: StorageLike | null = null;
  * storage.setItem("theme", "dark");
  */
 export function getLocalStorageOrMemory(): StorageLike {
-  if (typeof window !== "undefined" && window.localStorage) {
-    return window.localStorage as StorageLike;
+  const native = getNativeLocalStorage();
+  if (native) {
+    return native;
   }
   if (!memoryStorageSingleton) {
     memoryStorageSingleton = createMemoryStorage();

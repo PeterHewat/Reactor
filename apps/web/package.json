@@ -30,15 +30,15 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@clerk/testing": "^2.1.0",
+    "@clerk/testing": "^2.1.1",
     "@playwright/test": "^1.60.0",
-    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/postcss": "^4.3.1",
     "@tanstack/react-router-devtools": "^1.167.0",
     "@tanstack/router-cli": "^1.167.17",
     "@tanstack/router-plugin": "^1.168.18",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.15",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.1"
   }
 }

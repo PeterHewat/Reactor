@@ -25,7 +25,7 @@
 | `convex/_generated/`, `apps/web/src/routeTree.gen.ts`                    | `bun run codegen`                                                                                        |
 | `.agents/skills/convex*/`, `.agents/skills/clerk-*/`, `skills-lock.json` | `bun run setup` or [docs/monorepo-structure.md](docs/monorepo-structure.md#generated-code-not-committed) |
 
-Repo-owned skills (e.g. `.agents/skills/create-pr/`) are committed under `.agents/skills/`; `.claude/skills` is a symlink to that directory for Claude Code.
+Repo-owned skills (e.g. `.agents/skills/pr-push/`) are committed under `.agents/skills/`; `.claude/skills` is a symlink to that directory for Claude Code.
 
 ## Verify gate
 

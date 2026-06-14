@@ -103,7 +103,7 @@ Staging: merge to `main`. Production tags: `release-2026-06-07-18-55-37` (one ta
 | `apps/web/src/routeTree.gen.ts`                                          | TanStack Router               | `bun scripts/generate-routes.ts` (or `tsr generate` in `apps/web`)                                                                                              |
 | `.agents/skills/convex*/`, `.agents/skills/clerk-*/`, `skills-lock.json` | `bun run setup` (best effort) | `bunx convex ai-files install`; Clerk: `bunx skills add clerk/skills -y -a cursor --skill clerk-react-patterns --skill clerk-testing --skill clerk-backend-api` |
 
-Repo-owned agent skills (e.g. `.agents/skills/create-pr/`) live under `.agents/skills/`. `.claude/skills` is a symlink to that directory (committed); Convex `convex*` and Clerk `clerk-*` install targets are gitignored. `CLAUDE.md` is a symlink to `AGENTS.md`.
+Repo-owned agent skills (e.g. `.agents/skills/pr-push/`) live under `.agents/skills/`. `.claude/skills` is a symlink to that directory (committed); Convex `convex*` and Clerk `clerk-*` install targets are gitignored. `CLAUDE.md` is a symlink to `AGENTS.md`.
 
 Run **`bun run dev:convex`** or **`bun run codegen`** before the first `typecheck` / `test`. Use **`bun run check`** (or **`bun run verify`**) so codegen runs exactly once. There are **no committed** Convex stubs — missing `_generated` fails with remediation text.
 

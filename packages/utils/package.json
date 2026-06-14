@@ -57,6 +57,6 @@
     "react": "^19.2.7"
   },
   "devDependencies": {
-    "happy-dom": "^20.10.2"
+    "happy-dom": "^20.10.3"
   }
 }

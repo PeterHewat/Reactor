@@ -61,7 +61,13 @@ Stay on supported Vitest 3.x with matching coverage packages across workspaces.
 
 ## Update existing PR
 
-Second run on `feat/task-due-dates` after a follow-up commit fixing overdue styling. Draft from `git diff main...HEAD`, not just the latest staged slice. Commit message: title only. Publish via `gh pr edit`.
+Second run on `feat/task-due-dates` after a follow-up commit fixing overdue styling. **Run full preflight again** — do not assume the PR is already up to date because it was created earlier in the session. Draft from `git diff main...HEAD`, not just the latest staged slice or latest commit message. Commit message: title only. **Always** publish the full-branch title and body via `gh pr edit` after push.
+
+**Wrong:** Re-invoke in the same chat → "PR #42 already exists; state unchanged."
+
+**Wrong:** New commit pushed → `gh pr edit` title/body describe only that commit.
+
+**Right:** Re-read `git diff main...HEAD`, merge outcomes from every commit on the branch into one title and description, then `gh pr edit`.
 
 **Label:** `enhancement`
 

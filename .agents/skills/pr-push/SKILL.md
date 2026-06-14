@@ -54,6 +54,20 @@ Rows two and three share the same draft source when the branch has commits; row 
 
 Chat history may add intent beyond the diff.
 
+### Re-invoke and follow-up runs
+
+**Always run the full [Preflight](#1-preflight) on every invocation** — including when the user invokes the skill again in the same chat, when you already created or updated a PR earlier in the session, or when you believe nothing changed.
+
+**Never** reply that state is unchanged, that a PR already exists, or that no action is needed **without** running preflight commands in this turn and applying the [What to ship](#what-to-ship) stop rule.
+
+When an open PR exists on the current branch (`existing_pr` is set):
+
+1. Draft title, body, and label from **`git diff base...HEAD`**, not from `git diff --cached`, the latest commit message, or chat memory alone.
+2. **Always** run the [Existing PR](#push-and-publish-pr) `gh pr edit` block after push — even when the only new work was an extra commit, when metadata looks stale, or when the user only asked to "update the PR".
+3. Do **not** narrow the title or body to the latest commit; squash-merge release notes must reflect the **whole branch**.
+
+If preflight shows nothing to ship (no staged diff and branch not ahead of `base`), report that and stop — do not skip preflight.
+
 ## 2. Draft title, description, and label
 
 Draft from the [preflight scope table](#what-to-ship), then continue to [Execute](#3-execute).

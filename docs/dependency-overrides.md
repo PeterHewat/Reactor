@@ -18,6 +18,7 @@ Root [package.json](../package.json) `overrides` pin **transitive** dependency v
 | `srvx`              | `^0.11.16` | [GHSA-p36q-q72m-gchr](https://github.com/advisories/GHSA-p36q-q72m-gchr) (`@vercel/backends`)            |
 | `path-to-regexp`    | `^8.4.2`   | [GHSA-9wv6-86v2-598j](https://github.com/advisories/GHSA-9wv6-86v2-598j) (Vercel CLI 6.x pins)           |
 | `undici`            | `^7.27.2`  | Multiple GHSA advisories in Vercel CLI / Astro transitive tree                                           |
+| `esbuild`           | `^0.28.1`  | [GHSA-gv7w-rqvm-qjhr](https://github.com/advisories/GHSA-gv7w-rqvm-qjhr) (binary integrity in Deno API)  |
 
 Re-add an override only when `bun audit` reports a vulnerable range and upstream has not released a fix.
 

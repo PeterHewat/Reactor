@@ -45,7 +45,7 @@
     "install:all": "bun install",
     "outdated": "bun outdated",
     "update": "bun update",
-    "audit": "bun audit",
+    "audit": "bun audit --audit-level=high",
     "build": "bun run --filter @repo/marketing sync && tsc -b",
     "build:all": "bun run build && bun run --filter '*' build",
     "clean": "rm -rf node_modules",
@@ -73,7 +73,8 @@
     "tar": "^7.5.16",
     "srvx": "^0.11.16",
     "path-to-regexp": "^8.4.2",
-    "undici": "^7.27.2"
+    "undici": "^7.27.2",
+    "esbuild": "^0.28.1"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.9.0",
